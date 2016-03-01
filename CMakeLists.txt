@@ -93,6 +93,7 @@ configure_file(
 # ============================================================================
 set(HEADERS
   "${PROJECT_BINARY_DIR}/config.h"
+  "src/throughnet.h"
   )
 
 set(SOURCES
