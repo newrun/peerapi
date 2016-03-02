@@ -1,5 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <iostream>
+
+#include <throughnet.h>
+
+using namespace std;
 
 #define CHECK_ERR(err, msg) { \
     if (err != 0) { \
@@ -8,13 +13,22 @@
     } \
 }
 
-
 /* ===========================================================================
  * Test connect_peer1() with valid condition
  */
+
 void connect_peer1()
 {
   int err = 0;
+
+  Throughnet(function_tn(string event_id, tn::EventData& data){
+    if (event_id == "connected") {
+      this_->Send("your-guid", "Hello");
+    }
+  })
+  .Connect("my-guid", "{}");
+    
+
   CHECK_ERR(err, "nothing");
 }
 

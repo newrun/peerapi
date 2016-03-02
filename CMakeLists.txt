@@ -112,6 +112,7 @@ set(SOURCES
 
 include_directories(
   "${PROJECT_BINARY_DIR}"
+  "${PROJECT_SOURCE_DIR}/src"
   "${WEBRTC_INCLUDE_DIR}"
   "${WEBRTC_INCLUDE_DIR}/webrtc"
   )
@@ -186,6 +187,6 @@ endif()
 # Test example
 # ============================================================================
 
-add_executable(example src/test/example.cc)
-target_link_libraries(example throughnet)
-add_test(example example)
+add_executable(test_main src/test/test_main.cc)
+target_link_libraries(test_main throughnet)
+add_test(test_main test_main)
