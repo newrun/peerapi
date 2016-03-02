@@ -7,7 +7,7 @@
 #include "config.h"
 #include "throughnet.h"
 
-Throughnet::Throughnet(EventHandler handler) {
+Throughnet::Throughnet(void(*handler) (Throughnet* this_, std::string, tn::EventData&)) {
   handler_ = handler;
   return;
 }
@@ -20,7 +20,7 @@ void Throughnet::Connect(std::string id, std::string setting) {
   return;
 }
  	
-void Throughnet::Post(std::string id, std::string data) {
+void Throughnet::Send(std::string id, std::string data) {
   
   return;
 }

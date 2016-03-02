@@ -12,21 +12,27 @@
 #include <functional>
 
 
-#define function_tn(_x_, _y_) [](_x_, _y_)
+#define function_tn(_x_, _y_) [](Throughnet* this_, _x_, _y_)
+
+class Throughnet;
+
+namespace tn {
+typedef std::map<std::string, std::string> EventData;
+typedef std::function<void(Throughnet* this_, std::string, EventData&)> EventHandler;
+}
 
 class Throughnet {
  public:
-  typedef std::map<std::string, std::string> EventData;
-  typedef std::function<void (std::string, EventData)> EventHandler;
 
-  Throughnet(EventHandler func);
+//  Throughnet(tn::EventHandler& handler);
+  Throughnet(void (*handler) (Throughnet* this_, std::string, tn::EventData&));
   ~Throughnet();
   
   void Connect(std::string id, std::string setting);
-  void Post(std::string id, std::string data);
+  void Send(std::string id, std::string data);
   
  protected: 
-  EventHandler handler_;
+  tn::EventHandler handler_;
 };
 
 #endif // __THROUGHNET_THROUGHENT_H__
