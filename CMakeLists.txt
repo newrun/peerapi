@@ -28,13 +28,6 @@ if (NOT (TN_WITH_STATIC OR TN_WITH_SHARED))
 	message(FATAL_ERROR "Makes no sense to compile with neither static nor shared libraries.")
 endif()
 
-# ============================================================================
-# Find external dependencies
-# ============================================================================
-
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/")
-find_package(WebRTC)
-
 
 # ============================================================================
 # The output directory.
@@ -50,10 +43,6 @@ message(STATUS "CMAKE_TOOLCHAIN_FILE='${CMAKE_TOOLCHAIN_FILE}'")
 # Platform or compiler specific configurations
 # ============================================================================
 if (MSVC)
-  if (NOT MSVC12)
-    message(WARNING "\n\n WebRTC requests Visual Studio 2013.\n")
-  endif()
-
   # Use /MT or /MTd instead of /MD or /MDd
   foreach(flag_var
     CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
@@ -66,9 +55,9 @@ endif()
 
 if (UNIX)
   if(APPLE)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -stdlib=libstdc++")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -stdlib=libc++")
     set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++11")
-    set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libstdc++")
+    set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
   else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
   endif()
@@ -79,6 +68,57 @@ endif()
 
 add_definitions(-DUNICODE -D_UNICODE)
 add_definitions(${WEBRTC_DEFINES})
+
+
+# ============================================================================
+# Find external dependencies
+# ============================================================================
+
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/")
+
+# WebRTC
+find_package(WebRTC)
+
+# zlib
+set(SKIP_INSTALL_ALL ON)
+add_subdirectory(${PROJECT_SOURCE_DIR}/src/libs/zlib)
+set(ZLIB_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/src/libs/zlib)
+if (MSVC)
+list(APPEND
+  ZLIB_LIBRARIES
+  optimized ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/zlibstatic.lib
+  debug ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/zlibstaticd.lib
+  )
+else()
+list(APPEND
+  ZLIB_LIBRARIES
+  ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/zlib.a
+  )
+endif()
+
+# libwebsockets
+set(LWS_WITH_STATIC ON)
+set(LWS_WITH_SHARED OFF)
+set(LWS_WITHOUT_CLIENT OFF)
+set(LWS_WITHOUT_SERVER ON)
+set(LWS_WITH_SSL ON)
+set(LWS_WITH_ZLIB ON)
+set(LWS_USE_BUNDLED_ZLIB OFF)
+set(LWS_WITHOUT_TESTAPPS ON)
+set(LWS_WITHOUT_TEST_CLIENT ON)
+set(LWS_WITHOUT_TEST_ECHO ON)
+set(LWS_WITHOUT_TEST_FRAGGLE ON)
+set(LWS_WITHOUT_TEST_PING ON)
+set(LWS_WITHOUT_TEST_SERVER ON)
+set(LWS_WITHOUT_TEST_SERVER_EXTPOLL ON)
+set(LWS_ZLIB_INCLUDE_DIRS ${ZLIB_INCLUDE_DIR} CACHE PATH "Path to the zlib include directory")
+set(LWS_ZLIB_LIBRARIES ${ZLIB_LIBRARIES} CACHE PATH "Path to the zlib library")
+set(LWS_OPENSSL_LIBRARIES ${WEBRTC_BORING_SSL_LIBRARIES} CACHE PATH "Path to the OpenSSL library")
+set(LWS_OPENSSL_INCLUDE_DIRS ${WEBRTC_BORING_SSL_INCLUDE} CACHE PATH "Path to the OpenSSL include directory")
+set(LWS_WITHOUT_EXTENSIONS ON)
+
+add_subdirectory(${PROJECT_SOURCE_DIR}/src/libs/libwebsockets)
+
 
 # ============================================================================
 # Generate the config.h that includes all the compilation settings.
@@ -153,6 +193,7 @@ endif()
 foreach (lib ${TN_LIBRARIES})
   target_link_libraries(${lib} ${LIB_LIST})
 endforeach()
+
 
 # These will be available to parent projects including throughnet using add_subdirectory()
 set(THROUGHNET_LIBRARIES ${TN_LIBRARIES} CACHE STRING "ThroughNet libraries")

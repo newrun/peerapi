@@ -5,22 +5,35 @@
 #  WEBRTC_INCLUDE_DIR
 #  WEBRTC_LIBRARIES
 #
+#  WEBRTC_BORING_SSL_INCLUDE
+#  WEBRTC_BORING_SSL_LIBRARIES
+#
 
 # ============================================================================
 # WebRTC root and default library directory
 # ============================================================================
 
-set(WEBRTC_ROOT_DIR
-  ${PROJECT_SOURCE_DIR}/libs/webrtc/src
-  CACHE PATH
-  "WebRTC root directory."
+if (DEFINED ENV{WEBRTC_ROOT_DIR})
+  set(WEBRTC_ROOT_DIR $ENV{WEBRTC_ROOT_DIR})
+  message("WEBRTC_ROOT_DIR = '${WEBRTC_ROOT_DIR}' from environment variable")
+else() 
+  set(WEBRTC_ROOT_DIR
+    ${PROJECT_SOURCE_DIR}/libs/webrtc/src
+    CACHE PATH
+    "WebRTC root directory."
   )
+endif()
 
-set(WEBRTC_LIBRARY_DIR
-  ${PROJECT_SOURCE_DIR}/out/Release
-  CACHE PATH
-  "WebRTC output directory"
-  )
+if (DEFINED ENV{WEBRTC_LIBRARY_DIR})
+  set(WEBRTC_LIBRARY_DIR $ENV{WEBRTC_LIBRARY_DIR})
+  message("WEBRTC_LIBRARY_DIR = '${WEBRTC_LIBRARY_DIR}' from environment variable")
+else() 
+  set(WEBRTC_LIBRARY_DIR
+    ${PROJECT_SOURCE_DIR}/out/Release
+    CACHE PATH
+    "WebRTC output directory"
+    )
+endif()
 
 # ============================================================================
 # Find WebRTC header directory
@@ -91,6 +104,42 @@ if(UNIX)
     )
 endif()
 
+# BoringSSL
+find_library(_WEBRTC_BORING_SSL_LIBRARY
+  NAMES boringssl
+  PATHS 
+    ${WEBRTC_LIBRARY_DIR}
+    ${WEBRTC_LIBRARY_DIR}/obj/third_party/boringssl
+  )
+  
+if (_WEBRTC_BORING_SSL_LIBRARY)
+  list(APPEND WEBRTC_BORING_SSL_LIBRARIES ${_WEBRTC_BORING_SSL_LIBRARY})
+else()
+  message(FATAL_ERROR "BoringSSL library not found in WebRTC")
+endif()
+
+if (MSVC)
+  find_library(_WEBRTC_BORING_SSL_ASM_LIBRARY
+    NAMES boringssl_asm
+    PATHS 
+      ${WEBRTC_LIBRARY_DIR}
+      ${WEBRTC_LIBRARY_DIR}/obj/third_party/boringssl
+    )
+  
+  if (_WEBRTC_BORING_SSL_ASM_LIBRARY)
+    list(APPEND WEBRTC_BORING_SSL_LIBRARIES ${_WEBRTC_BORING_SSL_ASM_LIBRARY})
+  else()
+    message(FATAL_ERROR "BoringSSL asm library not found in WebRTC")
+  endif()
+endif(MSVC)
+
+find_path(WEBRTC_BORING_SSL_INCLUDE
+  NAMES
+  	openssl/ssl.h
+  PATHS
+  	${WEBRTC_ROOT_DIR}/third_party/boringssl/src/include
+  )
+  
 
 # ============================================================================
 # Definitions
