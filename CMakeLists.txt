@@ -180,3 +180,12 @@ endif()
 if (TN_WITH_SHARED)
   set(THROUGHNET_LIBRARIES_SHARED throughnet_shared CACHE STRING "ThroughNet shared library")
 endif()
+
+
+# ============================================================================
+# Test example
+# ============================================================================
+
+add_executable(example src/test/example.cc)
+target_link_libraries(example throughnet)
+add_test(example example)
