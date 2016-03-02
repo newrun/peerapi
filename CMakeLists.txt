@@ -80,44 +80,10 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/")
 find_package(WebRTC)
 
 # zlib
-set(SKIP_INSTALL_ALL ON)
-add_subdirectory(${PROJECT_SOURCE_DIR}/src/libs/zlib)
-set(ZLIB_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/src/libs/zlib)
-if (MSVC)
-list(APPEND
-  ZLIB_LIBRARIES
-  optimized ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/zlibstatic.lib
-  debug ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/zlibstaticd.lib
-  )
-else()
-list(APPEND
-  ZLIB_LIBRARIES
-  ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/zlib.a
-  )
-endif()
+find_package(ZLIB)
 
 # libwebsockets
-set(LWS_WITH_STATIC ON)
-set(LWS_WITH_SHARED OFF)
-set(LWS_WITHOUT_CLIENT OFF)
-set(LWS_WITHOUT_SERVER ON)
-set(LWS_WITH_SSL ON)
-set(LWS_WITH_ZLIB ON)
-set(LWS_USE_BUNDLED_ZLIB OFF)
-set(LWS_WITHOUT_TESTAPPS ON)
-set(LWS_WITHOUT_TEST_CLIENT ON)
-set(LWS_WITHOUT_TEST_ECHO ON)
-set(LWS_WITHOUT_TEST_FRAGGLE ON)
-set(LWS_WITHOUT_TEST_PING ON)
-set(LWS_WITHOUT_TEST_SERVER ON)
-set(LWS_WITHOUT_TEST_SERVER_EXTPOLL ON)
-set(LWS_ZLIB_INCLUDE_DIRS ${ZLIB_INCLUDE_DIR} CACHE PATH "Path to the zlib include directory")
-set(LWS_ZLIB_LIBRARIES ${ZLIB_LIBRARIES} CACHE PATH "Path to the zlib library")
-set(LWS_OPENSSL_LIBRARIES ${WEBRTC_BORING_SSL_LIBRARIES} CACHE PATH "Path to the OpenSSL library")
-set(LWS_OPENSSL_INCLUDE_DIRS ${WEBRTC_BORING_SSL_INCLUDE} CACHE PATH "Path to the OpenSSL include directory")
-set(LWS_WITHOUT_EXTENSIONS ON)
-
-add_subdirectory(${PROJECT_SOURCE_DIR}/src/libs/libwebsockets)
+find_package(Libwebsockets)
 
 
 # ============================================================================
@@ -194,8 +160,19 @@ foreach (lib ${TN_LIBRARIES})
   target_link_libraries(${lib} ${LIB_LIST})
 endforeach()
 
+# ============================================================================
+# Target dependencies
+# ============================================================================
 
-# These will be available to parent projects including throughnet using add_subdirectory()
+add_dependencies(websockets zlibstatic)
+add_dependencies(websockets zlib)
+add_dependencies(throughnet websockets)
+add_dependencies(throughnet_shared websockets)
+
+# ============================================================================
+# Variables for parent project including throughnet using add_subdirectory()
+# ============================================================================
+
 set(THROUGHNET_LIBRARIES ${TN_LIBRARIES} CACHE STRING "ThroughNet libraries")
 if (TN_WITH_STATIC)
   set(THROUGHNET_LIBRARIES_STATIC throughnet CACHE STRING "ThroughNet static library")
