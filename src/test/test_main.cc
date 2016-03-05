@@ -21,14 +21,18 @@ void connect_peer1()
 {
   int err = 0;
 
-  Throughnet(function_tn(string event_id, tn::EventData& data){
-    if (event_id == "connected") {
-      this_->Send("your-guid", "Hello");
-    }
-  })
-  .Connect("my-guid", "{}");
-    
+  Throughnet tn("my-guid", "{}");
 
+  tn.On("connected", function_tn(Throughnet::Data& data){
+    this_->Send("your-guid", "Hello");
+  });
+
+  tn.On("disconnected", function_tn(Throughnet::Data& data) {
+    std::cout << data["id"].c_str() << " has been disconnected.";
+  });
+
+  tn.Connect("my-guid", "{}");
+   
   CHECK_ERR(err, "nothing");
 }
 
