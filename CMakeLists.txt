@@ -67,7 +67,6 @@ elseif (WIN32)
 endif()
 
 add_definitions(-DUNICODE -D_UNICODE)
-add_definitions(${WEBRTC_DEFINES})
 
 
 # ============================================================================
@@ -85,6 +84,7 @@ find_package(ZLIB)
 # libwebsockets
 find_package(Libwebsockets)
 
+add_definitions(${WEBRTC_DEFINES})
 
 # ============================================================================
 # Generate the config.h that includes all the compilation settings.
@@ -100,10 +100,19 @@ configure_file(
 set(HEADERS
   "${PROJECT_BINARY_DIR}/config.h"
   "src/throughnet.h"
+  "src/control.h"
+  "src/defaults.h"
+  "src/flagdefs.h"
+  "src/connection.h"
+  "src/dummy_wnd.h"
   )
 
 set(SOURCES
   "src/throughnet.cc"
+  "src/control.cc"
+  "src/defaults.cc"
+  "src/connection.cc"
+  "src/dummy_wnd.cc"
   )
 
 # ============================================================================
@@ -115,6 +124,11 @@ include_directories(
   "${PROJECT_SOURCE_DIR}/src"
   "${WEBRTC_INCLUDE_DIR}"
   "${WEBRTC_INCLUDE_DIR}/webrtc"
+  "${WEBRTC_INCLUDE_DIR}/third_party"
+  "${WEBRTC_INCLUDE_DIR}/third_party/webrtc"
+  "${WEBRTC_INCLUDE_DIR}/third_party/wtl/include"
+  "${WEBRTC_INCLUDE_DIR}/third_party/jsoncpp/overrides/include"
+  "${WEBRTC_INCLUDE_DIR}/third_party/jsoncpp/source/include"
   )
 
 set(TN_LIBRARIES)
