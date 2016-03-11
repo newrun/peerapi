@@ -7,10 +7,11 @@
 //
 
 #if defined(DEBUG) || defined(_DEBUG)
-
+#define __THROUGHNET_DEUBG_FLAG_FIXED__
 #undef DEBUG
 #undef _DEBUG
 #define NDEBUG
+#endif //defined(DEBUG) || defined(_DEBUG)
 
 #include "webrtc/base/common.h"
 #include "webrtc/base/json.h"
@@ -45,11 +46,15 @@
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/physicalsocketserver.h"
 
+
+#ifdef __THROUGHNET_DEUBG_FLAG_FIXED__
+#undef __THROUGHNET_DEUBG_FLAG_FIXED__
+
 #define DEBUG
 #define _DEBUG
 #undef NDEBUG
 
-#endif // defined(DEBUG) || defined(_DEBUG)
+#endif // __THROUGHNET_DEUBG_FLAG_FIXED__
 
 
 #if WIN32
