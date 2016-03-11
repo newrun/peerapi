@@ -1,10 +1,58 @@
 #ifndef __THROUGHNET_CONFIG_H__
 #define __THROUGHNET_CONFIG_H__
 
-#define @WEBRTC_POSIX_OR_WIN@ 1
+//
+// Throughnet only supports linking with 'Release' build WebRTC library.
+// To avoid link error, undef DEBUg and _DEBUG while including webrtc headers.
+//
+
+#if defined(DEBUG) || defined(_DEBUG)
+
+#undef DEBUG
+#undef _DEBUG
+#define NDEBUG
+
+#include "webrtc/base/common.h"
+#include "webrtc/base/json.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/nethelpers.h"
+#include "webrtc/base/stringutils.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/arraysize.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/signalthread.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/flags.h"
+#include "webrtc/base/basictypes.h"
+
+#include "webrtc/api/mediastreaminterface.h"
+#include "webrtc/api/videosourceinterface.h"
+#include "webrtc/api/datachannel.h"
+#include "webrtc/api/peerconnectioninterface.h"
+#include "webrtc/api/test/fakedatachannelprovider.h"
+#include "webrtc/api/test/fakeconstraints.h"
+#include "webrtc/media/devices/devicemanager.h"
+#include "webrtc/media/base/mediachannel.h"
+#include "webrtc/media/base/videocommon.h"
+#include "webrtc/media/base/videoframe.h"
+#include "webrtc/media/base/videorenderer.h"
+
+#ifdef WIN32
+#include "webrtc/base/win32.h"
+#include "webrtc/base/win32socketserver.h"
+#endif
+
+#include "webrtc/base/ssladapter.h"
+#include "webrtc/base/physicalsocketserver.h"
+
+#define DEBUG
+#define _DEBUG
+#undef NDEBUG
+
+#endif // defined(DEBUG) || defined(_DEBUG)
+
 
 #if WIN32
-#define _CRT_SECURE_NO_WARNINGS
 #ifdef _DEBUG
   #define _CRTDBG_MAP_ALLOC
   #include <stdlib.h>
@@ -15,5 +63,6 @@
  #endif
 #endif  // _DEBUG
 #endif //WIN32
+
 
 #endif // __THROUGHNET_CONFIG_H__

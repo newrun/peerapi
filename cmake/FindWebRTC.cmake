@@ -13,12 +13,13 @@
 # WebRTC root and default library directory
 # ============================================================================
 
+
 if (DEFINED ENV{WEBRTC_ROOT_DIR})
   set(WEBRTC_ROOT_DIR $ENV{WEBRTC_ROOT_DIR})
   message("WEBRTC_ROOT_DIR = '${WEBRTC_ROOT_DIR}' from environment variable")
 else() 
   set(WEBRTC_ROOT_DIR
-    ${PROJECT_SOURCE_DIR}/libs/webrtc/src
+    "webrtc-checkout/src"
     CACHE PATH
     "WebRTC root directory."
   )
@@ -27,12 +28,21 @@ endif()
 if (DEFINED ENV{WEBRTC_LIBRARY_DIR})
   set(WEBRTC_LIBRARY_DIR $ENV{WEBRTC_LIBRARY_DIR})
   message("WEBRTC_LIBRARY_DIR = '${WEBRTC_LIBRARY_DIR}' from environment variable")
-else() 
-  set(WEBRTC_LIBRARY_DIR
-    ${PROJECT_SOURCE_DIR}/out/Release
-    CACHE PATH
-    "WebRTC output directory"
-    )
+else()
+  if (NOT WEBRTC_ROOT_DIR STREQUAL "webrtc-checkout/src" AND WEBRTC_LIBRARY_DIR STREQUAL "webrtc-checkout/src/out/Release")
+    set(WEBRTC_LIBRARY_DIR
+      ${WEBRTC_ROOT_DIR}/out/Release
+      CACHE PATH
+      "WebRTC output directory"
+      FORCE
+      )  
+  else()
+    set(WEBRTC_LIBRARY_DIR
+      ${WEBRTC_ROOT_DIR}/out/Release
+      CACHE PATH
+      "WebRTC output directory"
+      )
+  endif()
 endif()
 
 # ============================================================================
@@ -57,9 +67,90 @@ find_path(WEBRTC_INCLUDE_DIR
 set (WEBRTC_LIBRARIES)
 
 list(APPEND _WEBRTC_LIB_NAMES
-  "webrtc"
-  "libyuv yuv"
+    "libjingle_peerconnection"
+    "field_trial_default"
+    "jsoncpp"
+    "rtc_media"
+    "rtc_base_approved"
+    "webrtc_common"
+    "video_render_module"
+    "webrtc_utility"
+    "audio_coding_module"
+    "cng"
+    "common_audio"
+    "system_wrappers"
+    "openmax_dl"
+    "common_audio_sse2"
+    "audio_encoder_interface"
+    "g711"
+    "pcm16b"
+    "ilbc"
+    "webrtc_opus"
+    "opus"
+    "g722"
+    "isac"
+    "audio_decoder_interface"
+    "isac_common"
+    "red"
+    "rtc_event_log"
+    "rtc_event_log_proto"
+    "protobuf_lite"
+    "neteq"
+    "rent_a_codec"
+    "media_file"
+    "common_video"
+    "libjpeg"
+    "webrtc"
+    "voice_engine"
+    "audio_conference_mixer"
+    "audio_processing"
+    "audioproc_debug_proto"
+    "audio_processing_sse2"
+    "audio_device"
+    "bitrate_controller"
+    "paced_sender"
+    "rtp_rtcp"
+    "remote_bitrate_estimator"
+    "congestion_controller"
+    "video_capture_module"
+    "video_processing"
+    "video_processing_sse2"
+    "webrtc_video_coding"
+    "webrtc_h264"
+    "webrtc_i420"
+    "video_coding_utility"
+    "webrtc_vp8"
+    "libvpx_new"
+    "libvpx_intrinsics_mmx"
+    "libvpx_intrinsics_sse2"
+    "libvpx_intrinsics_ssse3"
+    "libvpx_intrinsics_sse4_1"
+    "libvpx_intrinsics_avx"
+    "libvpx_intrinsics_avx2"
+    "webrtc_vp9"
+    "rtc_sound"
+    "rtc_base"
+    "boringssl"
+    "metrics_default"
+    "rtc_xmllite"
+    "expat"
+    "rtc_xmpp"
+    "rtc_p2p"
+    "usrsctplib"
+    "video_capture_module_internal_impl"
+    "directshow_baseclasses"
+    "video_render_module_internal_impl"
+    "rtc_pc"
+    "libsrtp"
+
+    "libyuv yuv"
   )
+
+if (MSVC)
+  list(APPEND _WEBRTC_LIB_NAMES
+    "boringssl_asm"
+    )
+endif(MSVC)
 
 foreach (lib ${_WEBRTC_LIB_NAMES})
   unset(_WEBRTC_LIB_PATH CACHE)
@@ -69,6 +160,33 @@ foreach (lib ${_WEBRTC_LIB_NAMES})
     PATHS 
       ${WEBRTC_LIBRARY_DIR}
       ${WEBRTC_LIBRARY_DIR}/obj/webrtc
+      ${WEBRTC_LIBRARY_DIR}/obj/webrtc/api
+      ${WEBRTC_LIBRARY_DIR}/obj/webrtc/base
+      ${WEBRTC_LIBRARY_DIR}/obj/webrtc/common_audio
+      ${WEBRTC_LIBRARY_DIR}/obj/webrtc/common_video
+      ${WEBRTC_LIBRARY_DIR}/obj/webrtc/libjingle/xmllite
+      ${WEBRTC_LIBRARY_DIR}/obj/webrtc/libjingle/xmpp
+      ${WEBRTC_LIBRARY_DIR}/obj/webrtc/media
+      ${WEBRTC_LIBRARY_DIR}/obj/webrtc/modules
+      ${WEBRTC_LIBRARY_DIR}/obj/webrtc/modules/video_coding/utility
+      ${WEBRTC_LIBRARY_DIR}/obj/webrtc/modules/video_coding/codecs/vp8
+      ${WEBRTC_LIBRARY_DIR}/obj/webrtc/modules/video_coding/codecs/vp9
+      ${WEBRTC_LIBRARY_DIR}/obj/webrtc/p2p
+      ${WEBRTC_LIBRARY_DIR}/obj/webrtc/pc
+      ${WEBRTC_LIBRARY_DIR}/obj/webrtc/sound
+      ${WEBRTC_LIBRARY_DIR}/obj/webrtc/system_wrappers
+      ${WEBRTC_LIBRARY_DIR}/obj/webrtc/voice_engine
+      ${WEBRTC_LIBRARY_DIR}/obj/third_party/boringssl
+      ${WEBRTC_LIBRARY_DIR}/obj/third_party/expat
+      ${WEBRTC_LIBRARY_DIR}/obj/third_party/libjpeg_turbo
+      ${WEBRTC_LIBRARY_DIR}/obj/third_party/libsrtp
+      ${WEBRTC_LIBRARY_DIR}/obj/third_party/libvpx_new
+      ${WEBRTC_LIBRARY_DIR}/obj/third_party/jsoncpp
+      ${WEBRTC_LIBRARY_DIR}/obj/third_party/openmax_dl/dl
+      ${WEBRTC_LIBRARY_DIR}/obj/third_party/opus
+      ${WEBRTC_LIBRARY_DIR}/obj/third_party/protobuf
+      ${WEBRTC_LIBRARY_DIR}/obj/third_party/usrsctp
+      ${WEBRTC_LIBRARY_DIR}/obj/third_party/winsdk_samples
     )        
   if (_WEBRTC_LIB_PATH)
     list(APPEND
@@ -76,8 +194,10 @@ foreach (lib ${_WEBRTC_LIB_NAMES})
       ${_WEBRTC_LIB_PATH}
       )
   else(_WEBRTC_LIB_PATH)
-    message(FATAL_ERROR "WebRTC module '${lib}' was not found.\n"
-        "Please check 'WEBRTC_ROOT_DIR' and 'WEBRTC_LIBRARY_DIR'.\n")
+    message("\nCurrent WEBRTC_ROOT_DIR is '${WEBRTC_ROOT_DIR}'")
+    message("Current WEBRTC_LIBRARY_DIR is '${WEBRTC_LIBRARY_DIR}'\n")
+    message(FATAL_ERROR "WebRTC module '${lib}' was not found. "
+           "Check 'WEBRTC_ROOT_DIR' and 'WEBRTC_LIBRARY_DIR'.\n")
   endif()
 endforeach()
   
@@ -146,73 +266,64 @@ find_path(WEBRTC_BORING_SSL_INCLUDE
 # ============================================================================
 
 set(WEBRTC_DEFINES
-  -DWIN32_LEAN_AND_MEAN
-  -DNOMINMAX
-  -DV8_DEPRECATION_WARNINGS
-  -DEXPAT_RELATIVE_PATH
-  -DFEATURE_ENABLE_VOICEMAIL
-  -DGTEST_RELATIVE_PATH
-  -DJSONCPP_RELATIVE_PATH
-  -DLOGGING=1
-  -DSRTP_RELATIVE_PATH
-  -DFEATURE_ENABLE_SSL
-  -DFEATURE_ENABLE_PSTN
-  -DHAVE_SCTP
-  -DHAVE_SRTP
-  -DHAVE_WEBRTC_VIDEO
-  -DHAVE_WEBRTC_VOICE
-  -DUSE_WEBRTC_DEV_BRANCH
-  -DCERT_CHAIN_PARA_HAS_EXTRA_FIELDS
-  -DCHROMIUM_BUILD
-  -DTOOLKIT_VIEWS=1
-  -DUSE_AURA=1
-  -DUSE_ASH=1
-  -DUSE_DEFAULT_RENDER_THEME=1
-  -DUSE_LIBJPEG_TURBO=1
-  -DENABLE_ONE_CLICK_SIGNIN
-  -DENABLE_PRE_SYNC_BACKUP
-  -DENABLE_REMOTING=1
-  -DENABLE_WEBRTC=1
-  -DENABLE_PEPPER_CDMS
-  -DENABLE_CONFIGURATION_POLICY
-  -DENABLE_NOTIFICATIONS
-  -DENABLE_HIDPI=1
-  -DDONT_EMBED_BUILD_METADATA
-  -DNO_TCMALLOC
-  -DALLOCATOR_SHIM
-  -DENABLE_TASK_MANAGER=1
-  -DENABLE_EXTENSIONS=1
-  -DENABLE_PLUGIN_INSTALLATION=1
-  -DENABLE_PLUGINS=1
-  -DENABLE_SESSION_SERVICE=1
-  -DENABLE_THEMES=1
-  -DENABLE_AUTOFILL_DIALOG=1
-  -DENABLE_BACKGROUND=1
-  -DENABLE_GOOGLE_NOW=1
-  -DCLD_VERSION=2
-  -DENABLE_PRINTING=1
-  -DENABLE_BASIC_PRINTING=1
-  -DENABLE_PRINT_PREVIEW=1
-  -DENABLE_SPELLCHECK=1
-  -DENABLE_CAPTIVE_PORTAL_DETECTION=1
-  -DENABLE_APP_LIST=1
-  -DENABLE_SETTINGS_APP=1
-  -DENABLE_SUPERVISED_USERS=1
-  -DENABLE_MDNS=1
-  -DENABLE_SERVICE_DISCOVERY=1
-  -DENABLE_WIFI_BOOTSTRAPPING=1
-  -DV8_USE_EXTERNAL_STARTUP_DATA
-  -DLIBPEERCONNECTION_LIB=1
-  -DUSE_LIBPCI=1
-  -DUSE_OPENSSL=1
-  -DNVALGRIND
-  -DDYNAMIC_ANNOTATIONS_ENABLED=0
+    -DV8_DEPRECATION_WARNINGS -DCLD_VERSION=2
+    -DCHROMIUM_BUILD
+    -DUSE_LIBJPEG_TURBO=1 -DENABLE_WEBRTC=1
+    -DENABLE_MEDIA_ROUTER=1 -DENABLE_PEPPER_CDMS
+    -DENABLE_CONFIGURATION_POLICY -DENABLE_NOTIFICATIONS
+    -DENABLE_TOPCHROME_MD=1 -DFIELDTRIAL_TESTING_ENABLED
+    -DENABLE_TASK_MANAGER=1 -DENABLE_EXTENSIONS=1 -DENABLE_PDF=1
+    -DENABLE_PLUGIN_INSTALLATION=1 -DENABLE_PLUGINS=1
+    -DENABLE_SESSION_SERVICE=1 -DENABLE_THEMES=1 -DENABLE_AUTOFILL_DIALOG=1
+    -DENABLE_PRINTING=1 -DENABLE_BASIC_PRINTING=1 -DENABLE_PRINT_PREVIEW=1
+    -DENABLE_SPELLCHECK=1 -DENABLE_CAPTIVE_PORTAL_DETECTION=1
+    -DENABLE_APP_LIST=1
+    -DENABLE_SETTINGS_APP=1 -DENABLE_SUPERVISED_USERS=1 -DENABLE_MDNS=1
+    -DENABLE_SERVICE_DISCOVERY=1 -DV8_USE_EXTERNAL_STARTUP_DATA
+    -DFULL_SAFE_BROWSING -DSAFE_BROWSING_CSD -DSAFE_BROWSING_DB_LOCAL
+    -DUSE_LIBPCI=1
+    -DUSE_OPENSSL=1 -DNVALGRIND -DDYNAMIC_ANNOTATIONS_ENABLED=0
+
+    -DUSE_DEFAULT_RENDER_THEME=1
   )
 
 
 if (MSVC)
-  list(APPEND WEBRTC_DEFINES)
-endif(MSVC)
+  list(APPEND WEBRTC_DEFINES
+    -DNOMINMAX -DPSAPI_VERSION=1 -D_CRT_RAND_S
+    -DCERT_CHAIN_PARA_HAS_EXTRA_FIELDS
+    -D_ATL_NO_OPENGL -D_SECURE_ATL -D_HAS_EXCEPTIONS=0
+    -D_WINSOCK_DEPRECATED_NO_WARNINGS
+    -DNO_TCMALLOC -D__STD_C
+    -D_CRT_SECURE_NO_DEPRECATE -D_SCL_SECURE_NO_DEPRECATE
+    -D_CRT_NONSTDC_NO_WARNINGS
+    -DENABLE_CAPTIVE_PORTAL_DETECTION=1
+    -D_CRT_NONSTDC_NO_DEPRECATE
+    -D_UNICODE -DUNICODE
+    -DWEBRTC_WIN
+  )
+elseif(UNIX)
+  list(APPEND WEBRTC_DEFINES
+    -DWEBRTC_POSIX 
+    -DCARBON_DEPRECATED=YES 
+    -DDISABLE_DYNAMIC_CAST -D_REENTRANT
+    -DUSE_BROWSER_SPELLCHECKER=1
+  )
+
+  if(APPLE)
+    list(APPEND WEBRTC_DEFINES
+      -DWEBRTC_MAC 
+    )
+  else()
+    list(APPEND WEBRTC_DEFINES
+      -DWEBRTC_LINUX
+      -DDUI_COMPOSITOR_IMAGE_TRANSPORT
+      -DUSE_PANGO=1 -DUSE_CAIRO=1
+      -DUSE_X11=1 -DUSE_GLIB=1 -DUSE_NSS_CERTS=1
+    )
+  endif()
+endif()
+
 
 
 # ============================================================================

@@ -61,12 +61,7 @@ if (UNIX)
   else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
   endif()
-  set(WEBRTC_POSIX_OR_WIN WEBRTC_POSIX)
-elseif (WIN32)
-  set(WEBRTC_POSIX_OR_WIN WEBRTC_WIN)
 endif()
-
-add_definitions(-DUNICODE -D_UNICODE)
 
 
 # ============================================================================
@@ -100,18 +95,22 @@ configure_file(
 set(HEADERS
   "${PROJECT_BINARY_DIR}/config.h"
   "src/throughnet.h"
+  "src/datachannel.h"
   "src/control.h"
   "src/defaults.h"
   "src/flagdefs.h"
-  "src/connection.h"
+  "src/signal.h"
+  "src/peer.h"
   "src/dummy_wnd.h"
   )
 
 set(SOURCES
   "src/throughnet.cc"
+  "src/datachannel.cc"
   "src/control.cc"
   "src/defaults.cc"
-  "src/connection.cc"
+  "src/signal.cc"
+  "src/peer.cc"
   "src/dummy_wnd.cc"
   )
 
@@ -159,6 +158,8 @@ if (TN_WITH_SHARED)
     OUTPUT_NAME throughnet
     )
 
+  target_link_libraries(throughnet_shared ${WEBRTC_LIBRARIES})
+
   if (WIN32)
   # Compile as DLL (export function declarations)
     set_property(
@@ -171,9 +172,7 @@ if (TN_WITH_SHARED)
   endif()
 endif()
 
-foreach (lib ${TN_LIBRARIES})
-  target_link_libraries(${lib} ${LIB_LIST})
-endforeach()
+
 
 # ============================================================================
 # Target dependencies
@@ -202,5 +201,8 @@ endif()
 # ============================================================================
 
 add_executable(test_main src/test/test_main.cc)
-target_link_libraries(test_main throughnet)
+target_link_libraries(test_main
+  throughnet
+  ${WEBRTC_LIBRARIES}
+  )
 add_test(test_main test_main)
