@@ -13,7 +13,6 @@
 # WebRTC root and default library directory
 # ============================================================================
 
-
 if (DEFINED ENV{WEBRTC_ROOT_DIR})
   set(WEBRTC_ROOT_DIR $ENV{WEBRTC_ROOT_DIR})
   message("WEBRTC_ROOT_DIR = '${WEBRTC_ROOT_DIR}' from environment variable")
@@ -29,20 +28,14 @@ if (DEFINED ENV{WEBRTC_LIBRARY_DIR})
   set(WEBRTC_LIBRARY_DIR $ENV{WEBRTC_LIBRARY_DIR})
   message("WEBRTC_LIBRARY_DIR = '${WEBRTC_LIBRARY_DIR}' from environment variable")
 else()
-  if (NOT WEBRTC_ROOT_DIR STREQUAL "webrtc-checkout/src" AND WEBRTC_LIBRARY_DIR STREQUAL "webrtc-checkout/src/out/Release")
-    set(WEBRTC_LIBRARY_DIR
-      ${WEBRTC_ROOT_DIR}/out/Release
-      CACHE PATH
-      "WebRTC output directory"
-      FORCE
-      )  
-  else()
-    set(WEBRTC_LIBRARY_DIR
-      ${WEBRTC_ROOT_DIR}/out/Release
-      CACHE PATH
-      "WebRTC output directory"
-      )
-  endif()
+  set(WEBRTC_LIBRARY_DIR ${WEBRTC_ROOT_DIR}/out/Release)
+endif()
+
+if (DEFINED ENV{WEBRTC_LIBRARY_DIR_DEBUG})
+  set(WEBRTC_LIBRARY_DIR_DEBUG $ENV{WEBRTC_LIBRARY_DIR_DEBUG})
+  message("WEBRTC_LIBRARY_DIR = '${WEBRTC_LIBRARY_DIR}' from environment variable")
+else()
+  set(WEBRTC_LIBRARY_DIR_DEBUG ${WEBRTC_ROOT_DIR}/out/Debug)
 endif()
 
 # ============================================================================
@@ -120,7 +113,7 @@ list(APPEND _WEBRTC_LIB_NAMES
     "webrtc_i420"
     "video_coding_utility"
     "webrtc_vp8"
-    "libvpx_new"
+    "libvpx"
     "libvpx_intrinsics_mmx"
     "libvpx_intrinsics_sse2"
     "libvpx_intrinsics_ssse3"
@@ -180,18 +173,18 @@ foreach (lib ${_WEBRTC_LIB_NAMES})
       ${WEBRTC_LIBRARY_DIR}/obj/third_party/expat
       ${WEBRTC_LIBRARY_DIR}/obj/third_party/libjpeg_turbo
       ${WEBRTC_LIBRARY_DIR}/obj/third_party/libsrtp
-      ${WEBRTC_LIBRARY_DIR}/obj/third_party/libvpx_new
+      ${WEBRTC_LIBRARY_DIR}/obj/third_party/libvpx
       ${WEBRTC_LIBRARY_DIR}/obj/third_party/jsoncpp
       ${WEBRTC_LIBRARY_DIR}/obj/third_party/openmax_dl/dl
       ${WEBRTC_LIBRARY_DIR}/obj/third_party/opus
       ${WEBRTC_LIBRARY_DIR}/obj/third_party/protobuf
       ${WEBRTC_LIBRARY_DIR}/obj/third_party/usrsctp
       ${WEBRTC_LIBRARY_DIR}/obj/third_party/winsdk_samples
-    )        
+    )
   if (_WEBRTC_LIB_PATH)
     list(APPEND
       WEBRTC_LIBRARIES
-      ${_WEBRTC_LIB_PATH}
+      optimized ${_WEBRTC_LIB_PATH}
       )
   else(_WEBRTC_LIB_PATH)
     message("\nCurrent WEBRTC_ROOT_DIR is '${WEBRTC_ROOT_DIR}'")
@@ -201,6 +194,51 @@ foreach (lib ${_WEBRTC_LIB_NAMES})
   endif()
 endforeach()
   
+# Optional DEBUG library
+foreach (lib ${_WEBRTC_LIB_NAMES})
+  unset(_WEBRTC_LIB_PATH CACHE)
+  separate_arguments(lib)
+  find_library(_WEBRTC_LIB_PATH
+    NAMES ${lib}
+    PATHS 
+      ${WEBRTC_LIBRARY_DIR_DEBUG}
+      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/webrtc
+      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/webrtc/api
+      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/webrtc/base
+      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/webrtc/common_audio
+      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/webrtc/common_video
+      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/webrtc/libjingle/xmllite
+      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/webrtc/libjingle/xmpp
+      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/webrtc/media
+      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/webrtc/modules
+      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/webrtc/modules/video_coding/utility
+      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/webrtc/modules/video_coding/codecs/vp8
+      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/webrtc/modules/video_coding/codecs/vp9
+      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/webrtc/p2p
+      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/webrtc/pc
+      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/webrtc/sound
+      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/webrtc/system_wrappers
+      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/webrtc/voice_engine
+      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/third_party/boringssl
+      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/third_party/expat
+      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/third_party/libjpeg_turbo
+      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/third_party/libsrtp
+      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/third_party/libvpx
+      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/third_party/jsoncpp
+      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/third_party/openmax_dl/dl
+      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/third_party/opus
+      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/third_party/protobuf
+      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/third_party/usrsctp
+      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/third_party/winsdk_samples
+    )
+  if (_WEBRTC_LIB_PATH)
+    list(APPEND
+      WEBRTC_LIBRARIES
+      debug ${_WEBRTC_LIB_PATH}
+      )
+  endif()
+endforeach()
+
 if(WIN32 AND MSVC)
   list(APPEND
     WEBRTC_LIBRARIES

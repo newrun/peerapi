@@ -2,16 +2,8 @@
 #define __THROUGHNET_CONFIG_H__
 
 //
-// Throughnet only supports linking with 'Release' build WebRTC library.
-// To avoid link error, undef DEBUg and _DEBUG while including webrtc headers.
+// WebRTC headers
 //
-
-#if defined(DEBUG) || defined(_DEBUG)
-#define __THROUGHNET_DEUBG_FLAG_FIXED__
-#undef DEBUG
-#undef _DEBUG
-#define NDEBUG
-#endif //defined(DEBUG) || defined(_DEBUG)
 
 #include "webrtc/base/common.h"
 #include "webrtc/base/json.h"
@@ -46,15 +38,6 @@
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/physicalsocketserver.h"
 
-
-#ifdef __THROUGHNET_DEUBG_FLAG_FIXED__
-#undef __THROUGHNET_DEUBG_FLAG_FIXED__
-
-#define DEBUG
-#define _DEBUG
-#undef NDEBUG
-
-#endif // __THROUGHNET_DEUBG_FLAG_FIXED__
 
 
 #if WIN32
