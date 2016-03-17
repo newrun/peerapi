@@ -95,10 +95,12 @@ configure_file(
 set(HEADERS
   "${PROJECT_BINARY_DIR}/config.h"
   "src/throughnet.h"
+  "src/control.h"
   )
 
 set(SOURCES
   "src/throughnet.cc"
+  "src/control.cc"
   )
 
 # ============================================================================
@@ -195,4 +197,5 @@ target_link_libraries(test_main
   throughnet
   ${WEBRTC_LIBRARIES}
   )
+
 add_test(test_main test_main)
