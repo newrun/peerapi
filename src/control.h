@@ -10,6 +10,14 @@
 #include "webrtc/api/peerconnectioninterface.h"
 #include "webrtc/base/sigslot.h"
 
+#define WAIT_(ex, timeout)                     \
+  do {                                              \
+    uint32_t start = rtc::Time();                   \
+    while (!(ex) && rtc::Time() < start + timeout) { \
+      rtc::Thread::Current()->ProcessMessages(1);   \
+    }                                               \
+  } while (0)
+
 
 namespace tn {
 
@@ -35,7 +43,7 @@ public:
       webrtc::PeerConnectionInterface::SignalingState new_state) override {};
   void OnAddStream(webrtc::MediaStreamInterface* stream) override {};
   void OnRemoveStream(webrtc::MediaStreamInterface* stream) override {};
-  void OnDataChannel(webrtc::DataChannelInterface* channel) override {};
+  void OnDataChannel(webrtc::DataChannelInterface* channel) override;
   void OnRenegotiationNeeded() override {}
   void OnIceConnectionChange(
       webrtc::PeerConnectionInterface::IceConnectionState new_state) override {};

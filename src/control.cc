@@ -14,14 +14,6 @@
 
 namespace tn {
 
-#define WAIT_(ex, timeout)                     \
-  do {                                              \
-    uint32_t start = rtc::Time();                   \
-    while (!(ex) && rtc::Time() < start + timeout) { \
-      rtc::Thread::Current()->ProcessMessages(1);   \
-    }                                               \
-  } while (0)
-
 static const int kMaxWait = 10000;
 
 void Control::Control::Connect(Control* caller,
@@ -81,6 +73,11 @@ Control::CreateDataChannel(
     const std::string& label,
     const webrtc::DataChannelInit& init) {
   return peer_connection_->CreateDataChannel(label, &init);
+}
+
+void Control::OnDataChannel(
+  webrtc::DataChannelInterface* data_channel) {
+  SignalOnDataChannel(data_channel);
 }
 
 
