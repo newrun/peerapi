@@ -33,6 +33,10 @@ Control::Control(const std::string& device_id)
        : device_id_(device_id) {
 }
 
+Control::~Control() {
+  DeletePeerConnection();
+}
+
 
 bool Control::InitializePeerConnection() {
 
@@ -64,8 +68,11 @@ bool Control::InitializePeerConnection() {
 }
 
 void Control::DeletePeerConnection() {
+  local_data_channel_ = NULL;
+//  remote_data_channels_.clear();
   peer_connection_ = NULL;
   peer_connection_factory_ = NULL;
+  fake_audio_capture_module_ = NULL;
 }
 
 bool Control::CreatePeerFactory(
@@ -86,6 +93,11 @@ bool Control::CreatePeerFactory(
 
   return true;
 }
+
+bool Control::Send(const std::string& message) {
+  return local_data_channel_->Send(message);
+}
+
 
 bool Control::CreatePeerConnection(
       const webrtc::MediaConstraintsInterface* constraints) {
@@ -211,6 +223,15 @@ void Control::TestWaitForChannelOpen(uint32_t kMaxWait) {
   WAIT_(local_data_channel_->IsOpen(), kMaxWait);
   WAIT_(remote_data_channels_.size() >= 1, kMaxWait);
   WAIT_(remote_data_channels_[0]->IsOpen(), kMaxWait);
+}
+
+void Control::TestWaitForMessage(const std::string& message, uint32_t kMaxWait) {
+  WAIT_(message == remote_data_channels_[0]->last_message(), kMaxWait);
+}
+
+void Control::TestWaitForClose(uint32_t kMaxWait) {
+  local_data_channel_->Close();
+  WAIT_(local_data_channel_->state() == webrtc::DataChannelInterface::DataState::kClosed, kMaxWait);
 }
 
 

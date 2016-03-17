@@ -40,10 +40,11 @@ public:
                       Control* callee);
 
   explicit Control(const std::string& name);
-  ~Control() {}
+  ~Control();
 
   bool InitializePeerConnection();
   void DeletePeerConnection();
+  bool Send(const std::string& message);
 
   //
   // PeerConnectionObserver implementation.
@@ -79,6 +80,8 @@ public:
        const std::string& candidate);
   void TestWaitForConnection(uint32_t kMaxWait);
   void TestWaitForChannelOpen(uint32_t kMaxWait);
+  void TestWaitForMessage(const std::string& message, uint32_t kMaxWait);
+  void TestWaitForClose(uint32_t kMaxWait);
   bool CheckForConnection();
 
 

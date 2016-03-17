@@ -22,7 +22,10 @@ public:
   void OnStateChange() override;
   void OnMessage(const webrtc::DataBuffer& buffer) override;
 
+  bool Send(const std::string& message);
+  void Close();
   bool IsOpen() const;
+  const webrtc::DataChannelInterface::DataState state() const;
   const std::string& last_message() const;
   size_t received_message_count() const;
 

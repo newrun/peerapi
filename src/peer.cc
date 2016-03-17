@@ -16,6 +16,7 @@ PeerDataChannelObserver::PeerDataChannelObserver(webrtc::DataChannelInterface* c
 }
 
 PeerDataChannelObserver::~PeerDataChannelObserver() {
+  channel_->Close();
   channel_->UnregisterObserver();
 }
 
@@ -32,8 +33,23 @@ void PeerDataChannelObserver::OnMessage(const webrtc::DataBuffer& buffer) {
   ++received_message_count_;
 }
 
+bool PeerDataChannelObserver::Send(const std::string& message) {
+  webrtc::DataBuffer buffer(message);
+  return channel_->Send(buffer);
+}
+
+void PeerDataChannelObserver::Close() {
+  channel_->Close();
+}
+
+
 bool PeerDataChannelObserver::IsOpen() const {
   return state_ == webrtc::DataChannelInterface::kOpen;
+}
+
+const webrtc::DataChannelInterface::DataState
+PeerDataChannelObserver::state() const {
+  return channel_->state();
 }
 
 const std::string& PeerDataChannelObserver::last_message() const {

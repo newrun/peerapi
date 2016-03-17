@@ -54,6 +54,21 @@ public:
     caller_->TestWaitForChannelOpen(10000);
     callee_->TestWaitForChannelOpen(10000);
 
+    std::string msg = "test_meesage_from_caller";
+    caller_->Send(msg);
+    callee_->TestWaitForMessage(msg, 10000);
+    callee_->Send(msg);
+    caller_->TestWaitForMessage(msg, 10000);
+
+    caller_->TestWaitForClose(10000);
+    callee_->TestWaitForClose(10000);
+
+    caller_ = NULL;
+    callee_ = NULL;
+
+    rtc::ThreadManager::Instance()->CurrentThread()->Run();
+
+
     /*
     WaitForDataChannelsToOpen(caller_dc, callee_signaled_data_channels_, 0);
     WaitForDataChannelsToOpen(callee_dc, caller_signaled_data_channels_, 0);
