@@ -40,9 +40,14 @@ bool Control::CreatePc(
   rtc::scoped_ptr<cricket::PortAllocator> port_allocator(
     new cricket::FakePortAllocator(rtc::Thread::Current(), nullptr));
 
+  fake_audio_capture_module_ = FakeAudioCaptureModule::Create();
+  if (fake_audio_capture_module_ == NULL) {
+    return false;
+  }
+
   peer_connection_factory_ = webrtc::CreatePeerConnectionFactory(
-      rtc::Thread::Current(), rtc::Thread::Current(),
-      NULL, NULL, NULL);
+    rtc::Thread::Current(), rtc::Thread::Current(),
+    fake_audio_capture_module_, NULL, NULL);
 
   if (!peer_connection_factory_) {
     return false;

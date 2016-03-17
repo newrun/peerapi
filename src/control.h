@@ -9,6 +9,8 @@
 
 #include "webrtc/api/peerconnectioninterface.h"
 #include "webrtc/base/sigslot.h"
+#include "fakeaudiocapturemodule.h"
+
 
 #define WAIT_(ex, timeout)                     \
   do {                                              \
@@ -93,7 +95,7 @@ protected:
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
   rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
       peer_connection_factory_;
-
+  rtc::scoped_refptr<FakeAudioCaptureModule> fake_audio_capture_module_;
 };
 
 } // namespace tn

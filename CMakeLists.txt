@@ -96,11 +96,13 @@ set(HEADERS
   "${PROJECT_BINARY_DIR}/config.h"
   "src/throughnet.h"
   "src/control.h"
+  "src/fakeaudiocapturemodule.h"
   )
 
 set(SOURCES
   "src/throughnet.cc"
   "src/control.cc"
+  "src/fakeaudiocapturemodule.cc"
   )
 
 # ============================================================================
