@@ -35,6 +35,21 @@ public:
       "callee")) {
   }
 
+
+  void Start() {
+
+    CreatePcs();
+
+    webrtc::DataChannelInit init;
+    rtc::scoped_refptr<webrtc::DataChannelInterface> caller_dc(
+      caller_->CreateDataChannel("data", init));
+    rtc::scoped_refptr<webrtc::DataChannelInterface> callee_dc(
+      callee_->CreateDataChannel("data", init));
+
+    Negotiate();
+    WaitForConnection();
+  }
+
   void CreatePcs() {
     CreatePcs(NULL);
   }
@@ -48,6 +63,15 @@ public:
         this, &ControlTest::OnCallerAddedDataChanel);
     callee_->SignalOnDataChannel.connect(
         this, &ControlTest::OnCalleeAddedDataChannel);
+  }
+
+  void Negotiate() {
+    caller_->CreateOffer(NULL);
+  }
+
+  void WaitForConnection() {
+    caller_->WaitForConnection();
+    callee_->WaitForConnection();
   }
 
   void OnCallerAddedDataChanel(webrtc::DataChannelInterface* dc) {
@@ -70,6 +94,7 @@ private:
 int main(int argc, char *argv[]) {
   
   ControlTest test;
+  test.Start();
 
   return 0;
 }

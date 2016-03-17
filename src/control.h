@@ -41,7 +41,7 @@ public:
       webrtc::PeerConnectionInterface::IceConnectionState new_state) override {};
   void OnIceGatheringChange(
       webrtc::PeerConnectionInterface::IceGatheringState new_state) override {};
-  void OnIceCandidate(const webrtc::IceCandidateInterface* candidate) override {};
+  void OnIceCandidate(const webrtc::IceCandidateInterface* candidate) override;
   void OnIceConnectionReceivingChange(bool receiving) override {}
 
 
@@ -49,8 +49,13 @@ public:
   // Implements CreateSessionDescriptionObserver.
   //
 
-  virtual void OnSuccess(webrtc::SessionDescriptionInterface* desc) {};
-  virtual void OnFailure(const std::string& error) {}
+  void OnSuccess(webrtc::SessionDescriptionInterface* desc) override;
+  void OnFailure(const std::string& error) {}
+
+
+  rtc::scoped_refptr<webrtc::DataChannelInterface> CreateDataChannel(
+      const std::string& label,
+      const webrtc::DataChannelInit& init);
 
 
   void CreateOffer(const webrtc::MediaConstraintsInterface* constraints);
@@ -59,6 +64,9 @@ public:
   void ReceiveAnswerSdp(const std::string& sdp);
   void AddIceCandidate(const std::string& sdp_mid, int sdp_mline_index,
        const std::string& candidate);
+  void WaitForConnection();
+  bool CheckForConnection();
+
 
   // sigslots
   sigslot::signal1<std::string*> SignalOnIceCandidateCreated;

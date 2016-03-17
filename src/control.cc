@@ -14,6 +14,16 @@
 
 namespace tn {
 
+#define WAIT_(ex, timeout)                     \
+  do {                                              \
+    uint32_t start = rtc::Time();                   \
+    while (!(ex) && rtc::Time() < start + timeout) { \
+      rtc::Thread::Current()->ProcessMessages(1);   \
+    }                                               \
+  } while (0)
+
+static const int kMaxWait = 10000;
+
 void Control::Control::Connect(Control* caller,
                                Control* callee) {
   caller->SignalOnIceCandidateReady.connect(
@@ -64,6 +74,50 @@ bool Control::CreatePc(
 }
 
 
+
+
+rtc::scoped_refptr<webrtc::DataChannelInterface>
+Control::CreateDataChannel(
+    const std::string& label,
+    const webrtc::DataChannelInit& init) {
+  return peer_connection_->CreateDataChannel(label, &init);
+}
+
+
+
+void Control::OnIceCandidate(const webrtc::IceCandidateInterface* candidate) {
+  std::string sdp;
+  
+  if (!candidate->ToString(&sdp)) {
+    return;
+  }
+
+  // Give the user a chance to modify sdp for testing.
+  SignalOnIceCandidateCreated(&sdp);
+  SignalOnIceCandidateReady(candidate->sdp_mid(), candidate->sdp_mline_index(),
+    sdp);
+}
+
+void Control::OnSuccess(webrtc::SessionDescriptionInterface* desc) {
+  // This callback should take the ownership of |desc|.
+  rtc::scoped_ptr<webrtc::SessionDescriptionInterface> owned_desc(desc);
+  std::string sdp;
+
+  if (!desc->ToString(&sdp)) {
+    return;
+  }
+  
+  LOG(LS_INFO) << "PeerConnectionTestWrapper " << name_
+               << ": " << desc->type() << " sdp created: " << sdp;
+
+  // Give the user a chance to modify sdp for testing.
+  SignalOnSdpCreated(&sdp);
+
+  SetLocalDescription(desc->type(), sdp);
+
+  SignalOnSdpReady(sdp);
+}
+
 void Control::CreateOffer(
     const webrtc::MediaConstraintsInterface* constraints) {
   LOG(LS_INFO) << "PeerConnectionTestWrapper " << name_
@@ -87,11 +141,24 @@ void Control::ReceiveAnswerSdp(const std::string& sdp) {
   SetRemoteDescription(webrtc::SessionDescriptionInterface::kAnswer, sdp);
 }
 
+void Control::WaitForConnection() {
+  WAIT_(CheckForConnection(), kMaxWait);
+  LOG(LS_INFO) << "PeerConnectionTestWrapper " << name_
+    << ": Connected.";
+}
+
+bool Control::CheckForConnection() {
+  return (peer_connection_->ice_connection_state() ==
+          webrtc::PeerConnectionInterface::kIceConnectionConnected) ||
+         (peer_connection_->ice_connection_state() ==
+          webrtc::PeerConnectionInterface::kIceConnectionCompleted);
+}
+
 void Control::AddIceCandidate(const std::string& sdp_mid,
                               int sdp_mline_index,
                               const std::string& candidate) {
   rtc::scoped_ptr<webrtc::IceCandidateInterface> owned_candidate(
-    webrtc::CreateIceCandidate(sdp_mid, sdp_mline_index, candidate, NULL));
+      webrtc::CreateIceCandidate(sdp_mid, sdp_mline_index, candidate, NULL));
   
   peer_connection_->AddIceCandidate(owned_candidate.get());
 }
@@ -103,7 +170,7 @@ void Control::SetLocalDescription(const std::string& type,
                << ": SetLocalDescription " << type << " " << sdp;
 
   rtc::scoped_refptr<webrtc::MockSetSessionDescriptionObserver>
-      observer(new rtc::RefCountedObject<
+    observer(new rtc::RefCountedObject<
                    webrtc::MockSetSessionDescriptionObserver>());
   peer_connection_->SetLocalDescription(
     observer, webrtc::CreateSessionDescription(type, sdp, NULL));
