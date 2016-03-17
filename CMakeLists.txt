@@ -15,8 +15,8 @@ project(throughnet)
 set(PACKAGE "throughnet")
 set(CPACK_PACKAGE_NAME "${PACKAGE}")
 set(CPACK_PACKAGE_VERSION_MAJOR "0")
-set(CPACK_PACKAGE_VERSION_MINOR "1")
-set(CPACK_PACKAGE_VERSION_PATCH "0")
+set(CPACK_PACKAGE_VERSION_MINOR "0")
+set(CPACK_PACKAGE_VERSION_PATCH "1")
 set(CPACK_PACKAGE_VERSION "${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}")
 #set(CPACK_PACKAGE_VENDOR "")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "${PACKAGE} ${PACKAGE_VERSION}")
@@ -95,23 +95,10 @@ configure_file(
 set(HEADERS
   "${PROJECT_BINARY_DIR}/config.h"
   "src/throughnet.h"
-  "src/datachannel.h"
-  "src/control.h"
-  "src/defaults.h"
-  "src/flagdefs.h"
-  "src/signal.h"
-  "src/peer.h"
-  "src/dummy_wnd.h"
   )
 
 set(SOURCES
   "src/throughnet.cc"
-  "src/datachannel.cc"
-  "src/control.cc"
-  "src/defaults.cc"
-  "src/signal.cc"
-  "src/peer.cc"
-  "src/dummy_wnd.cc"
   )
 
 # ============================================================================
@@ -200,7 +187,10 @@ endif()
 # Test example
 # ============================================================================
 
-add_executable(test_main src/test/test_main.cc)
+add_executable(test_main
+  src/test/test_main.cc
+  )
+
 target_link_libraries(test_main
   throughnet
   ${WEBRTC_LIBRARIES}
