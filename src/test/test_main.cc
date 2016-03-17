@@ -41,24 +41,29 @@ public:
 
     CreatePcs();
 
+    /**
     webrtc::DataChannelInit init;
     rtc::scoped_refptr<webrtc::DataChannelInterface> caller_dc(
       caller_->CreateDataChannel("data", init));
     rtc::scoped_refptr<webrtc::DataChannelInterface> callee_dc(
       callee_->CreateDataChannel("data", init));
-
+*/
     Negotiate();
     WaitForConnection();
 
+    caller_->TestWaitForChannelOpen(10000);
+    callee_->TestWaitForChannelOpen(10000);
+
+    /*
     WaitForDataChannelsToOpen(caller_dc, callee_signaled_data_channels_, 0);
     WaitForDataChannelsToOpen(callee_dc, caller_signaled_data_channels_, 0);
-
+    
     TestDataChannelSendAndReceive(caller_dc, callee_signaled_data_channels_[0]);
     TestDataChannelSendAndReceive(callee_dc, caller_signaled_data_channels_[0]);
 
     CloseDataChannels(caller_dc, callee_signaled_data_channels_, 0);
     CloseDataChannels(callee_dc, caller_signaled_data_channels_, 0);
-
+    */
   }
 
   void CreatePcs() {
@@ -66,14 +71,16 @@ public:
   }
 
   void CreatePcs(const webrtc::MediaConstraintsInterface* pc_constraints) {
-    caller_->CreatePc(pc_constraints);
-    callee_->CreatePc(pc_constraints);
+    caller_->InitializePeerConnection();
+    callee_->InitializePeerConnection();
+//    caller_->CreatePc(pc_constraints);
+//    callee_->CreatePc(pc_constraints);
     Control::Connect(caller_.get(), callee_.get());
 
-    caller_->SignalOnDataChannel.connect(
-        this, &ControlTest::OnCallerAddedDataChanel);
-    callee_->SignalOnDataChannel.connect(
-        this, &ControlTest::OnCalleeAddedDataChannel);
+//    caller_->SignalOnDataChannel.connect(
+//        this, &ControlTest::OnCallerAddedDataChanel);
+//    callee_->SignalOnDataChannel.connect(
+//        this, &ControlTest::OnCalleeAddedDataChannel);
   }
 
   void Negotiate() {
@@ -81,17 +88,17 @@ public:
   }
 
   void WaitForConnection() {
-    caller_->WaitForConnection();
-    callee_->WaitForConnection();
+    caller_->TestWaitForConnection(10000);
+    callee_->TestWaitForConnection(10000);
   }
 
-  void OnCallerAddedDataChanel(webrtc::DataChannelInterface* dc) {
-    caller_signaled_data_channels_.push_back(dc);
-  }
+//  void OnCallerAddedDataChanel(webrtc::DataChannelInterface* dc) {
+//    caller_signaled_data_channels_.push_back(dc);
+//  }
 
-  void OnCalleeAddedDataChannel(webrtc::DataChannelInterface* dc) {
-    callee_signaled_data_channels_.push_back(dc);
-  }
+//  void OnCalleeAddedDataChannel(webrtc::DataChannelInterface* dc) {
+//    callee_signaled_data_channels_.push_back(dc);
+//  }
 
   void WaitForDataChannelsToOpen(webrtc::DataChannelInterface* local_dc,
                                  const DataChannelList& remote_dc_list,
@@ -144,8 +151,8 @@ private:
 
 } // namespace tn
 
+
 int main(int argc, char *argv[]) {
-  
   ControlTest test;
   test.Start();
 

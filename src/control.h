@@ -7,9 +7,12 @@
 #ifndef __THROUGHNET_CONTROL_H__
 #define __THROUGHNET_CONTROL_H__
 
+#include "peer.h"
+
 #include "webrtc/api/peerconnectioninterface.h"
 #include "webrtc/base/sigslot.h"
 #include "fakeaudiocapturemodule.h"
+
 
 
 #define WAIT_(ex, timeout)                     \
@@ -29,13 +32,18 @@ class Control
       public sigslot::has_slots<> {
 
 public:
+
+  typedef std::vector<rtc::scoped_ptr<PeerDataChannelObserver> >
+            DataChannelList;
+
   static void Connect(Control* caller,
                       Control* callee);
 
   explicit Control(const std::string& name);
   ~Control() {}
 
-  bool CreatePc(const webrtc::MediaConstraintsInterface* constraints);
+  bool InitializePeerConnection();
+  void DeletePeerConnection();
 
   //
   // PeerConnectionObserver implementation.
@@ -63,18 +71,14 @@ public:
   void OnFailure(const std::string& error) {}
 
 
-  rtc::scoped_refptr<webrtc::DataChannelInterface> CreateDataChannel(
-      const std::string& label,
-      const webrtc::DataChannelInit& init);
-
-
   void CreateOffer(const webrtc::MediaConstraintsInterface* constraints);
   void CreateAnswer(const webrtc::MediaConstraintsInterface* constraints);
   void ReceiveOfferSdp(const std::string& sdp);
   void ReceiveAnswerSdp(const std::string& sdp);
   void AddIceCandidate(const std::string& sdp_mid, int sdp_mline_index,
        const std::string& candidate);
-  void WaitForConnection();
+  void TestWaitForConnection(uint32_t kMaxWait);
+  void TestWaitForChannelOpen(uint32_t kMaxWait);
   bool CheckForConnection();
 
 
@@ -85,17 +89,25 @@ public:
                    const std::string&> SignalOnIceCandidateReady;
   sigslot::signal1<std::string*> SignalOnSdpCreated;
   sigslot::signal1<const std::string&> SignalOnSdpReady;
-  sigslot::signal1<webrtc::DataChannelInterface*> SignalOnDataChannel;
+//  sigslot::signal1<webrtc::DataChannelInterface*> SignalOnDataChannel;
 
 protected:
+  bool CreatePeerFactory(const webrtc::MediaConstraintsInterface* constraints);
+  bool CreatePeerConnection(const webrtc::MediaConstraintsInterface* constraints);
+  bool CreateDataChannel(const std::string& label,
+       const webrtc::DataChannelInit& init);
+
   void SetLocalDescription(const std::string& type, const std::string& sdp);
   void SetRemoteDescription(const std::string& type, const std::string& sdp);
 
-  std::string name_;
+  std::string device_id_;
+  std::string session_id_;
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
   rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
       peer_connection_factory_;
   rtc::scoped_refptr<FakeAudioCaptureModule> fake_audio_capture_module_;
+  rtc::scoped_ptr<PeerDataChannelObserver> local_data_channel_;
+  DataChannelList remote_data_channels_;
 };
 
 } // namespace tn
