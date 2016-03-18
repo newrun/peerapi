@@ -376,5 +376,5 @@ endif()
 
 if(NOT WEBRTC_FOUND)
   message(FATAL_ERROR "WebRTC file was not found.\n"
-      "Please check 'WEBRTC_ROOT_DIR' and 'WEBRTC_LIBRARY_DIR'.\n")
+      "Please check 'WEBRTC_ROOT_DIR'.\n")
 endif()
