@@ -4,8 +4,8 @@
  *  Ryan Lee (ryan.lee at throughnet.com)
  */
 
-#ifndef __THROUGHNET_THROUGHENT_H__
-#define __THROUGHNET_THROUGHENT_H__
+#ifndef __THROUGHNET_SIGNAL_H__
+#define __THROUGHNET_SIGNAL_H__
 
 
-#endif // __THROUGHNET_THROUGHENT_H__
+#endif // __THROUGHNET_SIGNAL_H__

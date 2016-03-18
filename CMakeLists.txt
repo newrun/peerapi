@@ -97,6 +97,7 @@ set(HEADERS
   "src/throughnet.h"
   "src/control.h"
   "src/peer.h"
+  "src/signal.h"
   "src/fakeaudiocapturemodule.h"
   )
 
@@ -104,6 +105,7 @@ set(SOURCES
   "src/throughnet.cc"
   "src/control.cc"
   "src/peer.cc"
+  "src/signal.cc"
   "src/fakeaudiocapturemodule.cc"
   )
 
