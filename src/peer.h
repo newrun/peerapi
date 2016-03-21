@@ -31,6 +31,7 @@ public:
 
   // sigslots
   sigslot::signal1<std::string&> SignalOnOpen_;
+  sigslot::signal1<const webrtc::DataBuffer&> SignalOnMessage_;
 
 
 protected:

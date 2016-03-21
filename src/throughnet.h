@@ -24,8 +24,17 @@ using tn::Signal;
 class Throughnet
     : public sigslot::has_slots<> {
 public:
-  typedef std::map<std::string, std::string> Data;
-  typedef std::function<void(Throughnet*, std::string msg_id, Data&)> EventHandler;
+  class Buffer {  
+  public:
+    Buffer(): buf_(nullptr), size_(0) {};
+    Buffer(const char* buf, const size_t size): buf_(buf), size_(size) {}
+    const char* buf_;
+    const size_t size_;
+  };
+
+  typedef std::map<std::string, std::string*> Data;
+  typedef std::function<void(Throughnet*, std::string peer_sid, Data&)> EventHandler;
+  typedef std::function<void(Throughnet*, std::string peer_sid, Buffer&)> DataHandler;
   typedef std::map<std::string, EventHandler> Events;
 
   explicit Throughnet(const std::string channel);
@@ -34,13 +43,21 @@ public:
   ~Throughnet();
 
   void Start();
-  Throughnet& On(std::string msg_id, void(*handler) (Throughnet* this_, std::string msg_id, Data& data));
+  bool Send(const char* message);
+  bool Send(const std::string& message);
+
+  Throughnet& On(std::string msg_id, void(*handler) (Throughnet* this_, std::string peer_sid, Data& data));
+  Throughnet& On(std::string msg_id, void(*handler) (Throughnet* this_, std::string peer_sid, Buffer& data));
 
 
 protected:
-  void OnConnected(std::string& peer_id);
+  void OnConnected(std::string& peer_sid);
+  void OnData(const char* buffer, const size_t size);
 
   Events events_;
+  std::map<std::string, DataHandler> data_handler_;
+
+  std::string channel_;
   rtc::scoped_refptr<Control> control_;
 };
 

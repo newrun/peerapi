@@ -7,6 +7,7 @@
 #ifndef __THROUGHNET_CONTROL_H__
 #define __THROUGHNET_CONTROL_H__
 
+#include "webrtc/api/datachannelinterface.h"
 #include "webrtc/api/peerconnectioninterface.h"
 #include "webrtc/base/sigslot.h"
 #include "fakeaudiocapturemodule.h"
@@ -53,7 +54,8 @@ public:
   void OnConnectToPeer(std::string& full_id);
   void OnCommandReceived(std::string& command, std::string& message);
   void OnPeerOpened(std::string& peer_id);
-  
+  void OnPeerMessage(const webrtc::DataBuffer& buffer);
+
 
 
   //
@@ -98,6 +100,7 @@ public:
 
   // sigslots
   sigslot::signal1<std::string&> SignalOnConnected_;
+  sigslot::signal2<const char*, const size_t> SignalOnData_;
 //  sigslot::signal1<std::string*> SignalOnIceCandidateCreated;
 //  sigslot::signal3<const std::string&,
 //                   int,

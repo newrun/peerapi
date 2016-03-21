@@ -14,6 +14,7 @@
 #include "webrtc/base/json.h"
 
 
+
 namespace tn {
 
 void Control::Control::Connect(Control* caller,
@@ -150,6 +151,10 @@ void Control::OnPeerOpened(std::string& peer_id) {
   }
 }
 
+void Control::OnPeerMessage(const webrtc::DataBuffer& buffer) {
+  std::string data;
+  SignalOnData_(buffer.data.data<char>(), buffer.data.size());
+}
 
 bool Control::CreatePeerConnection(
       const webrtc::MediaConstraintsInterface* constraints) {
@@ -196,6 +201,7 @@ Control::CreateDataChannel(
   }
 
   local_data_channel_->SignalOnOpen_.connect(this, &Control::OnPeerOpened);
+  local_data_channel_->SignalOnMessage_.connect(this, &Control::OnPeerMessage);
   return true;
 }
 
@@ -203,7 +209,8 @@ void Control::OnDataChannel(webrtc::DataChannelInterface* data_channel) {
   PeerDataChannelObserver* Observer = new PeerDataChannelObserver(data_channel);
   remote_data_channel_ = rtc::scoped_ptr<PeerDataChannelObserver>(Observer);
   remote_data_channel_->SignalOnOpen_.connect(this, &Control::OnPeerOpened);
-//  SignalOnDataChannel(data_channel);
+  remote_data_channel_->SignalOnMessage_.connect(this, &Control::OnPeerMessage);
+  //  SignalOnDataChannel(data_channel);
 }
 
 

@@ -32,7 +32,9 @@ void PeerDataChannelObserver::OnStateChange() {
 }
 
 void PeerDataChannelObserver::OnMessage(const webrtc::DataBuffer& buffer) {
-  last_message_.assign(buffer.data.data<char>(), buffer.data.size());
+  SignalOnMessage_(buffer);
+
+//  last_message_.assign(buffer.data.data<char>(), buffer.data.size());
   ++received_message_count_;
 }
 
