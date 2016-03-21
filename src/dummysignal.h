@@ -9,6 +9,7 @@
 
 #include <map>
 #include <vector>
+#include "webrtc/base/sigslot.h"
 #include "signal.h"
 
 namespace tn {
@@ -16,10 +17,14 @@ namespace tn {
 class DummySignal
   : public Signal {
 public:
-
-  virtual bool Connect();
+  typedef std::vector<DummySignal*> PeerSignal;
+  virtual void SignIn(std::string& url, std::string& id, std::string& password);
+  virtual void Connect(std::string& channel);
+  virtual void Disconnect(std::string& channel);
+  virtual void SendCommand(std::string command, std::string& message);
 
 private:
+  static std::map<std::string, PeerSignal> connections_;
 
 }; // class DummySignal
 

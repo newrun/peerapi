@@ -7,12 +7,12 @@
 #ifndef __THROUGHNET_CONTROL_H__
 #define __THROUGHNET_CONTROL_H__
 
-#include "peer.h"
-
 #include "webrtc/api/peerconnectioninterface.h"
 #include "webrtc/base/sigslot.h"
 #include "fakeaudiocapturemodule.h"
 
+#include "peer.h"
+#include "signal.h"
 
 
 #define WAIT_(ex, timeout)                     \
@@ -39,12 +39,20 @@ public:
   static void Connect(Control* caller,
                       Control* callee);
 
-  explicit Control(const std::string& name);
+  explicit Control(const std::string channel);
+  explicit Control(const std::string channel,
+                   rtc::scoped_refptr<Signal> signal);
   ~Control();
 
   bool InitializePeerConnection();
   void DeletePeerConnection();
   bool Send(const std::string& message);
+
+  void SignIn();
+  void OnSignedIn(std::string& full_id);
+  void OnChannelConnected(std::string& channel);
+  void OnConnectToPeer(std::string& full_id);
+  void OnCommandReceived(std::string& command, std::string& message);
 
   //
   // PeerConnectionObserver implementation.
@@ -76,8 +84,9 @@ public:
   void CreateAnswer(const webrtc::MediaConstraintsInterface* constraints);
   void ReceiveOfferSdp(const std::string& sdp);
   void ReceiveAnswerSdp(const std::string& sdp);
-  void AddIceCandidate(const std::string& sdp_mid, int sdp_mline_index,
-       const std::string& candidate);
+//  void AddIceCandidate(const std::string& sdp_mid, int sdp_mline_index,
+//       const std::string& candidate);
+  void AddIceCandidate(const std::string& message);
   void TestWaitForConnection(uint32_t kMaxWait);
   void TestWaitForChannelOpen(uint32_t kMaxWait);
   void TestWaitForMessage(const std::string& message, uint32_t kMaxWait);
@@ -86,12 +95,12 @@ public:
 
 
   // sigslots
-  sigslot::signal1<std::string*> SignalOnIceCandidateCreated;
-  sigslot::signal3<const std::string&,
-                   int,
-                   const std::string&> SignalOnIceCandidateReady;
-  sigslot::signal1<std::string*> SignalOnSdpCreated;
-  sigslot::signal1<const std::string&> SignalOnSdpReady;
+//  sigslot::signal1<std::string*> SignalOnIceCandidateCreated;
+//  sigslot::signal3<const std::string&,
+//                   int,
+//                   const std::string&> SignalOnIceCandidateReady;
+//  sigslot::signal1<std::string*> SignalOnSdpCreated;
+//  sigslot::signal1<const std::string&> SignalOnSdpReady;
 //  sigslot::signal1<webrtc::DataChannelInterface*> SignalOnDataChannel;
 
 protected:
@@ -103,8 +112,11 @@ protected:
   void SetLocalDescription(const std::string& type, const std::string& sdp);
   void SetRemoteDescription(const std::string& type, const std::string& sdp);
 
+  std::string channel_name_;
   std::string device_id_;
   std::string session_id_;
+  rtc::scoped_refptr<Signal> signal_;
+
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
   rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
       peer_connection_factory_;

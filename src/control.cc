@@ -11,26 +11,38 @@
 #include "webrtc/api/test/fakedtlsidentitystore.h"
 #include "webrtc/p2p/client/fakeportallocator.h"
 #include "webrtc/api/test/mockpeerconnectionobservers.h"
+#include "webrtc/base/json.h"
 
 
 namespace tn {
 
 void Control::Control::Connect(Control* caller,
                                Control* callee) {
-  caller->SignalOnIceCandidateReady.connect(
-      callee, &Control::AddIceCandidate);
-  callee->SignalOnIceCandidateReady.connect(
-      caller, &Control::AddIceCandidate);
+//  caller->SignalOnIceCandidateReady.connect(
+//      callee, &Control::AddIceCandidate);
+//  callee->SignalOnIceCandidateReady.connect(
+//      caller, &Control::AddIceCandidate);
 
-  caller->SignalOnSdpReady.connect(
-      callee, &Control::ReceiveOfferSdp);
-  callee->SignalOnSdpReady.connect(
-      caller, &Control::ReceiveAnswerSdp);
+//  caller->SignalOnSdpReady.connect(
+//      callee, &Control::ReceiveOfferSdp);
+//  callee->SignalOnSdpReady.connect(
+//      caller, &Control::ReceiveAnswerSdp);
 }
+
   
 
-Control::Control(const std::string& device_id)
-       : device_id_(device_id) {
+Control::Control(const std::string channel)
+       : Control(channel, nullptr){
+}
+
+Control::Control(const std::string channel, rtc::scoped_refptr<Signal> signal)
+       : channel_name_(channel),
+         signal_(signal) {
+
+  signal_->SignalOnSignedIn_.connect(this, &Control::OnSignedIn);
+  signal_->SignalOnConnected_.connect(this, &Control::OnChannelConnected);
+  signal_->SignalOnConnectToPeer_.connect(this, &Control::OnConnectToPeer);
+  signal_->SignalOnCommandReceived_.connect(this, &Control::OnCommandReceived);
 }
 
 Control::~Control() {
@@ -98,6 +110,42 @@ bool Control::Send(const std::string& message) {
   return local_data_channel_->Send(message);
 }
 
+void Control::SignIn() {
+  if (signal_.get() == NULL) {
+    LOG(LS_ERROR) << "SignIn failed, no signal server";
+    return;
+  }
+
+  signal_->SignIn(std::string(""), std::string(""), std::string(""));
+  return;
+}
+
+void Control::OnSignedIn(std::string& full_id) {
+  signal_->Connect(channel_name_);
+}
+
+void Control::OnChannelConnected(std::string& channel) {
+
+}
+
+void Control::OnConnectToPeer(std::string& full_id) {
+  CreateOffer(NULL);
+}
+
+void Control::OnCommandReceived(std::string& command, std::string& message) {
+
+  if (command == "offersdp") {
+    ReceiveOfferSdp(message);
+  }
+  else if (command == "answersdp") {
+    ReceiveAnswerSdp(message);
+  }
+  else if (command == "ice_candidate_ready") {
+    AddIceCandidate(message);
+  }
+
+}
+
 
 bool Control::CreatePeerConnection(
       const webrtc::MediaConstraintsInterface* constraints) {
@@ -163,9 +211,18 @@ void Control::OnIceCandidate(const webrtc::IceCandidateInterface* candidate) {
   }
 
   // Give the user a chance to modify sdp for testing.
-  SignalOnIceCandidateCreated(&sdp);
-  SignalOnIceCandidateReady(candidate->sdp_mid(), candidate->sdp_mline_index(),
-    sdp);
+//  SignalOnIceCandidateCreated(&sdp);
+
+  Json::StyledWriter writer;
+  Json::Value jmessage;
+
+  jmessage["sdp_mid"] = candidate->sdp_mid();
+  jmessage["sdp_mline_index"] = candidate->sdp_mline_index();
+  jmessage["candidate"] = sdp;
+
+  signal_->SendCommand("ice_candidate_ready", writer.write(jmessage));
+///  SignalOnIceCandidateReady(candidate->sdp_mid(), candidate->sdp_mline_index(),
+///    sdp);
 }
 
 void Control::OnSuccess(webrtc::SessionDescriptionInterface* desc) {
@@ -181,11 +238,17 @@ void Control::OnSuccess(webrtc::SessionDescriptionInterface* desc) {
                << ": " << desc->type() << " sdp created: " << sdp;
 
   // Give the user a chance to modify sdp for testing.
-  SignalOnSdpCreated(&sdp);
+//  SignalOnSdpCreated(&sdp);
 
   SetLocalDescription(desc->type(), sdp);
 
-  SignalOnSdpReady(sdp);
+  if (desc->type() == webrtc::SessionDescriptionInterface::kOffer) {
+    signal_->SendCommand("offersdp", sdp);
+  }
+  else if (desc->type() == webrtc::SessionDescriptionInterface::kAnswer) {
+    signal_->SendCommand("answersdp", sdp);
+  }
+//  SignalOnSdpReady(sdp);
 }
 
 void Control::CreateOffer(
@@ -242,9 +305,27 @@ bool Control::CheckForConnection() {
           webrtc::PeerConnectionInterface::kIceConnectionCompleted);
 }
 
-void Control::AddIceCandidate(const std::string& sdp_mid,
-                              int sdp_mline_index,
-                              const std::string& candidate) {
+void Control::AddIceCandidate(const std::string& message) {
+
+  std::string sdp_mid;
+  int sdp_mline_index;
+  std::string candidate;
+
+  Json::Reader reader;
+  Json::Value jmessage;
+  if (!reader.parse(message, jmessage)) {
+    LOG(WARNING) << "Received unknown message. " << message;
+    return;
+  }
+
+  if (!rtc::GetStringFromJsonObject(jmessage, "sdp_mid", &sdp_mid) ||
+    !rtc::GetIntFromJsonObject(jmessage, "sdp_mline_index", &sdp_mline_index) ||
+    !rtc::GetStringFromJsonObject(jmessage, "candidate", &candidate)) {
+
+    LOG(LS_ERROR) << "Invalid ice_candidate_ready message";
+    return;
+  }
+
   rtc::scoped_ptr<webrtc::IceCandidateInterface> owned_candidate(
       webrtc::CreateIceCandidate(sdp_mid, sdp_mline_index, candidate, NULL));
   

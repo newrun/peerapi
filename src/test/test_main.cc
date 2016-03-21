@@ -13,6 +13,7 @@
 
 #include "throughnet.h"
 #include "control.h"
+#include "dummysignal.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/api/datachannelinterface.h"
 #include "webrtc/api/test/mockpeerconnectionobservers.h"
@@ -168,8 +169,21 @@ private:
 
 
 int main(int argc, char *argv[]) {
-  ControlTest test;
-  test.Start();
+
+  rtc::scoped_refptr<DummySignal> signal1(new rtc::RefCountedObject<DummySignal>());
+  rtc::scoped_refptr<DummySignal> signal2(new rtc::RefCountedObject<DummySignal>());
+
+  Throughnet tn1("mychannel", "", signal1);
+  Throughnet tn2("mychannel", "", signal2);
+
+  tn1.Start();
+  tn2.Start();
+
+  rtc::ThreadManager::Instance()->CurrentThread()->Run();
+
+
+//  ControlTest test;
+//  test.Start();
 
   return 0;
 }
