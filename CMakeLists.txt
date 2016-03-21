@@ -98,6 +98,7 @@ set(HEADERS
   "src/control.h"
   "src/peer.h"
   "src/signal.h"
+  "src/dummysignal.h"
   "src/fakeaudiocapturemodule.h"
   )
 
@@ -106,6 +107,7 @@ set(SOURCES
   "src/control.cc"
   "src/peer.cc"
   "src/signal.cc"
+  "src/dummysignal.cc"
   "src/fakeaudiocapturemodule.cc"
   )
 

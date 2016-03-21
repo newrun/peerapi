@@ -7,3 +7,9 @@
 #include "config.h"
 #include "signal.h"
 
+namespace tn {
+
+
+
+
+} // namespace tn

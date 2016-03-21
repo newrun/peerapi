@@ -3,10 +3,16 @@
  *
  *  Ryan Lee (ryan.lee at throughnet.com)
  */
- 
+
 #include "config.h"
-#include "throughnet.h"
+#include "dummysignal.h"
+
+namespace tn {
+
+bool DummySignal::Connect() {
+
+  return false;
+}
 
 
-
-
+} // namespace tn
