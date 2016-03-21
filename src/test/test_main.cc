@@ -176,8 +176,13 @@ int main(int argc, char *argv[]) {
   Throughnet tn1("mychannel", "", signal1);
   Throughnet tn2("mychannel", "", signal2);
 
+  tn2.On("connected", function_tn(string peer_id, Throughnet::Data& data) {
+    std::cout << "peer " << peer_id << " has been connected." << std::endl;
+  });
+
   tn1.Start();
   tn2.Start();
+
 
   rtc::ThreadManager::Instance()->CurrentThread()->Run();
 

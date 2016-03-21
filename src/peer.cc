@@ -26,6 +26,9 @@ void PeerDataChannelObserver::OnBufferedAmountChange(uint64_t previous_amount) {
 
 void PeerDataChannelObserver::OnStateChange() {
   state_ = channel_->state();
+  if (state_ == webrtc::DataChannelInterface::DataState::kOpen) {
+    SignalOnOpen_(std::string(""));
+  }
 }
 
 void PeerDataChannelObserver::OnMessage(const webrtc::DataBuffer& buffer) {

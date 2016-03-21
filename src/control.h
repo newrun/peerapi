@@ -50,9 +50,11 @@ public:
 
   void SignIn();
   void OnSignedIn(std::string& full_id);
-  void OnChannelConnected(std::string& channel);
   void OnConnectToPeer(std::string& full_id);
   void OnCommandReceived(std::string& command, std::string& message);
+  void OnPeerOpened(std::string& peer_id);
+  
+
 
   //
   // PeerConnectionObserver implementation.
@@ -95,6 +97,7 @@ public:
 
 
   // sigslots
+  sigslot::signal1<std::string&> SignalOnConnected_;
 //  sigslot::signal1<std::string*> SignalOnIceCandidateCreated;
 //  sigslot::signal3<const std::string&,
 //                   int,
@@ -122,7 +125,7 @@ protected:
       peer_connection_factory_;
   rtc::scoped_refptr<FakeAudioCaptureModule> fake_audio_capture_module_;
   rtc::scoped_ptr<PeerDataChannelObserver> local_data_channel_;
-  DataChannelList remote_data_channels_;
+  rtc::scoped_ptr<PeerDataChannelObserver> remote_data_channel_;
 };
 
 } // namespace tn

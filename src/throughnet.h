@@ -13,13 +13,16 @@
 
 #include "control.h"
 #include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/base/sigslot.h"
 
 #define function_tn(_x_, _y_) [](Throughnet* this_, _x_, _y_)
+
 
 using tn::Control;
 using tn::Signal;
 
-class Throughnet {
+class Throughnet
+    : public sigslot::has_slots<> {
 public:
   typedef std::map<std::string, std::string> Data;
   typedef std::function<void(Throughnet*, std::string msg_id, Data&)> EventHandler;
@@ -31,8 +34,12 @@ public:
   ~Throughnet();
 
   void Start();
+  Throughnet& On(std::string msg_id, void(*handler) (Throughnet* this_, std::string msg_id, Data& data));
+
 
 protected:
+  void OnConnected(std::string& peer_id);
+
   Events events_;
   rtc::scoped_refptr<Control> control_;
 };

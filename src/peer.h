@@ -29,6 +29,10 @@ public:
   const std::string& last_message() const;
   size_t received_message_count() const;
 
+  // sigslots
+  sigslot::signal1<std::string&> SignalOnOpen_;
+
+
 protected:
 
 private:

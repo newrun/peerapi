@@ -28,7 +28,6 @@ public:
  
   // sigslots
   sigslot::signal1<std::string&> SignalOnSignedIn_;
-  sigslot::signal1<std::string&> SignalOnConnected_;
   sigslot::signal1<std::string&> SignalOnConnectToPeer_;
   sigslot::signal2<std::string&, std::string&> SignalOnCommandReceived_;
 

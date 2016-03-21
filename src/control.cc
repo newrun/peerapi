@@ -40,7 +40,6 @@ Control::Control(const std::string channel, rtc::scoped_refptr<Signal> signal)
          signal_(signal) {
 
   signal_->SignalOnSignedIn_.connect(this, &Control::OnSignedIn);
-  signal_->SignalOnConnected_.connect(this, &Control::OnChannelConnected);
   signal_->SignalOnConnectToPeer_.connect(this, &Control::OnConnectToPeer);
   signal_->SignalOnCommandReceived_.connect(this, &Control::OnCommandReceived);
 }
@@ -81,7 +80,7 @@ bool Control::InitializePeerConnection() {
 
 void Control::DeletePeerConnection() {
   local_data_channel_ = NULL;
-//  remote_data_channels_.clear();
+  remote_data_channel_ = NULL;
   peer_connection_ = NULL;
   peer_connection_factory_ = NULL;
   fake_audio_capture_module_ = NULL;
@@ -124,10 +123,6 @@ void Control::OnSignedIn(std::string& full_id) {
   signal_->Connect(channel_name_);
 }
 
-void Control::OnChannelConnected(std::string& channel) {
-
-}
-
 void Control::OnConnectToPeer(std::string& full_id) {
   CreateOffer(NULL);
 }
@@ -144,6 +139,15 @@ void Control::OnCommandReceived(std::string& command, std::string& message) {
     AddIceCandidate(message);
   }
 
+}
+
+void Control::OnPeerOpened(std::string& peer_id) {
+  if (local_data_channel_.get() != nullptr && remote_data_channel_.get() != nullptr &&
+      local_data_channel_->state() == webrtc::DataChannelInterface::DataState::kOpen &&
+      remote_data_channel_->state() == webrtc::DataChannelInterface::DataState::kOpen
+    ) {
+    SignalOnConnected_(std::string(""));
+  }
 }
 
 
@@ -191,13 +195,14 @@ Control::CreateDataChannel(
     return false;
   }
 
+  local_data_channel_->SignalOnOpen_.connect(this, &Control::OnPeerOpened);
   return true;
 }
 
 void Control::OnDataChannel(webrtc::DataChannelInterface* data_channel) {
   PeerDataChannelObserver* Observer = new PeerDataChannelObserver(data_channel);
-  remote_data_channels_.push_back(rtc::scoped_ptr<PeerDataChannelObserver>(Observer));
-
+  remote_data_channel_ = rtc::scoped_ptr<PeerDataChannelObserver>(Observer);
+  remote_data_channel_->SignalOnOpen_.connect(this, &Control::OnPeerOpened);
 //  SignalOnDataChannel(data_channel);
 }
 
@@ -284,12 +289,11 @@ void Control::TestWaitForConnection(uint32_t kMaxWait) {
 void Control::TestWaitForChannelOpen(uint32_t kMaxWait) {
   // Test code
   WAIT_(local_data_channel_->IsOpen(), kMaxWait);
-  WAIT_(remote_data_channels_.size() >= 1, kMaxWait);
-  WAIT_(remote_data_channels_[0]->IsOpen(), kMaxWait);
+  WAIT_(remote_data_channel_->IsOpen(), kMaxWait);
 }
 
 void Control::TestWaitForMessage(const std::string& message, uint32_t kMaxWait) {
-  WAIT_(message == remote_data_channels_[0]->last_message(), kMaxWait);
+  WAIT_(message == remote_data_channel_->last_message(), kMaxWait);
 }
 
 void Control::TestWaitForClose(uint32_t kMaxWait) {
