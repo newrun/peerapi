@@ -32,7 +32,7 @@ public:
     const size_t size_;
   };
 
-  typedef std::map<std::string, std::string*> Data;
+  typedef std::map<std::string, std::string> Data;
   typedef std::function<void(Throughnet*, std::string peer_sid, Data&)> EventHandler;
   typedef std::function<void(Throughnet*, std::string peer_sid, Buffer&)> DataHandler;
   typedef std::map<std::string, EventHandler> Events;
@@ -43,18 +43,19 @@ public:
   ~Throughnet();
 
   void Connect(const std::string channel);
-  bool Send(const char* message);
-  bool Send(const std::string& message);
+  bool Send(const std::string& destination, const char* message);
+  bool Send(const std::string& destination, const std::string& message);
+
 
   Throughnet& On(std::string msg_id, void(*handler) (Throughnet* this_, std::string peer_sid, Data& data));
   Throughnet& On(std::string msg_id, void(*handler) (Throughnet* this_, std::string peer_sid, Buffer& data));
 
 
 protected:
-  void OnConnected(std::string& peer_sid);
-  void OnData(const std::string& channel, const char* buffer, const size_t size);
+  void OnConnected(const std::string& channel, const std::string& peer_sid);
+  void OnData(const std::string& channel, const std::string& peer_id, const char* buffer, const size_t size);
 
-  Events events_;
+  Events event_handler_;
   std::map<std::string, DataHandler> data_handler_;
 
   std::string channel_;

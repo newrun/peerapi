@@ -87,8 +87,8 @@ public:
   }
 
   void CreatePcs(const webrtc::MediaConstraintsInterface* pc_constraints) {
-    caller_->InitializePeerConnection();
-    callee_->InitializePeerConnection();
+    caller_->InitializeControl();
+    callee_->InitializeControl();
 //    caller_->CreatePc(pc_constraints);
 //    callee_->CreatePc(pc_constraints);
     Control::Connect(caller_.get(), callee_.get());
@@ -100,7 +100,7 @@ public:
   }
 
   void Negotiate() {
-    caller_->CreateOffer(NULL);
+//    caller_->CreateOffer(NULL);
   }
 
   void WaitForConnection() {
@@ -178,7 +178,7 @@ int main(int argc, char *argv[]) {
 
   tn2.On("connected", function_tn(string peer_sid, Throughnet::Data& data) {
     std::cout << "Peer " << peer_sid << " has been connected." << std::endl;
-    this_->Send("hello");
+    this_->Send("mychannel", "hello");
   });
 
   tn1.On("mychannel", function_tn(string peer_sid, Throughnet::Buffer& data) {

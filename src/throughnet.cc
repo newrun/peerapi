@@ -47,9 +47,8 @@ void Throughnet::Connect(const std::string channel) {
   // Initialize peer connection
   //
 
-  if (!control_->InitializePeerConnection()) {
+  if (!control_->InitializeControl()) {
     LOG(LS_ERROR) << "Run failed, InitializePeerConnection failed";
-    control_->DeletePeerConnection();
     return;
   }
 
@@ -62,30 +61,34 @@ void Throughnet::Connect(const std::string channel) {
 }
 
 
-bool Throughnet::Send(const char* message) {
-  return Send(std::string(message));
+bool Throughnet::Send(const std::string& destination, const char* message) {
+  return Send(destination, std::string(message));
 }
 
-bool Throughnet::Send(const std::string& message) {
-  return control_->Send(message);
+bool Throughnet::Send(const std::string& destination, const std::string& message) {
+  if (control_->channel_name() == destination) {
+    return control_->Send(message);
+  }
+
+  return false;
 }
 
 Throughnet& Throughnet::On(std::string msg_id, void(*handler) (Throughnet* this_, std::string peer_sid, Data& data)) {
 
   if (msg_id == "connected") {
-    events_[msg_id] = handler;
+    event_handler_[msg_id] = handler;
   }
   else if (msg_id == "disconnected") {
-    events_[msg_id] = handler;
+    event_handler_[msg_id] = handler;
   }
   else if (msg_id == "signin") {
-    events_[msg_id] = handler;
+    event_handler_[msg_id] = handler;
   }
   else if (msg_id == "signout") {
-    events_[msg_id] = handler;
+    event_handler_[msg_id] = handler;
   }
   else if (msg_id == "error") {
-
+    event_handler_[msg_id] = handler;
   }
 
   return *this;
@@ -100,17 +103,18 @@ Throughnet& Throughnet::On(std::string msg_id, void(*handler) (Throughnet* this_
   return *this;
 }
 
-void Throughnet::OnConnected(std::string& peer_sid) {
-  if (events_.find("connected") == events_.end()) return;
+void Throughnet::OnConnected(const std::string& channel, const std::string& peer_sid) {
+  if (event_handler_.find("connected") == event_handler_.end()) return;
 
   Data data;
-  events_["connected"](this, peer_sid, data);
+  data["channel"] = channel;
+  event_handler_["connected"](this, peer_sid, data);
 }
 
-void Throughnet::OnData(const std::string& channel_name, const char* buffer, const size_t size) {
-  if (data_handler_.find(channel_name) == data_handler_.end()) return;
+void Throughnet::OnData(const std::string& channel, const std::string& peer_id, const char* buffer, const size_t size) {
+  if (data_handler_.find(channel) == data_handler_.end()) return;
 
   Buffer buf(buffer, size);
-  data_handler_[channel_name](this, "", buf);
+  data_handler_[channel](this, peer_id, buf);
 }
 

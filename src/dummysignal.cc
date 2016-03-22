@@ -8,6 +8,7 @@
 
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/json.h"
 #include "dummysignal.h"
 
 
@@ -38,7 +39,7 @@ void DummySignal::Connect(std::string& channel) {
   
     channel_ = channel;
     connections_[channel].push_back(this);
-    connections_[channel][0]->SignalOnConnectToPeer_(connections_[channel][1]->session_id());
+    connections_[channel][0]->SignalOnOfferPeer_(connections_[channel][1]->session_id());
   }
 
 
@@ -51,16 +52,32 @@ void DummySignal::Disconnect(std::string& channel) {
   connections_.erase(channel);
 }
 
-void DummySignal::SendCommand(std::string command, std::string& message) {
-  if (connections_.find(channel_) == connections_.end())
-    return;
+
+bool DummySignal::SendCommand(const Json::Value& jmessage) {
+
+  Json::FastWriter writer;
+  Json::Value final_message;
+  Json::Value data;
+  std::string peer_sid;
+  std::string command;
+
+  if (!rtc::GetStringFromJsonObject(jmessage, "command", &command)) return false;
+  if (!rtc::GetValueFromJsonObject(jmessage, "data", &data)) return false;
+
+  final_message["command"] = command;
+  final_message["data"] = data;
+
+  if (rtc::GetStringFromJsonObject(jmessage, "peer_sid", &peer_sid)) {
+    final_message["peer_sid"] = session_id_;
+  }
 
   for (auto& connection : connections_[channel_]) {
-    if (connection != this) {
-      connection->SignalOnCommandReceived_(command, message);
+    if (peer_sid.empty() || peer_sid == connection->session_id()) {
+      connection->SignalOnCommandReceived_(writer.write(final_message));
     }
   }
-}
 
+  return true;
+}
 
 } // namespace tn

@@ -7,8 +7,6 @@
 #ifndef __THROUGHNET_CONTROL_H__
 #define __THROUGHNET_CONTROL_H__
 
-#include "webrtc/api/datachannelinterface.h"
-#include "webrtc/api/peerconnectioninterface.h"
 #include "webrtc/base/sigslot.h"
 #include "fakeaudiocapturemodule.h"
 
@@ -28,12 +26,10 @@
 namespace tn {
 
 class Control
-    : public webrtc::PeerConnectionObserver,
-      public webrtc::CreateSessionDescriptionObserver,
-      public sigslot::has_slots<> {
-
+    : public PeerObserver,
+      public sigslot::has_slots<>,
+      public rtc::RefCountInterface {
 public:
-
   typedef std::vector<rtc::scoped_ptr<PeerDataChannelObserver> >
             DataChannelList;
 
@@ -45,52 +41,32 @@ public:
                    rtc::scoped_refptr<Signal> signal);
   ~Control();
 
-  bool InitializePeerConnection();
-  void DeletePeerConnection();
-  bool Send(const std::string& message);
+  bool InitializeControl();
+  void DeleteControl();
+  bool Send(const std::string& message, const std::string *peer_id = nullptr);
+
+  const std::string& channel_name() { return channel_name_; }
+
 
   void SignIn();
-  void OnSignedIn(std::string& sid);
-  void OnConnectToPeer(std::string& sid);
-  void OnCommandReceived(std::string& command, std::string& message);
-  void OnPeerOpened(std::string& peer_sid);
+  void OnSignedIn(const std::string& sid);
+  void OnOfferPeer(const std::string& peer_sid);
+  void OnAnswerPeer(const std::string& peer_sid);
+  void OnCommandReceived(const std::string& message);
+  void OnPeerOpened(const std::string& peer_sid);
   void OnPeerMessage(const webrtc::DataBuffer& buffer);
 
-
-
   //
-  // PeerConnectionObserver implementation.
+  // PeerObserver implementation
   //
 
-  void OnSignalingChange(
-      webrtc::PeerConnectionInterface::SignalingState new_state) override {};
-  void OnAddStream(webrtc::MediaStreamInterface* stream) override {};
-  void OnRemoveStream(webrtc::MediaStreamInterface* stream) override {};
-  void OnDataChannel(webrtc::DataChannelInterface* channel) override;
-  void OnRenegotiationNeeded() override {}
-  void OnIceConnectionChange(
-      webrtc::PeerConnectionInterface::IceConnectionState new_state) override {};
-  void OnIceGatheringChange(
-      webrtc::PeerConnectionInterface::IceGatheringState new_state) override {};
-  void OnIceCandidate(const webrtc::IceCandidateInterface* candidate) override;
-  void OnIceConnectionReceivingChange(bool receiving) override {}
+  virtual bool SendCommand(const std::string& command, const Json::Value& data, const std::string& peer_sid);
+  virtual void OnConnected(const std::string peer_id);
+  virtual void OnData(const std::string& peer_id, const char* buffer, const size_t size);
 
 
-  //
-  // Implements CreateSessionDescriptionObserver.
-  //
-
-  void OnSuccess(webrtc::SessionDescriptionInterface* desc) override;
-  void OnFailure(const std::string& error) {}
 
 
-  void CreateOffer(const webrtc::MediaConstraintsInterface* constraints);
-  void CreateAnswer(const webrtc::MediaConstraintsInterface* constraints);
-  void ReceiveOfferSdp(const std::string& sdp);
-  void ReceiveAnswerSdp(const std::string& sdp);
-//  void AddIceCandidate(const std::string& sdp_mid, int sdp_mline_index,
-//       const std::string& candidate);
-  void AddIceCandidate(const std::string& message);
   void TestWaitForConnection(uint32_t kMaxWait);
   void TestWaitForChannelOpen(uint32_t kMaxWait);
   void TestWaitForMessage(const std::string& message, uint32_t kMaxWait);
@@ -99,8 +75,8 @@ public:
 
 
   // sigslots
-  sigslot::signal1<std::string&> SignalOnConnected_;
-  sigslot::signal3<const std::string&, const char*, const size_t> SignalOnData_;
+  sigslot::signal2<const std::string&, const std::string&> SignalOnConnected_;
+  sigslot::signal4<const std::string&, const std::string&, const char*, const size_t> SignalOnData_;
 //  sigslot::signal1<std::string*> SignalOnIceCandidateCreated;
 //  sigslot::signal3<const std::string&,
 //                   int,
@@ -111,22 +87,23 @@ public:
 
 protected:
   bool CreatePeerFactory(const webrtc::MediaConstraintsInterface* constraints);
-  bool CreatePeerConnection(const webrtc::MediaConstraintsInterface* constraints);
-  bool CreateDataChannel(const std::string& label,
-       const webrtc::DataChannelInit& init);
 
-  void SetLocalDescription(const std::string& type, const std::string& sdp);
-  void SetRemoteDescription(const std::string& type, const std::string& sdp);
+  void AddIceCandidate(const std::string& peer_sid, const Json::Value& data);
+  void ReceiveOfferSdp(const std::string& peer_sid, const Json::Value& data);
+  void ReceiveAnswerSdp(const std::string& peer_sid, const Json::Value& data);
+
 
   std::string channel_name_;
   std::string device_id_;
   std::string session_id_;
   rtc::scoped_refptr<Signal> signal_;
+  rtc::scoped_refptr<FakeAudioCaptureModule> fake_audio_capture_module_;
 
-  rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
+  typedef rtc::scoped_refptr<PeerControl> Peer;
+  std::map<std::string, Peer> peers_;
+
   rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
       peer_connection_factory_;
-  rtc::scoped_refptr<FakeAudioCaptureModule> fake_audio_capture_module_;
   rtc::scoped_ptr<PeerDataChannelObserver> local_data_channel_;
   rtc::scoped_ptr<PeerDataChannelObserver> remote_data_channel_;
 };

@@ -8,9 +8,6 @@
 #include "control.h"
 #include "peer.h"
 
-#include "webrtc/api/test/fakedtlsidentitystore.h"
-#include "webrtc/p2p/client/fakeportallocator.h"
-#include "webrtc/api/test/mockpeerconnectionobservers.h"
 #include "webrtc/base/json.h"
 
 
@@ -41,51 +38,36 @@ Control::Control(const std::string channel, rtc::scoped_refptr<Signal> signal)
          signal_(signal) {
 
   signal_->SignalOnSignedIn_.connect(this, &Control::OnSignedIn);
-  signal_->SignalOnConnectToPeer_.connect(this, &Control::OnConnectToPeer);
+  signal_->SignalOnOfferPeer_.connect(this, &Control::OnOfferPeer);
+  signal_->SignalOnAnswerPeer_.connect(this, &Control::OnAnswerPeer);
   signal_->SignalOnCommandReceived_.connect(this, &Control::OnCommandReceived);
 }
 
 Control::~Control() {
-  DeletePeerConnection();
+  peers_.clear();
 }
 
 
-bool Control::InitializePeerConnection() {
+bool Control::InitializeControl() {
 
   ASSERT(peer_connection_factory_.get() == NULL);
-  ASSERT(peer_connection_.get() == NULL);
 
   webrtc::MediaConstraintsInterface* constraints = NULL;
 
   if (!CreatePeerFactory(constraints)) {
     LOG(LS_ERROR) << "CreatePeerFactory failed";
-    DeletePeerConnection();
+    DeleteControl();
     return false;
-  }
-
-  if (!CreatePeerConnection(constraints)) {
-    LOG(LS_ERROR) << "CreatePeerConnection failed";
-    DeletePeerConnection();
-    return false;
-  }
-
-  webrtc::DataChannelInit init;
-  const std::string data_channel_name = std::string("tn_data_") + session_id_;
-  if (!CreateDataChannel(data_channel_name, init)) {
-    LOG(LS_ERROR) << "CreateDataChannel failed";
-    DeletePeerConnection();
   }
 
   return true;
 }
 
-void Control::DeletePeerConnection() {
-  local_data_channel_ = NULL;
-  remote_data_channel_ = NULL;
-  peer_connection_ = NULL;
+void Control::DeleteControl() {
   peer_connection_factory_ = NULL;
   fake_audio_capture_module_ = NULL;
 }
+
 
 bool Control::CreatePeerFactory(
     const webrtc::MediaConstraintsInterface* constraints) {
@@ -106,9 +88,44 @@ bool Control::CreatePeerFactory(
   return true;
 }
 
-bool Control::Send(const std::string& message) {
-  return local_data_channel_->Send(message);
+bool Control::Send(const std::string& message, const std::string *peer_id) {
+  bool ret = true;
+
+  typedef std::map<std::string, rtc::scoped_refptr<PeerControl>>::iterator it_type;
+  for (it_type iterator = peers_.begin(); iterator != peers_.end(); iterator++) {
+    if (peer_id == nullptr || iterator->second->remote_session_id() == *peer_id) {
+      if (!iterator->second->Send(message)) {
+        ret = false;
+      }
+    }
+  }
+
+  return ret;
 }
+
+
+bool Control::SendCommand(const std::string& command, const Json::Value& data, const std::string& peer_sid) {
+  Json::Value jmessage;
+
+  jmessage["command"] = command;
+  jmessage["data"] = data;
+
+  if (!peer_sid.empty()) {
+    jmessage["peer_sid"] = peer_sid;
+  }
+
+  return signal_->SendCommand(jmessage);
+}
+
+void Control::OnConnected(const std::string peer_id) {
+  SignalOnConnected_(channel_name_, peer_id);
+}
+
+void Control::OnData(const std::string& peer_id, const char* buffer, const size_t size) {
+  SignalOnData_(channel_name_, peer_id, buffer, size);
+}
+
+
 
 void Control::SignIn() {
   if (signal_.get() == NULL) {
@@ -120,170 +137,93 @@ void Control::SignIn() {
   return;
 }
 
-void Control::OnSignedIn(std::string& sid) {
+void Control::OnSignedIn(const std::string& sid) {
   signal_->Connect(channel_name_);
 }
 
-void Control::OnConnectToPeer(std::string& sid) {
-  CreateOffer(NULL);
+void Control::OnOfferPeer(const std::string& peer_sid) {
+
+  Peer peer = new rtc::RefCountedObject<PeerControl>(session_id_, peer_sid, this, peer_connection_factory_);
+  peers_.insert(std::pair<std::string, Peer>(peer_sid, peer));
+
+  peer->CreateOffer(NULL);
 }
 
-void Control::OnCommandReceived(std::string& command, std::string& message) {
+void Control::OnAnswerPeer(const std::string& peer_sid) {
+  if (peers_.find(peer_sid) == peers_.end()) return;
+
+  peers_[peer_sid]->CreateAnswer(NULL);
+}
+
+void Control::OnCommandReceived(const std::string& message) {
+
+  Json::Reader reader;
+  Json::Value jmessage;
+  Json::Value data;
+  std::string command;
+  std::string peer_sid;
+
+  if (!reader.parse(message, jmessage)) {
+    LOG(WARNING) << "Received unknown message: " << message;
+    return;
+  }
+
+  if (!rtc::GetStringFromJsonObject(jmessage, "command", &command) ||
+      !rtc::GetValueFromJsonObject(jmessage, "data", &data)) {
+
+    LOG(LS_ERROR) << "Invalid message:" << message;
+    return;
+  }
+
+  if (!rtc::GetStringFromJsonObject(jmessage, "peer_sid", &peer_sid)) {
+    peer_sid.clear();
+  }
 
   if (command == "offersdp") {
-    ReceiveOfferSdp(message);
+    ReceiveOfferSdp(peer_sid, data);
   }
   else if (command == "answersdp") {
-    ReceiveAnswerSdp(message);
+    ReceiveAnswerSdp(peer_sid, data);
   }
-  else if (command == "ice_candidate_ready") {
-    AddIceCandidate(message);
-  }
-
-}
-
-void Control::OnPeerOpened(std::string& peer_id) {
-  if (local_data_channel_.get() != nullptr && remote_data_channel_.get() != nullptr &&
-      local_data_channel_->state() == webrtc::DataChannelInterface::DataState::kOpen &&
-      remote_data_channel_->state() == webrtc::DataChannelInterface::DataState::kOpen
-    ) {
-    SignalOnConnected_(std::string(""));
-  }
-}
-
-void Control::OnPeerMessage(const webrtc::DataBuffer& buffer) {
-  std::string data;
-  SignalOnData_(channel_name_, buffer.data.data<char>(), buffer.data.size());
-}
-
-bool Control::CreatePeerConnection(
-      const webrtc::MediaConstraintsInterface* constraints) {
-  ASSERT(peer_connection_factory_.get() != NULL);
-  ASSERT(peer_connection_.get() == NULL);
-
-  rtc::scoped_ptr<cricket::PortAllocator> port_allocator(
-    new cricket::FakePortAllocator(rtc::Thread::Current(), nullptr));
-
-
-  // CreatePeerConnection with RTCConfiguration.
-  webrtc::PeerConnectionInterface::RTCConfiguration config;
-  webrtc::PeerConnectionInterface::IceServer ice_server;
-  ice_server.uri = "stun:stun.l.google.com:19302";
-  config.servers.push_back(ice_server);
-
-  rtc::scoped_ptr<webrtc::DtlsIdentityStoreInterface> dtls_identity_store(
-    rtc::SSLStreamAdapter::HaveDtlsSrtp() ?
-    new FakeDtlsIdentityStore() : nullptr);
-
-  peer_connection_ = peer_connection_factory_->CreatePeerConnection(
-    config, constraints, std::move(port_allocator),
-    std::move(dtls_identity_store), this);
-
-  return peer_connection_.get() != NULL;
-}
-
-
-bool
-Control::CreateDataChannel(
-    const std::string& label,
-    const webrtc::DataChannelInit& init) {
-
-  rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel;
-
-  data_channel = peer_connection_->CreateDataChannel(label, &init);
-  if (data_channel.get() == NULL) {
-    return false;
+  else if (command == "ice_candidate") {
+    AddIceCandidate(peer_sid, data);
   }
 
-  local_data_channel_.reset(new PeerDataChannelObserver(data_channel));
-  if (local_data_channel_.get() == NULL) {
-    return false;
-  }
-
-  local_data_channel_->SignalOnOpen_.connect(this, &Control::OnPeerOpened);
-  local_data_channel_->SignalOnMessage_.connect(this, &Control::OnPeerMessage);
-  return true;
-}
-
-void Control::OnDataChannel(webrtc::DataChannelInterface* data_channel) {
-  PeerDataChannelObserver* Observer = new PeerDataChannelObserver(data_channel);
-  remote_data_channel_ = rtc::scoped_ptr<PeerDataChannelObserver>(Observer);
-  remote_data_channel_->SignalOnOpen_.connect(this, &Control::OnPeerOpened);
-  remote_data_channel_->SignalOnMessage_.connect(this, &Control::OnPeerMessage);
-  //  SignalOnDataChannel(data_channel);
 }
 
 
+void Control::AddIceCandidate(const std::string& peer_sid, const Json::Value& data) {
 
-void Control::OnIceCandidate(const webrtc::IceCandidateInterface* candidate) {
-  std::string sdp;
-  
-  if (!candidate->ToString(&sdp)) {
-    return;
-  }
+  std::string sdp_mid;
+  int sdp_mline_index;
+  std::string candidate;
 
-  // Give the user a chance to modify sdp for testing.
-//  SignalOnIceCandidateCreated(&sdp);
+  if (!rtc::GetStringFromJsonObject(data, "sdp_mid", &sdp_mid)) return;
+  if (!rtc::GetIntFromJsonObject(data, "sdp_mline_index", &sdp_mline_index)) return;
+  if (!rtc::GetStringFromJsonObject(data, "candidate", &candidate)) return;
 
-  Json::StyledWriter writer;
-  Json::Value jmessage;
-
-  jmessage["sdp_mid"] = candidate->sdp_mid();
-  jmessage["sdp_mline_index"] = candidate->sdp_mline_index();
-  jmessage["candidate"] = sdp;
-
-  signal_->SendCommand("ice_candidate_ready", writer.write(jmessage));
-///  SignalOnIceCandidateReady(candidate->sdp_mid(), candidate->sdp_mline_index(),
-///    sdp);
+  if (peers_.find(peer_sid) == peers_.end()) return;
+  peers_[peer_sid]->AddIceCandidate(sdp_mid, sdp_mline_index, candidate);
 }
 
-void Control::OnSuccess(webrtc::SessionDescriptionInterface* desc) {
-  // This callback should take the ownership of |desc|.
-  rtc::scoped_ptr<webrtc::SessionDescriptionInterface> owned_desc(desc);
+void Control::ReceiveOfferSdp(const std::string& peer_sid, const Json::Value& data) {
   std::string sdp;
 
-  if (!desc->ToString(&sdp)) {
-    return;
-  }
-  
-  LOG(LS_INFO) << "PeerConnectionTestWrapper " << device_id_
-               << ": " << desc->type() << " sdp created: " << sdp;
+  if (!rtc::GetStringFromJsonObject(data, "sdp", &sdp)) return;
 
-  // Give the user a chance to modify sdp for testing.
-//  SignalOnSdpCreated(&sdp);
+  Peer peer = new rtc::RefCountedObject<PeerControl>(session_id_, peer_sid, this, peer_connection_factory_);
+  peers_.insert(std::pair<std::string, Peer>(peer_sid, peer));
 
-  SetLocalDescription(desc->type(), sdp);
-
-  if (desc->type() == webrtc::SessionDescriptionInterface::kOffer) {
-    signal_->SendCommand("offersdp", sdp);
-  }
-  else if (desc->type() == webrtc::SessionDescriptionInterface::kAnswer) {
-    signal_->SendCommand("answersdp", sdp);
-  }
-//  SignalOnSdpReady(sdp);
+  peer->ReceiveOfferSdp(sdp);
 }
 
-void Control::CreateOffer(
-    const webrtc::MediaConstraintsInterface* constraints) {
-  LOG(LS_INFO) << "PeerConnectionTestWrapper " << device_id_
-               << ": CreateOffer.";
-  peer_connection_->CreateOffer(this, constraints);
-}
+void Control::ReceiveAnswerSdp(const std::string& peer_sid, const Json::Value& data) {
+  std::string sdp;
 
-void Control::CreateAnswer(
-    const webrtc::MediaConstraintsInterface* constraints) {
-  LOG(LS_INFO) << "PeerConnectionTestWrapper " << device_id_
-               << ": CreateAnswer.";
-  peer_connection_->CreateAnswer(this, constraints);
-}
+  if (!rtc::GetStringFromJsonObject(data, "sdp", &sdp)) return;
+  if (peers_.find(peer_sid) == peers_.end()) return;
 
-void Control::ReceiveOfferSdp(const std::string& sdp) {
-  SetRemoteDescription(webrtc::SessionDescriptionInterface::kOffer, sdp);
-  CreateAnswer(NULL);
-}
-
-void Control::ReceiveAnswerSdp(const std::string& sdp) {
-  SetRemoteDescription(webrtc::SessionDescriptionInterface::kAnswer, sdp);
+  peers_[peer_sid]->ReceiveAnswerSdp(sdp);
 }
 
 void Control::TestWaitForConnection(uint32_t kMaxWait) {
@@ -292,6 +232,8 @@ void Control::TestWaitForConnection(uint32_t kMaxWait) {
   LOG(LS_INFO) << "PeerConnectionTestWrapper " << device_id_
     << ": Connected.";
 }
+
+
 
 void Control::TestWaitForChannelOpen(uint32_t kMaxWait) {
   // Test code
@@ -310,62 +252,13 @@ void Control::TestWaitForClose(uint32_t kMaxWait) {
 
 
 bool Control::CheckForConnection() {
-  return (peer_connection_->ice_connection_state() ==
-          webrtc::PeerConnectionInterface::kIceConnectionConnected) ||
-         (peer_connection_->ice_connection_state() ==
-          webrtc::PeerConnectionInterface::kIceConnectionCompleted);
-}
-
-void Control::AddIceCandidate(const std::string& message) {
-
-  std::string sdp_mid;
-  int sdp_mline_index;
-  std::string candidate;
-
-  Json::Reader reader;
-  Json::Value jmessage;
-  if (!reader.parse(message, jmessage)) {
-    LOG(WARNING) << "Received unknown message. " << message;
-    return;
-  }
-
-  if (!rtc::GetStringFromJsonObject(jmessage, "sdp_mid", &sdp_mid) ||
-    !rtc::GetIntFromJsonObject(jmessage, "sdp_mline_index", &sdp_mline_index) ||
-    !rtc::GetStringFromJsonObject(jmessage, "candidate", &candidate)) {
-
-    LOG(LS_ERROR) << "Invalid ice_candidate_ready message";
-    return;
-  }
-
-  rtc::scoped_ptr<webrtc::IceCandidateInterface> owned_candidate(
-      webrtc::CreateIceCandidate(sdp_mid, sdp_mline_index, candidate, NULL));
-  
-  peer_connection_->AddIceCandidate(owned_candidate.get());
+  return false;
+  //return (peer_connection_->ice_connection_state() ==
+  //        webrtc::PeerConnectionInterface::kIceConnectionConnected) ||
+  //       (peer_connection_->ice_connection_state() ==
+  //        webrtc::PeerConnectionInterface::kIceConnectionCompleted);
 }
 
 
-void Control::SetLocalDescription(const std::string& type,
-                                  const std::string& sdp) {
-  LOG(LS_INFO) << "PeerConnectionTestWrapper " << device_id_
-               << ": SetLocalDescription " << type << " " << sdp;
-
-  rtc::scoped_refptr<webrtc::MockSetSessionDescriptionObserver>
-    observer(new rtc::RefCountedObject<
-                   webrtc::MockSetSessionDescriptionObserver>());
-  peer_connection_->SetLocalDescription(
-    observer, webrtc::CreateSessionDescription(type, sdp, NULL));
-}
-
-void Control::SetRemoteDescription(const std::string& type,
-                                   const std::string& sdp) {
-  LOG(LS_INFO) << "PeerConnectionTestWrapper " << device_id_
-               << ": SetRemoteDescription " << type << " " << sdp;
-
-  rtc::scoped_refptr<webrtc::MockSetSessionDescriptionObserver>
-    observer(new rtc::RefCountedObject<
-      webrtc::MockSetSessionDescriptionObserver>());
-  peer_connection_->SetRemoteDescription(
-    observer, webrtc::CreateSessionDescription(type, sdp, NULL));
-}
 
 } // namespace tn

@@ -21,7 +21,7 @@ public:
   virtual void SignIn(std::string& url, std::string& id, std::string& password);
   virtual void Connect(std::string& channel);
   virtual void Disconnect(std::string& channel);
-  virtual void SendCommand(std::string command, std::string& message);
+  virtual bool SendCommand(const Json::Value& jmessage);
 
 private:
   static std::map<std::string, PeerSignal> connections_;
