@@ -6,8 +6,7 @@
  
 #include "config.h"
 #include "throughnet.h"
-#include "signal.h"
-#include "dummysignal.h"
+
 
 Throughnet::Throughnet()
    : Throughnet("", nullptr){
@@ -24,15 +23,19 @@ Throughnet::Throughnet(const std::string setting, rtc::scoped_refptr<Signal> sig
 }
 
 Throughnet::~Throughnet() {
-
 }
 
+
 void Throughnet::Connect(const std::string channel) {
+
+  //
+  // Initialize control
+  //
 
   control_ = new rtc::RefCountedObject<Control>(channel, signal_);
 
   if (control_.get() == NULL) {
-    LOG(LS_ERROR) << "Run failed, no control";
+    LOG(LS_ERROR) << "Failed to create class Control.";
     return;
   }
 
@@ -48,7 +51,7 @@ void Throughnet::Connect(const std::string channel) {
   //
 
   if (!control_->InitializeControl()) {
-    LOG(LS_ERROR) << "Run failed, InitializePeerConnection failed";
+    LOG(LS_ERROR) << "Failed to initialize Control.";
     return;
   }
 
@@ -61,6 +64,11 @@ void Throughnet::Connect(const std::string channel) {
 }
 
 
+//
+// Send message to destination peer
+// destination: channel name or peer session_id
+//
+
 bool Throughnet::Send(const std::string& destination, const char* message) {
   return Send(destination, std::string(message));
 }
@@ -72,6 +80,10 @@ bool Throughnet::Send(const std::string& destination, const std::string& message
 
   return false;
 }
+
+//
+// Register Event handler
+//
 
 Throughnet& Throughnet::On(std::string msg_id, void(*handler) (Throughnet* this_, std::string peer_sid, Data& data)) {
 
@@ -94,6 +106,11 @@ Throughnet& Throughnet::On(std::string msg_id, void(*handler) (Throughnet* this_
   return *this;
 }
 
+
+//
+// Register Date handler
+//
+
 Throughnet& Throughnet::On(std::string msg_id, void(*handler) (Throughnet* this_, std::string peer_sid, Buffer& data)) {
 
   if (msg_id.length() > 0) {
@@ -103,6 +120,10 @@ Throughnet& Throughnet::On(std::string msg_id, void(*handler) (Throughnet* this_
   return *this;
 }
 
+//
+// Signal event handler
+//
+
 void Throughnet::OnConnected(const std::string& channel, const std::string& peer_sid) {
   if (event_handler_.find("connected") == event_handler_.end()) return;
 
@@ -110,6 +131,10 @@ void Throughnet::OnConnected(const std::string& channel, const std::string& peer
   data["channel"] = channel;
   event_handler_["connected"](this, peer_sid, data);
 }
+
+//
+// Signal data handler
+//
 
 void Throughnet::OnData(const std::string& channel, const std::string& peer_id, const char* buffer, const size_t size) {
   if (data_handler_.find(channel) == data_handler_.end()) return;
