@@ -23,7 +23,6 @@ Control::Control(const std::string channel, rtc::scoped_refptr<Signal> signal)
          signal_(signal) {
 
   signal_->SignalOnSignedIn_.connect(this, &Control::OnSignedIn);
-  signal_->SignalOnOfferPeer_.connect(this, &Control::OnOfferPeer);
   signal_->SignalOnCommandReceived_.connect(this, &Control::OnCommandReceived);
 }
 
@@ -138,19 +137,6 @@ void Control::OnSignedIn(const std::string& sid) {
 
 
 //
-// CreateOffer command has been received by signal server
-//
-
-void Control::OnOfferPeer(const std::string& peer_sid) {
-
-  Peer peer = new rtc::RefCountedObject<PeerControl>(session_id_, peer_sid, this, peer_connection_factory_);
-  peers_.insert(std::pair<std::string, Peer>(peer_sid, peer));
-
-  peer->CreateOffer(NULL);
-}
-
-
-//
 // Dispatch command from signal server
 //
 
@@ -178,7 +164,10 @@ void Control::OnCommandReceived(const std::string& message) {
     peer_sid.clear();
   }
 
-  if (command == "offersdp") {
+  if (command == "createoffer") {
+    CreateOffer(data);
+  }
+  else if (command == "offersdp") {
     ReceiveOfferSdp(peer_sid, data);
   }
   else if (command == "answersdp") {
@@ -231,6 +220,23 @@ void Control::AddIceCandidate(const std::string& peer_sid, const Json::Value& da
   peers_[peer_sid]->AddIceCandidate(sdp_mid, sdp_mline_index, candidate);
 }
 
+
+//
+// 'createoffer' command
+//
+
+void Control::CreateOffer(const Json::Value& data) {
+
+  std::string peer_sid;
+  if (!rtc::GetStringFromJsonObject(data, "peer_sid", &peer_sid)) {
+    return;
+  }
+
+  Peer peer = new rtc::RefCountedObject<PeerControl>(session_id_, peer_sid, this, peer_connection_factory_);
+  peers_.insert(std::pair<std::string, Peer>(peer_sid, peer));
+
+  peer->CreateOffer(NULL);
+}
 
 //
 // 'offersdp' command

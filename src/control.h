@@ -44,7 +44,6 @@ public:
 
   void SignIn();
   void OnSignedIn(const std::string& sid);
-  void OnOfferPeer(const std::string& peer_sid);
   void OnCommandReceived(const std::string& message);
 
   //
@@ -66,6 +65,7 @@ public:
 
 protected:
   bool CreatePeerFactory(const webrtc::MediaConstraintsInterface* constraints);
+  void CreateOffer(const Json::Value& data);
   void AddIceCandidate(const std::string& peer_sid, const Json::Value& data);
   void ReceiveOfferSdp(const std::string& peer_sid, const Json::Value& data);
   void ReceiveAnswerSdp(const std::string& peer_sid, const Json::Value& data);

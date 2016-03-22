@@ -39,7 +39,15 @@ void DummySignal::Connect(std::string& channel) {
   
     channel_ = channel;
     connections_[channel].push_back(this);
-    connections_[channel][0]->SignalOnOfferPeer_(connections_[channel][1]->session_id());
+
+    Json::Value jmessage;
+    Json::Value data;
+    jmessage["command"] = "createoffer";
+    jmessage["peer_sid"] = connections_[channel][0]->session_id();
+    data["peer_sid"] = connections_[channel][1]->session_id();
+    jmessage["data"] = data;
+
+    SendCommand(jmessage);
   }
 
 
