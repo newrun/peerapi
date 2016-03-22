@@ -26,41 +26,7 @@ public:
   virtual void OnData(const std::string& peer_id, const char* buffer, const size_t size) = 0;
 };
 
-
-
-//
-// class PeerDataChannelObserver
-//
-
-class PeerDataChannelObserver : public webrtc::DataChannelObserver {
-public:
-  explicit PeerDataChannelObserver(webrtc::DataChannelInterface* channel);
-  virtual ~PeerDataChannelObserver();
-
-  void OnBufferedAmountChange(uint64_t previous_amount) override;
-
-  void OnStateChange() override;
-  void OnMessage(const webrtc::DataBuffer& buffer) override;
-
-  bool Send(const std::string& message);
-  void Close();
-  bool IsOpen() const;
-  const webrtc::DataChannelInterface::DataState state() const;
-  const std::string& last_message() const;
-  size_t received_message_count() const;
-
-  // sigslots
-  sigslot::signal0<> SignalOnOpen_;
-  sigslot::signal1<const webrtc::DataBuffer&> SignalOnMessage_;
-
-protected:
-
-private:
-  rtc::scoped_refptr<webrtc::DataChannelInterface> channel_;
-  webrtc::DataChannelInterface::DataState state_;
-  std::string last_message_;
-  size_t received_message_count_;
-};
+class PeerDataChannelObserver;
 
 
 //
@@ -81,10 +47,16 @@ public:
 
   ~PeerControl();
 
-  const std::string& local_session_id() { return local_session_id_; }
-  const std::string& remote_session_id() { return remote_session_id_; }
+  const std::string& local_session_id() const { return local_session_id_; }
+  const std::string& remote_session_id() const { return remote_session_id_; }
 
   bool Send(const std::string& message);
+
+
+  //
+  // PeerConnection
+  //
+
   void CreateOffer(const webrtc::MediaConstraintsInterface* constraints);
   void CreateAnswer(const webrtc::MediaConstraintsInterface* constraints);
 
@@ -117,9 +89,8 @@ public:
   void OnSuccess(webrtc::SessionDescriptionInterface* desc);
   void OnFailure(const std::string& error) {}
 
-
   //
-  // Others
+  // PeerDataChannelObserver
   //
 
   void OnPeerOpened();
@@ -134,15 +105,13 @@ protected:
                          const webrtc::DataChannelInit& init);
   void SetLocalDescription(const std::string& type, const std::string& sdp);
   void SetRemoteDescription(const std::string& type, const std::string& sdp);
-
-
-  std::string local_session_id_;
-  std::string remote_session_id_;
-
+  void SigslotConnect(PeerDataChannelObserver* datachanel);
 
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
   rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> peer_connection_factory_;
 
+  std::string local_session_id_;
+  std::string remote_session_id_;
   rtc::scoped_ptr<PeerDataChannelObserver> local_data_channel_;
   rtc::scoped_ptr<PeerDataChannelObserver> remote_data_channel_;
 
@@ -151,7 +120,37 @@ protected:
 };
 
 
+//
+// class PeerDataChannelObserver
+//
 
+class PeerDataChannelObserver : public webrtc::DataChannelObserver {
+public:
+  explicit PeerDataChannelObserver(webrtc::DataChannelInterface* channel);
+  virtual ~PeerDataChannelObserver();
+
+  void OnBufferedAmountChange(uint64_t previous_amount) override;
+
+  void OnStateChange() override;
+  void OnMessage(const webrtc::DataBuffer& buffer) override;
+
+  bool Send(const std::string& message);
+  void Close();
+  bool IsOpen() const;
+  const webrtc::DataChannelInterface::DataState state() const;
+  size_t received_message_count() const;
+
+  // sigslots
+  sigslot::signal0<> SignalOnOpen_;
+  sigslot::signal1<const webrtc::DataBuffer&> SignalOnMessage_;
+
+protected:
+
+private:
+  rtc::scoped_refptr<webrtc::DataChannelInterface> channel_;
+  webrtc::DataChannelInterface::DataState state_;
+  size_t received_message_count_;
+};
 
 } // namespace tn
 
