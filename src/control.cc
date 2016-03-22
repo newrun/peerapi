@@ -14,21 +14,6 @@
 
 namespace tn {
 
-void Control::Control::Connect(Control* caller,
-                               Control* callee) {
-//  caller->SignalOnIceCandidateReady.connect(
-//      callee, &Control::AddIceCandidate);
-//  callee->SignalOnIceCandidateReady.connect(
-//      caller, &Control::AddIceCandidate);
-
-//  caller->SignalOnSdpReady.connect(
-//      callee, &Control::ReceiveOfferSdp);
-//  callee->SignalOnSdpReady.connect(
-//      caller, &Control::ReceiveAnswerSdp);
-}
-
-  
-
 Control::Control(const std::string channel)
        : Control(channel, nullptr){
 }
@@ -39,7 +24,6 @@ Control::Control(const std::string channel, rtc::scoped_refptr<Signal> signal)
 
   signal_->SignalOnSignedIn_.connect(this, &Control::OnSignedIn);
   signal_->SignalOnOfferPeer_.connect(this, &Control::OnOfferPeer);
-  signal_->SignalOnAnswerPeer_.connect(this, &Control::OnAnswerPeer);
   signal_->SignalOnCommandReceived_.connect(this, &Control::OnCommandReceived);
 }
 
@@ -47,6 +31,10 @@ Control::~Control() {
   peers_.clear();
 }
 
+
+//
+// Initialization and release
+//
 
 bool Control::InitializeControl() {
 
@@ -69,24 +57,10 @@ void Control::DeleteControl() {
 }
 
 
-bool Control::CreatePeerFactory(
-    const webrtc::MediaConstraintsInterface* constraints) {
 
-  fake_audio_capture_module_ = FakeAudioCaptureModule::Create();
-  if (fake_audio_capture_module_ == NULL) {
-    return false;
-  }
-
-  peer_connection_factory_ = webrtc::CreatePeerConnectionFactory(
-    rtc::Thread::Current(), rtc::Thread::Current(),
-    fake_audio_capture_module_, NULL, NULL);
-
-  if (!peer_connection_factory_.get()) {
-    return false;
-  }
-
-  return true;
-}
+//
+// Send data to peer
+//
 
 bool Control::Send(const std::string& message, const std::string *peer_id) {
   bool ret = true;
@@ -104,6 +78,10 @@ bool Control::Send(const std::string& message, const std::string *peer_id) {
 }
 
 
+//
+// Send command to other peer by signal server
+//
+
 bool Control::SendCommand(const std::string& command, const Json::Value& data, const std::string& peer_sid) {
   Json::Value jmessage;
 
@@ -117,15 +95,27 @@ bool Control::SendCommand(const std::string& command, const Json::Value& data, c
   return signal_->SendCommand(jmessage);
 }
 
+
+//
+// Signal connected
+//
+
 void Control::OnConnected(const std::string peer_id) {
   SignalOnConnected_(channel_name_, peer_id);
 }
+
+//
+// Signal receiving data
+//
 
 void Control::OnData(const std::string& peer_id, const char* buffer, const size_t size) {
   SignalOnData_(channel_name_, peer_id, buffer, size);
 }
 
 
+//
+// Signin to signal server
+//
 
 void Control::SignIn() {
   if (signal_.get() == NULL) {
@@ -137,9 +127,19 @@ void Control::SignIn() {
   return;
 }
 
+//
+// Connect to channel when signed in
+//
+
 void Control::OnSignedIn(const std::string& sid) {
+  session_id_ = sid;
   signal_->Connect(channel_name_);
 }
+
+
+//
+// CreateOffer command has been received by signal server
+//
 
 void Control::OnOfferPeer(const std::string& peer_sid) {
 
@@ -149,11 +149,10 @@ void Control::OnOfferPeer(const std::string& peer_sid) {
   peer->CreateOffer(NULL);
 }
 
-void Control::OnAnswerPeer(const std::string& peer_sid) {
-  if (peers_.find(peer_sid) == peers_.end()) return;
 
-  peers_[peer_sid]->CreateAnswer(NULL);
-}
+//
+// Dispatch command from signal server
+//
 
 void Control::OnCommandReceived(const std::string& message) {
 
@@ -188,9 +187,35 @@ void Control::OnCommandReceived(const std::string& message) {
   else if (command == "ice_candidate") {
     AddIceCandidate(peer_sid, data);
   }
-
 }
 
+//
+// Create peer creation factory
+//
+
+bool Control::CreatePeerFactory(
+  const webrtc::MediaConstraintsInterface* constraints) {
+
+  fake_audio_capture_module_ = FakeAudioCaptureModule::Create();
+  if (fake_audio_capture_module_ == NULL) {
+    return false;
+  }
+
+  peer_connection_factory_ = webrtc::CreatePeerConnectionFactory(
+    rtc::Thread::Current(), rtc::Thread::Current(),
+    fake_audio_capture_module_, NULL, NULL);
+
+  if (!peer_connection_factory_.get()) {
+    return false;
+  }
+
+  return true;
+}
+
+
+//
+// Add ice candidate to local peer from remote peer
+//
 
 void Control::AddIceCandidate(const std::string& peer_sid, const Json::Value& data) {
 
@@ -206,6 +231,11 @@ void Control::AddIceCandidate(const std::string& peer_sid, const Json::Value& da
   peers_[peer_sid]->AddIceCandidate(sdp_mid, sdp_mline_index, candidate);
 }
 
+
+//
+// 'offersdp' command
+//
+
 void Control::ReceiveOfferSdp(const std::string& peer_sid, const Json::Value& data) {
   std::string sdp;
 
@@ -217,6 +247,11 @@ void Control::ReceiveOfferSdp(const std::string& peer_sid, const Json::Value& da
   peer->ReceiveOfferSdp(sdp);
 }
 
+
+//
+// 'answersdp' command
+//
+
 void Control::ReceiveAnswerSdp(const std::string& peer_sid, const Json::Value& data) {
   std::string sdp;
 
@@ -225,40 +260,6 @@ void Control::ReceiveAnswerSdp(const std::string& peer_sid, const Json::Value& d
 
   peers_[peer_sid]->ReceiveAnswerSdp(sdp);
 }
-
-void Control::TestWaitForConnection(uint32_t kMaxWait) {
-  // Test code
-  WAIT_(CheckForConnection(), kMaxWait);
-  LOG(LS_INFO) << "PeerConnectionTestWrapper " << device_id_
-    << ": Connected.";
-}
-
-
-
-void Control::TestWaitForChannelOpen(uint32_t kMaxWait) {
-  // Test code
-  WAIT_(local_data_channel_->IsOpen(), kMaxWait);
-  WAIT_(remote_data_channel_->IsOpen(), kMaxWait);
-}
-
-void Control::TestWaitForMessage(const std::string& message, uint32_t kMaxWait) {
-//  WAIT_(message == remote_data_channel_->last_message(), kMaxWait);
-}
-
-void Control::TestWaitForClose(uint32_t kMaxWait) {
-  local_data_channel_->Close();
-  WAIT_(local_data_channel_->state() == webrtc::DataChannelInterface::DataState::kClosed, kMaxWait);
-}
-
-
-bool Control::CheckForConnection() {
-  return false;
-  //return (peer_connection_->ice_connection_state() ==
-  //        webrtc::PeerConnectionInterface::kIceConnectionConnected) ||
-  //       (peer_connection_->ice_connection_state() ==
-  //        webrtc::PeerConnectionInterface::kIceConnectionCompleted);
-}
-
 
 
 } // namespace tn
