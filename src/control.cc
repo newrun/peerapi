@@ -120,11 +120,11 @@ void Control::SignIn() {
   return;
 }
 
-void Control::OnSignedIn(std::string& full_id) {
+void Control::OnSignedIn(std::string& sid) {
   signal_->Connect(channel_name_);
 }
 
-void Control::OnConnectToPeer(std::string& full_id) {
+void Control::OnConnectToPeer(std::string& sid) {
   CreateOffer(NULL);
 }
 
@@ -153,7 +153,7 @@ void Control::OnPeerOpened(std::string& peer_id) {
 
 void Control::OnPeerMessage(const webrtc::DataBuffer& buffer) {
   std::string data;
-  SignalOnData_(buffer.data.data<char>(), buffer.data.size());
+  SignalOnData_(channel_name_, buffer.data.data<char>(), buffer.data.size());
 }
 
 bool Control::CreatePeerConnection(

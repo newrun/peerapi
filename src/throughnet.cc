@@ -9,34 +9,39 @@
 #include "signal.h"
 #include "dummysignal.h"
 
-Throughnet::Throughnet(const std::string channel)
-   : Throughnet(channel, "", nullptr){
+Throughnet::Throughnet()
+   : Throughnet("", nullptr){
 }
 
-Throughnet::Throughnet(const std::string channel, const std::string setting)
-   : Throughnet(channel, setting, nullptr) {
+Throughnet::Throughnet(const std::string setting)
+   : Throughnet(setting, nullptr) {
 }
 
-Throughnet::Throughnet(const std::string channel, const std::string setting, rtc::scoped_refptr<Signal> signal)
-    : channel_(channel)
+Throughnet::Throughnet(const std::string setting, rtc::scoped_refptr<Signal> signal)
+   : signal_(signal)
 {
-  rtc::scoped_refptr<Signal> localsignal = (signal != nullptr ? signal : new rtc::RefCountedObject<tn::Signal>());
-  control_ = new rtc::RefCountedObject<Control>(channel, localsignal);
-
-  control_->SignalOnConnected_.connect(this, &Throughnet::OnConnected);
-  control_->SignalOnData_.connect(this, &Throughnet::OnData);
+  if (signal == nullptr) signal_ = new rtc::RefCountedObject<tn::Signal>();
 }
 
 Throughnet::~Throughnet() {
 
 }
 
-void Throughnet::Start() {
+void Throughnet::Connect(const std::string channel) {
+
+  control_ = new rtc::RefCountedObject<Control>(channel, signal_);
 
   if (control_.get() == NULL) {
     LOG(LS_ERROR) << "Run failed, no control";
     return;
   }
+
+  //
+  // connect sigslot
+  //
+
+  control_->SignalOnConnected_.connect(this, &Throughnet::OnConnected);
+  control_->SignalOnData_.connect(this, &Throughnet::OnData);
 
   //
   // Initialize peer connection
@@ -56,6 +61,7 @@ void Throughnet::Start() {
   return;
 }
 
+
 bool Throughnet::Send(const char* message) {
   return Send(std::string(message));
 }
@@ -68,6 +74,18 @@ Throughnet& Throughnet::On(std::string msg_id, void(*handler) (Throughnet* this_
 
   if (msg_id == "connected") {
     events_[msg_id] = handler;
+  }
+  else if (msg_id == "disconnected") {
+    events_[msg_id] = handler;
+  }
+  else if (msg_id == "signin") {
+    events_[msg_id] = handler;
+  }
+  else if (msg_id == "signout") {
+    events_[msg_id] = handler;
+  }
+  else if (msg_id == "error") {
+
   }
 
   return *this;
@@ -89,10 +107,10 @@ void Throughnet::OnConnected(std::string& peer_sid) {
   events_["connected"](this, peer_sid, data);
 }
 
-void Throughnet::OnData(const char* buffer, const size_t size) {
-  if (data_handler_.find(channel_) == data_handler_.end()) return;
+void Throughnet::OnData(const std::string& channel_name, const char* buffer, const size_t size) {
+  if (data_handler_.find(channel_name) == data_handler_.end()) return;
 
   Buffer buf(buffer, size);
-  data_handler_[channel_](this, "", buf);
+  data_handler_[channel_name](this, "", buf);
 }
 

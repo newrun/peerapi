@@ -173,8 +173,8 @@ int main(int argc, char *argv[]) {
   rtc::scoped_refptr<DummySignal> signal1(new rtc::RefCountedObject<DummySignal>());
   rtc::scoped_refptr<DummySignal> signal2(new rtc::RefCountedObject<DummySignal>());
 
-  Throughnet tn1("mychannel", "", signal1);
-  Throughnet tn2("mychannel", "", signal2);
+  Throughnet tn1("", signal1);
+  Throughnet tn2("", signal2);
 
   tn2.On("connected", function_tn(string peer_sid, Throughnet::Data& data) {
     std::cout << "Peer " << peer_sid << " has been connected." << std::endl;
@@ -185,14 +185,11 @@ int main(int argc, char *argv[]) {
     std::cout << "Message " << std::string(data.buf_, data.size_) << " has been received." << std::endl;
   });
 
-  tn1.Start();
-  tn2.Start();
+  tn1.Connect("mychannel");
+  tn2.Connect("mychannel");
+
 
   rtc::ThreadManager::Instance()->CurrentThread()->Run();
-
-
-//  ControlTest test;
-//  test.Start();
 
   return 0;
 }

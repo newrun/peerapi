@@ -16,8 +16,8 @@ namespace tn {
 std::map<std::string, DummySignal::PeerSignal> DummySignal::connections_;
 
 void DummySignal::SignIn(std::string& url, std::string& id, std::string& password) {
-  full_id_ = rtc::CreateRandomUuid();
-  SignalOnSignedIn_(full_id_);
+  session_id_ = rtc::CreateRandomUuid();
+  SignalOnSignedIn_(session_id_);
 }
 
 void DummySignal::Connect(std::string& channel) {
@@ -38,7 +38,7 @@ void DummySignal::Connect(std::string& channel) {
   
     channel_ = channel;
     connections_[channel].push_back(this);
-    connections_[channel][0]->SignalOnConnectToPeer_(connections_[channel][1]->full_id());
+    connections_[channel][0]->SignalOnConnectToPeer_(connections_[channel][1]->session_id());
   }
 
 

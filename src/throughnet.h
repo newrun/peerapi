@@ -37,12 +37,12 @@ public:
   typedef std::function<void(Throughnet*, std::string peer_sid, Buffer&)> DataHandler;
   typedef std::map<std::string, EventHandler> Events;
 
-  explicit Throughnet(const std::string channel);
-  explicit Throughnet(const std::string channel, const std::string setting);
-  explicit Throughnet(const std::string channel, const std::string setting, rtc::scoped_refptr<Signal> signal);
+  explicit Throughnet();
+  explicit Throughnet(const std::string setting);
+  explicit Throughnet(const std::string setting, rtc::scoped_refptr<Signal> signal);
   ~Throughnet();
 
-  void Start();
+  void Connect(const std::string channel);
   bool Send(const char* message);
   bool Send(const std::string& message);
 
@@ -52,13 +52,14 @@ public:
 
 protected:
   void OnConnected(std::string& peer_sid);
-  void OnData(const char* buffer, const size_t size);
+  void OnData(const std::string& channel, const char* buffer, const size_t size);
 
   Events events_;
   std::map<std::string, DataHandler> data_handler_;
 
   std::string channel_;
   rtc::scoped_refptr<Control> control_;
+  rtc::scoped_refptr<Signal> signal_;
 };
 
 #endif // __THROUGHNET_THROUGHENT_H__

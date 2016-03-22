@@ -50,10 +50,10 @@ public:
   bool Send(const std::string& message);
 
   void SignIn();
-  void OnSignedIn(std::string& full_id);
-  void OnConnectToPeer(std::string& full_id);
+  void OnSignedIn(std::string& sid);
+  void OnConnectToPeer(std::string& sid);
   void OnCommandReceived(std::string& command, std::string& message);
-  void OnPeerOpened(std::string& peer_id);
+  void OnPeerOpened(std::string& peer_sid);
   void OnPeerMessage(const webrtc::DataBuffer& buffer);
 
 
@@ -100,7 +100,7 @@ public:
 
   // sigslots
   sigslot::signal1<std::string&> SignalOnConnected_;
-  sigslot::signal2<const char*, const size_t> SignalOnData_;
+  sigslot::signal3<const std::string&, const char*, const size_t> SignalOnData_;
 //  sigslot::signal1<std::string*> SignalOnIceCandidateCreated;
 //  sigslot::signal3<const std::string&,
 //                   int,

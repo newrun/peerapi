@@ -23,7 +23,7 @@ public:
   virtual void Disconnect(std::string& channel) = 0;
   virtual void SendCommand(std::string command, std::string& message) = 0;
 
-  std::string full_id() { return full_id_; }
+  std::string session_id() { return session_id_; }
   std::string channel() { return channel_; }
  
   // sigslots
@@ -33,7 +33,7 @@ public:
 
 
 protected:
-  std::string full_id_;
+  std::string session_id_;
   std::string channel_;
 };
 
