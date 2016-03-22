@@ -58,16 +58,16 @@ void Control::DeleteControl() {
 
 
 //
-// Send data to peer
+// Send data to peer or emit data to channel
 //
 
-bool Control::Send(const std::string& message, const std::string *peer_id) {
+bool Control::Send(const char* buffer, const size_t size, const std::string *peer_id) {
   bool ret = true;
 
   typedef std::map<std::string, rtc::scoped_refptr<PeerControl>>::iterator it_type;
   for (it_type iterator = peers_.begin(); iterator != peers_.end(); iterator++) {
     if (peer_id == nullptr || iterator->second->remote_session_id() == *peer_id) {
-      if (!iterator->second->Send(message)) {
+      if (!iterator->second->Send(buffer, size)) {
         ret = false;
       }
     }

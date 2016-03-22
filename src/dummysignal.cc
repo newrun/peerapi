@@ -49,8 +49,6 @@ void DummySignal::Connect(std::string& channel) {
 
     SendCommand(jmessage);
   }
-
-
 }
 
 void DummySignal::Disconnect(std::string& channel) {

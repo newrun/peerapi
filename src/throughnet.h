@@ -43,8 +43,12 @@ public:
   ~Throughnet();
 
   void Connect(const std::string channel);
-  bool Send(const std::string& destination, const char* message);
-  bool Send(const std::string& destination, const std::string& message);
+  bool Send(const std::string& peer_sid, const char* buffer, const size_t size);
+  bool Send(const std::string& peer_sid, const char* buffer);
+  bool Send(const std::string& peer_sid, const std::string& message);
+  bool Emit(const std::string& channel, const char* buffer, const size_t size);
+  bool Emit(const std::string& channel, const char* buffer);
+  bool Emit(const std::string& channel, const std::string& message);
 
   Throughnet& On(std::string msg_id, void(*handler) (Throughnet* this_, std::string peer_sid, Data& data));
   Throughnet& On(std::string msg_id, void(*handler) (Throughnet* this_, std::string peer_sid, Buffer& data));

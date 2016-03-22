@@ -37,10 +37,10 @@ public:
   void DeleteControl();
   
   //
-  // Negotiation and send data
+  // Negotiation and send/emit data
   //
 
-  bool Send(const std::string& message, const std::string *peer_id = nullptr);
+  bool Send(const char* buffer, const size_t size, const std::string *peer_id = nullptr);
 
   void SignIn();
   void OnSignedIn(const std::string& sid);

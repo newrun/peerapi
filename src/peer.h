@@ -50,7 +50,7 @@ public:
   const std::string& local_session_id() const { return local_session_id_; }
   const std::string& remote_session_id() const { return remote_session_id_; }
 
-  bool Send(const std::string& message);
+  bool Send(const char* buffer, const size_t size);
 
 
   //
@@ -134,7 +134,7 @@ public:
   void OnStateChange() override;
   void OnMessage(const webrtc::DataBuffer& buffer) override;
 
-  bool Send(const std::string& message);
+  bool Send(const char* buffer, const size_t size);
   void Close();
   bool IsOpen() const;
   const webrtc::DataChannelInterface::DataState state() const;

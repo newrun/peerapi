@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
 
   tn2.On("connected", function_tn(string peer_sid, Throughnet::Data& data) {
     std::cout << "Peer " << peer_sid << " has been connected." << std::endl;
-    this_->Send("mychannel", "hello");
+    this_->Emit("mychannel", "hello");
   });
 
   tn1.On("mychannel", function_tn(string peer_sid, Throughnet::Buffer& data) {

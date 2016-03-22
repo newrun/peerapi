@@ -65,21 +65,41 @@ void Throughnet::Connect(const std::string channel) {
 
 
 //
-// Send message to destination peer
-// destination: channel name or peer session_id
+// Send message to destination peer session id
 //
 
-bool Throughnet::Send(const std::string& destination, const char* message) {
-  return Send(destination, std::string(message));
+bool Throughnet::Send(const std::string& peer_sid, const char* buffer, const size_t size) {
+  return control_->Send(buffer, size);
 }
 
-bool Throughnet::Send(const std::string& destination, const std::string& message) {
-  if (control_->channel_name() == destination) {
-    return control_->Send(message);
-  }
-
-  return false;
+bool Throughnet::Send(const std::string& peer_sid, const char* message) {
+  return Send(peer_sid, message, strlen(message));
 }
+
+bool Throughnet::Send(const std::string& peer_sid, const std::string& message) {
+  return Send(peer_sid, message.c_str(), message.size());
+}
+
+//
+// Emit message to all peer in the channel
+//
+
+bool Throughnet::Emit(const std::string& channel, const char* buffer, const size_t size) {
+  if (control_->channel_name() != channel)
+    return false;
+
+  return control_->Send(buffer, size);
+}
+
+bool Throughnet::Emit(const std::string& channel, const char* message) {
+  return Emit(channel, message, strlen(message));
+}
+
+bool Throughnet::Emit(const std::string& channel, const std::string& message) {
+  return Emit(channel, message.c_str(), message.size());
+}
+
+
 
 //
 // Register Event handler

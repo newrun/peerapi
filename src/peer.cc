@@ -46,8 +46,8 @@ PeerControl::~PeerControl() {
 }
 
 
-bool PeerControl::Send(const std::string& message) {
-  return local_data_channel_->Send(message);
+bool PeerControl::Send(const char* buffer, const size_t size) {
+  return local_data_channel_->Send(buffer, size);
 }
 
 
@@ -254,9 +254,10 @@ void PeerDataChannelObserver::OnMessage(const webrtc::DataBuffer& buffer) {
   ++received_message_count_;
 }
 
-bool PeerDataChannelObserver::Send(const std::string& message) {
-  webrtc::DataBuffer buffer(message);
-  return channel_->Send(buffer);
+bool PeerDataChannelObserver::Send(const char* buffer, const size_t size) {
+  rtc::Buffer rtcbuffer(buffer, size);
+  webrtc::DataBuffer databuffer(rtcbuffer, true);
+  return channel_->Send(databuffer);
 }
 
 void PeerDataChannelObserver::Close() {
