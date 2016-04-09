@@ -116,11 +116,18 @@ set(SOURCES
 # Target settings
 # ============================================================================
 
-set(_TN_INCLUDE_DIR_INTERNAL
+set(_TN_INTERNAL_INCLUDE_DIR
   "${PROJECT_BINARY_DIR}"
   "${PROJECT_SOURCE_DIR}/src"
   "${WEBRTC_INCLUDE_DIR}"
+  "${SIOCLIENT_INCLUDE_DIR}"
   )
+
+set(_TN_INTERNAL_LIBRARIES
+  "${WEBRTC_LIBRARIES}"
+  "${Boost_LIBRARIES}"
+  sioclient_tls
+)
 
 set(TN_INCLUDE_DIRECTORY
   "${PROJECT_BINARY_DIR}"
@@ -135,7 +142,7 @@ if (TN_WITH_STATIC)
     ${SOURCES})
   list(APPEND TN_LIBRARIES throughnet)
   target_compile_definitions(throughnet PRIVATE ${WEBRTC_DEFINES})
-  target_include_directories(throughnet PRIVATE ${_TN_INCLUDE_DIR_INTERNAL} )
+  target_include_directories(throughnet PRIVATE ${_TN_INTERNAL_INCLUDE_DIR} )
 
   if (WIN32)
     # Windows uses the same .lib ending for static libraries and shared
@@ -152,14 +159,14 @@ if (TN_WITH_SHARED)
     ${SOURCES})
   list(APPEND TN_LIBRARIES throughnet_shared)
   target_compile_definitions(throughnet_shared PRIVATE ${WEBRTC_DEFINES})
-  target_include_directories(throughnet_shared PRIVATE ${_TN_INCLUDE_DIR_INTERNAL} )
+  target_include_directories(throughnet_shared PRIVATE ${_TN_INTERNAL_INCLUDE_DIR} )
 
   set_target_properties(throughnet_shared
     PROPERTIES
     OUTPUT_NAME throughnet
     )
 
-  target_link_libraries(throughnet_shared ${WEBRTC_LIBRARIES})
+  target_link_libraries(throughnet_shared ${_TN_INTERNAL_LIBRARIES})
 
   if (WIN32)
 #  # Compile as DLL (export function declarations)
@@ -204,7 +211,7 @@ add_dependencies(test_main throughnet)
 add_dependencies(test_main throughnet_shared)
 
 target_compile_definitions(test_main PRIVATE ${WEBRTC_DEFINES})
-target_include_directories(test_main PRIVATE ${_TN_INCLUDE_DIR_INTERNAL})
-target_link_libraries(test_main throughnet ${WEBRTC_LIBRARIES})
+target_include_directories(test_main PRIVATE ${_TN_INTERNAL_INCLUDE_DIR})
+target_link_libraries(test_main throughnet ${_TN_INTERNAL_LIBRARIES})
 
 add_test(test_main test_main)
