@@ -13,6 +13,8 @@
 # WebRTC root and default library directory
 # ============================================================================
 
+message("Check WebRTC library")
+
 if (DEFINED ENV{WEBRTC_ROOT_DIR})
   set(WEBRTC_ROOT_DIR $ENV{WEBRTC_ROOT_DIR})
   message("WEBRTC_ROOT_DIR = '${WEBRTC_ROOT_DIR}' from environment variable")
@@ -38,6 +40,7 @@ else()
   set(WEBRTC_LIBRARY_DIR_DEBUG ${WEBRTC_ROOT_DIR}/out/Debug)
 endif()
 
+
 # ============================================================================
 # Find WebRTC header directory
 # ============================================================================
@@ -49,6 +52,15 @@ find_path(WEBRTC_INCLUDE_DIR
   	${WEBRTC_ROOT_DIR}
   )
 
+list(APPEND WEBRTC_INCLUDE_DIR
+  "${WEBRTC_INCLUDE_DIR}"
+  "${WEBRTC_INCLUDE_DIR}/webrtc"
+  "${WEBRTC_INCLUDE_DIR}/third_party"
+  "${WEBRTC_INCLUDE_DIR}/third_party/webrtc"
+  "${WEBRTC_INCLUDE_DIR}/third_party/wtl/include"
+  "${WEBRTC_INCLUDE_DIR}/third_party/jsoncpp/overrides/include"
+  "${WEBRTC_INCLUDE_DIR}/third_party/jsoncpp/source/include"
+  )
 
 # ============================================================================
 # Find WebRTC libries
@@ -60,6 +72,8 @@ find_path(WEBRTC_INCLUDE_DIR
 set (WEBRTC_LIBRARIES)
 
 list(APPEND _WEBRTC_LIB_NAMES
+    "libyuv yuv"  # Find one of them
+
     "libjingle_peerconnection"
     "field_trial_default"
     "jsoncpp"
@@ -135,8 +149,6 @@ list(APPEND _WEBRTC_LIB_NAMES
     "video_render_module_internal_impl"
     "rtc_pc"
     "libsrtp"
-
-    "libyuv yuv"
   )
 
 if (MSVC)
@@ -369,12 +381,10 @@ endif()
 # ============================================================================
 
 if (WEBRTC_INCLUDE_DIR AND _WEBRTC_LIB_PATH)
+  message("Found WebRTC library successfully.")
   set(WEBRTC_FOUND 1)
 else()
   set(WEBRTC_FOUND 0)
-endif()
-
-if(NOT WEBRTC_FOUND)
   message(FATAL_ERROR "WebRTC file was not found.\n"
       "Please check 'WEBRTC_ROOT_DIR'.\n")
 endif()

@@ -42,6 +42,7 @@ message(STATUS "CMAKE_TOOLCHAIN_FILE='${CMAKE_TOOLCHAIN_FILE}'")
 # ============================================================================
 # Platform or compiler specific configurations
 # ============================================================================
+
 if (MSVC)
   # Use /MT or /MTd instead of /MD or /MDd
   foreach(flag_var
@@ -73,11 +74,14 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/")
 # WebRTC
 find_package(WebRTC)
 
-# zlib
-find_package(ZLIB)
+# Websocketpp for socket.io-client-cpp
+find_package(Websocketpp)
 
-# libwebsockets
-find_package(Libwebsockets)
+# rapidjson for socket.io-client-cpp
+find_package(RapidJson)
+
+# Socket.Io-client-cpp, socket.io-client-cpp requires boost library
+find_package(SioClient)
 
 add_definitions(${WEBRTC_DEFINES})
 
@@ -87,7 +91,6 @@ add_definitions(${WEBRTC_DEFINES})
 configure_file(
   "${PROJECT_SOURCE_DIR}/src/config.h.in"
   "${PROJECT_BINARY_DIR}/config.h")
-
 
 # ============================================================================
 # Headers and sources.
@@ -115,16 +118,15 @@ set(SOURCES
 # Target settings
 # ============================================================================
 
-include_directories(
+set(_TN_INCLUDE_DIR_INTERNAL
   "${PROJECT_BINARY_DIR}"
   "${PROJECT_SOURCE_DIR}/src"
   "${WEBRTC_INCLUDE_DIR}"
-  "${WEBRTC_INCLUDE_DIR}/webrtc"
-  "${WEBRTC_INCLUDE_DIR}/third_party"
-  "${WEBRTC_INCLUDE_DIR}/third_party/webrtc"
-  "${WEBRTC_INCLUDE_DIR}/third_party/wtl/include"
-  "${WEBRTC_INCLUDE_DIR}/third_party/jsoncpp/overrides/include"
-  "${WEBRTC_INCLUDE_DIR}/third_party/jsoncpp/source/include"
+  )
+
+set(TN_INCLUDE_DIRECTORY
+  "${PROJECT_BINARY_DIR}"
+  "${PROJECT_SOURCE_DIR}/src"
   )
 
 set(TN_LIBRARIES)
@@ -134,6 +136,7 @@ if (TN_WITH_STATIC)
     ${HEADERS}
     ${SOURCES})
   list(APPEND TN_LIBRARIES throughnet)
+  target_include_directories(throughnet PRIVATE ${_TN_INCLUDE_DIR_INTERNAL} )
 
   if (WIN32)
     # Windows uses the same .lib ending for static libraries and shared
@@ -149,6 +152,7 @@ if (TN_WITH_SHARED)
     ${HEADERS}
     ${SOURCES})
   list(APPEND TN_LIBRARIES throughnet_shared)
+  target_include_directories(throughnet_shared PRIVATE ${_TN_INCLUDE_DIR_INTERNAL} )
 
   set_target_properties(throughnet_shared
     PROPERTIES
@@ -175,10 +179,8 @@ endif()
 # Target dependencies
 # ============================================================================
 
-add_dependencies(websockets zlibstatic)
-add_dependencies(websockets zlib)
-add_dependencies(throughnet websockets)
-add_dependencies(throughnet_shared websockets)
+#add_dependencies(throughnet socketio_client_cpp)
+#add_dependencies(throughnet_shared socketio_client_cpp)
 
 # ============================================================================
 # Variables for parent project including throughnet using add_subdirectory()
@@ -199,6 +201,10 @@ endif()
 
 add_executable(test_main
   src/test/test_main.cc
+  )
+
+target_include_directories(test_main PRIVATE
+  ${_TN_INCLUDE_DIR_INTERNAL}
   )
 
 target_link_libraries(test_main
