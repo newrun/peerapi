@@ -179,8 +179,8 @@ endif()
 # Target dependencies
 # ============================================================================
 
-#add_dependencies(throughnet socketio_client_cpp)
-#add_dependencies(throughnet_shared socketio_client_cpp)
+add_dependencies(throughnet sioclient_tls)
+add_dependencies(throughnet_shared sioclient_tls)
 
 # ============================================================================
 # Variables for parent project including throughnet using add_subdirectory()
@@ -200,6 +200,8 @@ endif()
 # ============================================================================
 
 add_executable(test_main src/test/test_main.cc)
+add_dependencies(test_main throughnet)
+add_dependencies(test_main throughnet_shared)
 
 target_compile_definitions(test_main PRIVATE ${WEBRTC_DEFINES})
 target_include_directories(test_main PRIVATE ${_TN_INCLUDE_DIR_INTERNAL})
