@@ -83,8 +83,6 @@ find_package(RapidJson)
 # Socket.Io-client-cpp, socket.io-client-cpp requires boost library
 find_package(SioClient)
 
-add_definitions(${WEBRTC_DEFINES})
-
 # ============================================================================
 # Generate the config.h that includes all the compilation settings.
 # ============================================================================
@@ -136,6 +134,7 @@ if (TN_WITH_STATIC)
     ${HEADERS}
     ${SOURCES})
   list(APPEND TN_LIBRARIES throughnet)
+  target_compile_definitions(throughnet PRIVATE ${WEBRTC_DEFINES})
   target_include_directories(throughnet PRIVATE ${_TN_INCLUDE_DIR_INTERNAL} )
 
   if (WIN32)
@@ -152,6 +151,7 @@ if (TN_WITH_SHARED)
     ${HEADERS}
     ${SOURCES})
   list(APPEND TN_LIBRARIES throughnet_shared)
+  target_compile_definitions(throughnet_shared PRIVATE ${WEBRTC_DEFINES})
   target_include_directories(throughnet_shared PRIVATE ${_TN_INCLUDE_DIR_INTERNAL} )
 
   set_target_properties(throughnet_shared
@@ -162,10 +162,10 @@ if (TN_WITH_SHARED)
   target_link_libraries(throughnet_shared ${WEBRTC_LIBRARIES})
 
   if (WIN32)
-  # Compile as DLL (export function declarations)
-    set_property(
-      TARGET throughnet_shared
-      PROPERTY COMPILE_DEFINITIONS)
+#  # Compile as DLL (export function declarations)
+#    set_property(
+#      TARGET throughnet_shared
+#      PROPERTY COMPILE_DEFINITIONS)
   endif()
 
   if (APPLE)
@@ -199,17 +199,10 @@ endif()
 # Test example
 # ============================================================================
 
-add_executable(test_main
-  src/test/test_main.cc
-  )
+add_executable(test_main src/test/test_main.cc)
 
-target_include_directories(test_main PRIVATE
-  ${_TN_INCLUDE_DIR_INTERNAL}
-  )
-
-target_link_libraries(test_main
-  throughnet
-  ${WEBRTC_LIBRARIES}
-  )
+target_compile_definitions(test_main PRIVATE ${WEBRTC_DEFINES})
+target_include_directories(test_main PRIVATE ${_TN_INCLUDE_DIR_INTERNAL})
+target_link_libraries(test_main throughnet ${WEBRTC_LIBRARIES})
 
 add_test(test_main test_main)
