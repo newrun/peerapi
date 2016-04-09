@@ -13,6 +13,37 @@
 #define INTIALIZER(__TYPE__) (__TYPE__)
 #endif
 #include <websocketpp/client.hpp>
+
+//
+// Throughnet patch to support BoringSSL instead of OpenSSL
+//
+
+#if defined(WIN32) || defined(_WIN32)
+// Undefine the macros which conflict with OpenSSL and define replacements. See
+// http://msdn.microsoft.com/en-us/library/windows/desktop/aa378145(v=vs.85).aspx
+#undef X509_CERT_PAIR
+#undef X509_EXTENSIONS
+#undef X509_NAME
+#define WINCRYPT_X509_CERT_PAIR ((LPCSTR) 53)
+#define WINCRYPT_X509_EXTENSIONS ((LPCSTR) 5)
+#define WINCRYPT_X509_NAME ((LPCSTR) 7)
+#endif // WIN32 || _WIN32
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+#if !defined(SSL_R_SHORT_READ)
+# define SSL_R_SHORT_READ    SSL_R_UNEXPECTED_RECORD
+#endif // !defined(SSL_R_SHORT_READ)
+  inline void CONF_modules_unload(int p) {}
+#ifdef __cplusplus
+}
+#endif
+
+//
+// End of throughnet patch
+//
+
 #if _DEBUG || DEBUG
 #if SIO_TLS
 #include <websocketpp/config/debug_asio.hpp>
