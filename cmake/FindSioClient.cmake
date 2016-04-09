@@ -98,9 +98,7 @@ else()
 endif()
 
 # Enable TLS
-target_compile_definitions(sioclient_tls PRIVATE
- -DSIO_TLS
- )
+target_compile_definitions(sioclient_tls PRIVATE -DSIO_TLS)
 
 
 # ============================================================================
