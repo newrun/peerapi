@@ -19,7 +19,20 @@ Throughnet::Throughnet(const std::string setting)
 Throughnet::Throughnet(const std::string setting, rtc::scoped_refptr<Signal> signal)
    : signal_(signal)
 {
-  if (signal == nullptr) signal_ = new rtc::RefCountedObject<tn::Signal>();
+  if (!setting.empty()) {
+    ParseSetting(setting);
+  }
+
+  if (signal == nullptr) {
+    signal_ = new rtc::RefCountedObject<tn::Signal>();
+
+    if (signal_) {
+      signal_->SetConfig(setting_.signal_url_,
+                         setting_.signal_id_,
+                         setting_.signal_password_);
+    }
+  }
+
 }
 
 Throughnet::~Throughnet() {
@@ -163,3 +176,28 @@ void Throughnet::OnData(const std::string& channel, const std::string& peer_id, 
   data_handler_[channel](this, peer_id, buf);
 }
 
+bool Throughnet::ParseSetting(const std::string& setting) {
+  Json::Reader reader;
+  Json::Value jsetting;
+
+  std::string value;
+
+  if (!reader.parse(setting, jsetting)) {
+    LOG(WARNING) << "Invalid setting: " << setting;
+    return false;
+  }
+
+  if (rtc::GetStringFromJsonObject(jsetting, "url", &value)) {
+    setting_.signal_url_ = value;
+  }
+
+  if (rtc::GetStringFromJsonObject(jsetting, "user_id", &value)) {
+    setting_.signal_id_ = value;
+  }
+
+  if (rtc::GetStringFromJsonObject(jsetting, "user_password", &value)) {
+    setting_.signal_password_ = value;
+  }
+
+  return true;
+}

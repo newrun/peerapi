@@ -24,6 +24,15 @@ using tn::Signal;
 class Throughnet
     : public sigslot::has_slots<> {
 public:
+
+  class Setting {
+  public:
+    Setting():signal_url_(""), signal_id_(""), signal_password_("") {};
+    std::string signal_url_;
+    std::string signal_id_;
+    std::string signal_password_;
+  };
+
   class Buffer {  
   public:
     Buffer(): buf_(nullptr), size_(0) {};
@@ -57,6 +66,9 @@ protected:
   void OnConnected(const std::string& channel, const std::string& peer_sid);
   void OnData(const std::string& channel, const std::string& peer_id, const char* buffer, const size_t size);
 
+  bool ParseSetting(const std::string& setting);
+
+  Setting setting_;
   Events event_handler_;
   std::map<std::string, DataHandler> data_handler_;
 

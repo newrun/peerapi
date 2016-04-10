@@ -63,6 +63,7 @@ public:
 
   const std::string& channel_name() { return channel_name_; }
 
+
 protected:
   bool CreatePeerFactory(const webrtc::MediaConstraintsInterface* constraints);
   void CreateOffer(const Json::Value& data);
@@ -80,6 +81,9 @@ protected:
 
   rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
       peer_connection_factory_;
+
+private:
+
 };
 
 } // namespace tn

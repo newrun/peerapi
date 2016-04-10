@@ -16,7 +16,7 @@ namespace tn {
 
 std::map<std::string, DummySignal::PeerSignal> DummySignal::connections_;
 
-void DummySignal::SignIn(std::string& url, std::string& id, std::string& password) {
+void DummySignal::SignIn() {
   session_id_ = rtc::CreateRandomUuid();
   SignalOnSignedIn_(session_id_);
 }

@@ -13,13 +13,15 @@
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/json.h"
 
+#include "sio_client.h"
+
 
 namespace tn {
 
 class SignalInterface
     : public rtc::RefCountInterface {
 public:
-  virtual void SignIn(std::string& url, std::string& id, std::string& password) = 0;
+  virtual void SignIn() = 0;
   virtual void Connect(std::string& channel) = 0;
   virtual void Disconnect(std::string& channel) = 0;
   virtual bool SendCommand(const Json::Value& jmessage) = 0;
@@ -40,13 +42,28 @@ protected:
 class Signal
     : public SignalInterface {
 public:
-  virtual void SignIn(std::string& url, std::string& id, std::string& password) {};
+  Signal::Signal();
+  virtual void SignIn();
   virtual void Connect(std::string& channel) {};
   virtual void Disconnect(std::string& channel) {};
   virtual bool SendCommand(const Json::Value& jmessage) { return false; };
 
-private:
+  void SetConfig(const std::string& url,
+                 const std::string& user_id,
+                 const std::string& user_password);
 
+protected:
+
+  void on_connected();
+  void on_close(sio::client::close_reason const& reason);
+  void on_fail();
+
+private:
+  sio::client sio_;
+
+  std::string url_;
+  std::string user_id_;
+  std::string user_password_;
 }; // class Signal
 
 

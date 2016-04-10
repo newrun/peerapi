@@ -122,7 +122,7 @@ void Control::SignIn() {
     return;
   }
 
-  signal_->SignIn(std::string(""), std::string(""), std::string(""));
+  signal_->SignIn();
   return;
 }
 

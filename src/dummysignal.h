@@ -18,7 +18,7 @@ class DummySignal
   : public Signal {
 public:
   typedef std::vector<DummySignal*> PeerSignal;
-  virtual void SignIn(std::string& url, std::string& id, std::string& password);
+  virtual void SignIn();
   virtual void Connect(std::string& channel);
   virtual void Disconnect(std::string& channel);
   virtual bool SendCommand(const Json::Value& jmessage);
