@@ -208,7 +208,6 @@ endif()
 
 add_executable(test_main src/test/test_main.cc)
 add_dependencies(test_main throughnet)
-add_dependencies(test_main throughnet_shared)
 
 target_compile_definitions(test_main PRIVATE ${WEBRTC_DEFINES})
 target_include_directories(test_main PRIVATE ${_TN_INTERNAL_INCLUDE_DIR})
