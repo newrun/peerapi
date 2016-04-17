@@ -4,8 +4,6 @@
  *  Ryan Lee (ryan.lee at throughnet.com)
  */
 
-//#include "config.h"
-
 #include <map>
 #include "signalconnection.h"
 #include "webrtc/base/logging.h"

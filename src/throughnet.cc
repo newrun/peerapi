@@ -4,7 +4,6 @@
  *  Ryan Lee (ryan.lee at throughnet.com)
  */
  
-#include "config.h"
 #include "throughnet.h"
 
 

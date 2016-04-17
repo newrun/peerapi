@@ -4,8 +4,6 @@
  *  Ryan Lee (ryan.lee at throughnet.com)
  */
 
-#include "config.h"
-
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/json.h"

@@ -81,18 +81,11 @@ find_package(Websocketpp)
 find_package(Asio)
 
 
-# ============================================================================
-# Generate the config.h that includes all the compilation settings.
-# ============================================================================
-configure_file(
-  "${PROJECT_SOURCE_DIR}/src/config.h.in"
-  "${PROJECT_BINARY_DIR}/config.h")
 
 # ============================================================================
 # Headers and sources.
 # ============================================================================
 set(HEADERS
-  "${PROJECT_BINARY_DIR}/config.h"
   "src/throughnet.h"
   "src/control.h"
   "src/peer.h"

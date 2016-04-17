@@ -7,7 +7,6 @@
 #ifndef __THROUGHNET_THROUGHENT_H__
 #define __THROUGHNET_THROUGHENT_H__
 
-#include "config.h"
 #include <map>
 #include <functional>
 
