@@ -11,7 +11,7 @@
 #include "fakeaudiocapturemodule.h"
 
 #include "peer.h"
-#include "signal.h"
+#include "signalconnection.h"
 
 
 namespace tn {

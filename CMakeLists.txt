@@ -74,14 +74,12 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/")
 # WebRTC
 find_package(WebRTC)
 
-# Websocketpp for socket.io-client-cpp
+# Websocketpp
 find_package(Websocketpp)
 
-# rapidjson for socket.io-client-cpp
-find_package(RapidJson)
+# standalone asio for websocketpp
+find_package(Asio)
 
-# Socket.Io-client-cpp, socket.io-client-cpp requires boost library
-find_package(SioClient)
 
 # ============================================================================
 # Generate the config.h that includes all the compilation settings.
@@ -98,7 +96,7 @@ set(HEADERS
   "src/throughnet.h"
   "src/control.h"
   "src/peer.h"
-  "src/signal.h"
+  "src/signalconnection.h"
   "src/dummysignal.h"
   "src/fakeaudiocapturemodule.h"
   )
@@ -107,7 +105,7 @@ set(SOURCES
   "src/throughnet.cc"
   "src/control.cc"
   "src/peer.cc"
-  "src/signal.cc"
+  "src/signalconnection.cc"
   "src/dummysignal.cc"
   "src/fakeaudiocapturemodule.cc"
   )
@@ -117,16 +115,16 @@ set(SOURCES
 # ============================================================================
 
 set(_TN_INTERNAL_INCLUDE_DIR
+  "${WEBRTC_INCLUDE_DIR}"
+  "${ASIO_INCLUDE_DIR}"
+  "${WEBSOCKETPP_INCLUDE_DIIR}"
+  "${WEBRTC_BORING_SSL_INCLUDE}"
   "${PROJECT_BINARY_DIR}"
   "${PROJECT_SOURCE_DIR}/src"
-  "${WEBRTC_INCLUDE_DIR}"
-  "${SIOCLIENT_INCLUDE_DIR}"
   )
 
 set(_TN_INTERNAL_LIBRARIES
   "${WEBRTC_LIBRARIES}"
-  "${Boost_LIBRARIES}"
-  sioclient_tls
 )
 
 set(TN_INCLUDE_DIRECTORY
@@ -141,7 +139,7 @@ if (TN_WITH_STATIC)
     ${HEADERS}
     ${SOURCES})
   list(APPEND TN_LIBRARIES throughnet)
-  target_compile_definitions(throughnet PRIVATE ${WEBRTC_DEFINES})
+  target_compile_definitions(throughnet PRIVATE ${WEBRTC_DEFINES} ${WEBSOCKETPP_DEFINES})
   target_include_directories(throughnet PRIVATE ${_TN_INTERNAL_INCLUDE_DIR} )
 
   if (WIN32)
@@ -158,7 +156,7 @@ if (TN_WITH_SHARED)
     ${HEADERS}
     ${SOURCES})
   list(APPEND TN_LIBRARIES throughnet_shared)
-  target_compile_definitions(throughnet_shared PRIVATE ${WEBRTC_DEFINES})
+  target_compile_definitions(throughnet_shared PRIVATE ${WEBRTC_DEFINES} ${WEBSOCKETPP_DEFINES})
   target_include_directories(throughnet_shared PRIVATE ${_TN_INTERNAL_INCLUDE_DIR} )
 
   set_target_properties(throughnet_shared
@@ -186,8 +184,6 @@ endif()
 # Target dependencies
 # ============================================================================
 
-add_dependencies(throughnet sioclient_tls)
-add_dependencies(throughnet_shared sioclient_tls)
 
 # ============================================================================
 # Variables for parent project including throughnet using add_subdirectory()
@@ -209,7 +205,7 @@ endif()
 add_executable(test_main src/test/test_main.cc)
 add_dependencies(test_main throughnet)
 
-target_compile_definitions(test_main PRIVATE ${WEBRTC_DEFINES})
+target_compile_definitions(test_main PRIVATE ${WEBRTC_DEFINES} ${WEBSOCKETPP_DEFINES})
 target_include_directories(test_main PRIVATE ${_TN_INTERNAL_INCLUDE_DIR})
 target_link_libraries(test_main throughnet ${_TN_INTERNAL_LIBRARIES})
 

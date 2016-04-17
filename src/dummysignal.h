@@ -10,7 +10,7 @@
 #include <map>
 #include <vector>
 #include "webrtc/base/sigslot.h"
-#include "signal.h"
+#include "signalconnection.h"
 
 namespace tn {
 

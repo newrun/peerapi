@@ -8,12 +8,15 @@
 #define __THROUGHNET_SIGNAL_H__
 
 #include <string>
+
+#include "websocketpp/config/asio_client.hpp"
+#include "websocketpp/client.hpp"
+#include "websocketpp/common/thread.hpp"
+
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/refcount.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/json.h"
-
-#include "sio_client.h"
 
 
 namespace tn {
@@ -39,27 +42,46 @@ protected:
   std::string channel_;
 };
 
+
 class Signal
-    : public SignalInterface {
+  : public SignalInterface {
 public:
+  typedef websocketpp::config::asio_tls_client::message_type::ptr message_ptr;
+  typedef websocketpp::lib::shared_ptr<asio::ssl::context> context_ptr;
+  typedef websocketpp::client<websocketpp::config::asio_tls_client> client;
+  typedef websocketpp::lib::lock_guard<websocketpp::lib::mutex> scoped_lock;
+
   Signal::Signal();
+
   virtual void SignIn();
   virtual void Connect(std::string& channel) {};
   virtual void Disconnect(std::string& channel) {};
-  virtual bool SendCommand(const Json::Value& jmessage) { return false; };
+  
+  virtual bool SendCommand(const Json::Value& data);
+  virtual void SendCommand(const Json::Value& data,
+                           const std::string sio_eventname,
+                           const std::string sio_namespace);
 
   void SetConfig(const std::string& url,
                  const std::string& user_id,
                  const std::string& user_password);
 
 protected:
-
-  void on_connected();
-  void on_close(sio::client::close_reason const& reason);
-  void on_fail();
+  void on_open(websocketpp::connection_hdl);
+  void on_close(websocketpp::connection_hdl);
+  void on_fail(websocketpp::connection_hdl);
+  void on_message(websocketpp::connection_hdl hdl, message_ptr);
+  context_ptr on_tls_init(websocketpp::connection_hdl);
+  void run();
+  void Signal::loop();
 
 private:
-  sio::client sio_;
+  client client_;
+  websocketpp::lib::thread thread_;
+  websocketpp::connection_hdl hdl_;
+  websocketpp::lib::mutex lock_;
+  bool open_;
+  bool done_;
 
   std::string url_;
   std::string user_id_;
