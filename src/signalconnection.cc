@@ -85,15 +85,27 @@ void Signal::SignIn() {
 }
 
 
-void Signal::SendCommand(const Json::Value& data, const std::string eventname, const std::string sio_namespace) {
-  return;
+void Signal::SendCommand(const std::string channel,
+                         const std::string eventname,
+                         const Json::Value& data) {
 
+  if (eventname.empty()) {
+    LOG(LS_WARNING) << "SendCommand with empty eventname";
+    return;
+  }
+
+  Json::Value message;
+  Json::FastWriter writer;
+  message["event_name"] = eventname;
+  message["data"] = data;
+  if (!channel.empty()) message["channel"] = channel;
+  client_.send(con_hdl_, writer.write(message), websocketpp::frame::opcode::text);
 }
 
-bool Signal::SendCommand(const Json::Value& data) {
-  return false;
+void Signal::SendGlobalCommand(const std::string eventname,
+                               const Json::Value& data) {
+  SendCommand("", eventname, data);
 }
-
 
 
 
@@ -161,6 +173,36 @@ asio::io_service& Signal::GetIoService()
 
 
 
+void Signal::SendSignInCommand() {
+  Json::Value data;
+
+  data["user_id"] = user_id_;
+  data["user_password"] = user_password_;
+
+  SendGlobalCommand("signin", data);
+}
+
+void Signal::OnSignInCommand(Json::Value& data) {
+  bool result;
+  if (!rtc::GetBoolFromJsonObject(data, "result", &result)) {
+    LOG(LS_WARNING) << "Unknown signin response";
+    return;
+  }
+
+  if (!result) {
+    LOG(LS_WARNING) << "Signin failed";
+    return;
+  }
+
+  std::string session_id;
+  if (!rtc::GetStringFromJsonObject(data, "session_id", &session_id)) {
+    LOG(LS_WARNING) << "Signin failed - no session_id";
+    return;
+  }
+
+  session_id_ = session_id;
+  SignalOnSignedIn_(session_id_);
+}
 
 
 void Signal::RunLoop()
@@ -255,6 +297,8 @@ void Signal::OnOpen(websocketpp::connection_hdl con)
   con_state_ = con_opened;
   con_hdl_ = con;
   reconn_made_ = 0;
+
+  SendSignInCommand();
 }
 
 
@@ -297,7 +341,27 @@ void Signal::OnClose(websocketpp::connection_hdl con)
 
 void Signal::OnMessage(websocketpp::connection_hdl con, client_type::message_ptr msg)
 {
-  // NOTHING
+  Json::Reader reader;
+  Json::Value jmessage;
+  Json::Value data;
+  std::string eventname;
+
+  if (!reader.parse(msg->get_payload(), jmessage)) {
+    LOG(WARNING) << "Received unknown message: " << msg->get_payload();
+    return;
+  }
+
+  if (!rtc::GetStringFromJsonObject(jmessage, "event_name", &eventname)) {
+    LOG(WARNING) << "Received unknown message - no eventname: " << msg->get_payload();
+    return;
+  }
+
+  rtc::GetValueFromJsonObject(jmessage, "data", &data);
+
+  if (eventname == "signin") {
+    OnSignInCommand(data);
+  }
+
 }
 
 
@@ -311,11 +375,11 @@ Signal::context_ptr Signal::OnTlsInit(websocketpp::connection_hdl conn)
   context_ptr ctx = context_ptr(new  asio::ssl::context(asio::ssl::context::tlsv1));
   websocketpp::lib::asio::error_code ec;
   ctx->set_options(asio::ssl::context::default_workarounds |
-    asio::ssl::context::no_sslv2 |
-    asio::ssl::context::single_dh_use, ec);
+                   asio::ssl::context::no_sslv2 |
+                   asio::ssl::context::single_dh_use, ec);
   if (ec)
   {
-//    cerr << "Init tls failed,reason:" << ec.message() << endl;
+    LOG(LS_ERROR) << "Init tls failed,reason:" << ec.message();
   }
 
   return ctx;

@@ -19,44 +19,6 @@ void DummySignal::SignIn() {
   SignalOnSignedIn_(session_id_);
 }
 
-void DummySignal::Connect(std::string& channel) {
-
-  // First connection
-  if (connections_.find(channel) == connections_.end()) {
-    channel_ = channel;
-    PeerSignal peer_signal;
-    peer_signal.push_back(this);
-    connections_.insert(std::pair<std::string, PeerSignal>(channel, peer_signal));
-  }
-  // Second connection
-  else {
-    if (connections_[channel].size() != 1) {
-      LOG(LS_ERROR) << "Support only two peer in the same channel.";
-      return;
-    }
-  
-    channel_ = channel;
-    connections_[channel].push_back(this);
-
-    Json::Value jmessage;
-    Json::Value data;
-    jmessage["command"] = "createoffer";
-    jmessage["peer_sid"] = connections_[channel][0]->session_id();
-    data["peer_sid"] = connections_[channel][1]->session_id();
-    jmessage["data"] = data;
-
-    SendCommand(jmessage);
-  }
-}
-
-void DummySignal::Disconnect(std::string& channel) {
-  if (connections_.find(channel) == connections_.end())
-    return;
-
-  connections_.erase(channel);
-}
-
-
 bool DummySignal::SendCommand(const Json::Value& jmessage) {
 
   Json::FastWriter writer;

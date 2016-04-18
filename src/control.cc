@@ -90,7 +90,8 @@ bool Control::SendCommand(const std::string& command, const Json::Value& data, c
     jmessage["peer_sid"] = peer_sid;
   }
 
-  return signal_->SendCommand(jmessage);
+  return false;
+//  return signal_->SendCommand(jmessage);
 }
 
 
@@ -131,7 +132,7 @@ void Control::SignIn() {
 
 void Control::OnSignedIn(const std::string& sid) {
   session_id_ = sid;
-  signal_->Connect(channel_name_);
+//  signal_->Connect();
 }
 
 

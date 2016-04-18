@@ -56,9 +56,11 @@ class SignalInterface
     : public rtc::RefCountInterface {
 public:
   virtual void SignIn() = 0;
-  virtual void Connect(std::string& channel) = 0;
-  virtual void Disconnect(std::string& channel) = 0;
-  virtual bool SendCommand(const Json::Value& jmessage) = 0;
+  virtual void SendCommand(const std::string channel,
+                           const std::string eventname,
+                           const Json::Value& data) = 0;
+  virtual void SendGlobalCommand(const std::string eventname,
+                           const Json::Value& data) = 0;
 
   std::string session_id() { return session_id_; }
   std::string channel() { return channel_; }
@@ -97,13 +99,12 @@ public:
 
   virtual void SignIn();
 
-  void Connect(std::string& channel) {};
-  void Disconnect(std::string& channel) {};
+  void SendCommand(const std::string channel,
+                   const std::string eventname,
+                   const Json::Value& data);
+  void SendGlobalCommand(const std::string eventname,
+                         const Json::Value& data);
 
-  bool SendCommand(const Json::Value& data);
-  void SendCommand(const Json::Value& data,
-                           const std::string sio_eventname,
-                           const std::string sio_namespace);
 
   void SetConfig(const std::string& url,
                  const std::string& user_id,
@@ -123,6 +124,9 @@ protected:
   asio::io_service& GetIoService();
 
 private:
+  void SendSignInCommand();
+  void OnSignInCommand(Json::Value& data);
+
   void RunLoop();
   void ConnectInternal();
   void CloseInternal(websocketpp::close::status::value const& code, std::string const& reason);
