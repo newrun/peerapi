@@ -44,8 +44,8 @@ public:
   bool Send(const char* buffer, const size_t size, const std::string *peer_id = nullptr);
 
   void SignIn();
-  void OnSignedIn(const std::string& sid);
-  void OnCommandReceived(const std::string& message);
+  void OnCommandReceived(const Json::Value& message);
+  void OnSignalCommandReceived(const Json::Value& message);
 
   //
   // PeerObserver implementation
@@ -69,6 +69,7 @@ public:
 
 
 protected:
+  void OnSignedIn(const Json::Value& data);
   bool CreatePeerFactory(const webrtc::MediaConstraintsInterface* constraints);
   void CreateOffer(const Json::Value& data);
   void AddIceCandidate(const std::string& peer_sid, const Json::Value& data);
@@ -87,6 +88,16 @@ protected:
       peer_connection_factory_;
 
 private:
+
+  enum {
+    MSG_COMMAND_RECEIVED
+  };
+
+  struct ControlMessageData : public rtc::MessageData {
+    explicit ControlMessageData(Json::Value data) : data_(data) {}
+    Json::Value data_;
+  };
+
   rtc::Thread* signaling_thread_;
 
 };

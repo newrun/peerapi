@@ -99,25 +99,26 @@ void Signal::LeaveChannel(const std::string channel) {
 
 
 void Signal::SendCommand(const std::string channel,
-                         const std::string eventname,
+                         const std::string commandname,
                          const Json::Value& data) {
 
-  if (eventname.empty()) {
-    LOG(LS_WARNING) << "SendCommand with empty eventname";
+  if (commandname.empty()) {
+    LOG(LS_WARNING) << "SendCommand with empty commandname";
     return;
   }
 
   Json::Value message;
   Json::FastWriter writer;
-  message["event_name"] = eventname;
+  message["command"] = commandname;
   message["data"] = data;
   if (!channel.empty()) message["channel"] = channel;
+
   client_.send(con_hdl_, writer.write(message), websocketpp::frame::opcode::text);
 }
 
-void Signal::SendGlobalCommand(const std::string eventname,
+void Signal::SendGlobalCommand(const std::string commandname,
                                const Json::Value& data) {
-  SendCommand("", eventname, data);
+  SendCommand("", commandname, data);
 }
 
 
@@ -195,63 +196,8 @@ void Signal::SendSignInCommand() {
   SendGlobalCommand("signin", data);
 }
 
-void Signal::OnSignInCommand(Json::Value& data) {
-  bool result;
-  if (!rtc::GetBoolFromJsonObject(data, "result", &result)) {
-    LOG(LS_WARNING) << "Unknown signin response";
-    return;
-  }
-
-  if (!result) {
-    LOG(LS_WARNING) << "Signin failed";
-    return;
-  }
-
-  std::string session_id;
-  if (!rtc::GetStringFromJsonObject(data, "session_id", &session_id)) {
-    LOG(LS_WARNING) << "Signin failed - no session_id";
-    return;
-  }
-
-  session_id_ = session_id;
-  SignalOnSignedIn_(session_id_);
-}
-
-void Signal::OnPeerHandshakeCommand(Json::Value& data) {
-  bool result;
-  if (!rtc::GetBoolFromJsonObject(data, "result", &result)) {
-    LOG(LS_WARNING) << "Unknown peerhandshake response";
-    return;
-  }
-
-  if (!result) {
-    LOG(LS_WARNING) << "peerhandshake failed";
-    return;
-  }
-
-  Json::Value peers;
-  if (!rtc::GetValueFromJsonObject(data, "peers", &peers)) {
-    LOG(LS_WARNING) << "Peer handshake failed - no peers value";
-    return;
-  }
-
-  if (peers.size() != 1) {
-    LOG(LS_WARNING) << "Peer handshake failed - This version supports only 1 to 1 connection";
-    return;
-  }
-
-  std::list<std::string> sids;
-
-  for (size_t i = 0; i < peers.size(); ++i) {
-    std::string sid;
-    if (!rtc::GetStringFromJsonArray(peers, i, &sid)) {
-      LOG(LS_WARNING) << "Peer handshake failed - invalid peer sid";
-      return;
-    }
-
-    sids.push_back(sid);
-  }
-
+void Signal::OnCommandReceived(Json::Value& message) {
+  SignalOnCommandReceived_(message);
   return;
 }
 
@@ -393,28 +339,13 @@ void Signal::OnMessage(websocketpp::connection_hdl con, client_type::message_ptr
 {
   Json::Reader reader;
   Json::Value jmessage;
-  Json::Value data;
-  std::string eventname;
 
   if (!reader.parse(msg->get_payload(), jmessage)) {
     LOG(WARNING) << "Received unknown message: " << msg->get_payload();
     return;
   }
 
-  if (!rtc::GetStringFromJsonObject(jmessage, "event_name", &eventname)) {
-    LOG(WARNING) << "Received unknown message - no eventname: " << msg->get_payload();
-    return;
-  }
-
-  rtc::GetValueFromJsonObject(jmessage, "data", &data);
-
-  if (eventname == "signin") {
-    OnSignInCommand(data);
-  }
-  else if (eventname == "peerhandshake") {
-    OnPeerHandshakeCommand(data);
-  }
-
+  OnCommandReceived(jmessage);
 }
 
 

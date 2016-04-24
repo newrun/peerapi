@@ -16,7 +16,7 @@ std::map<std::string, DummySignal::PeerSignal> DummySignal::connections_;
 
 void DummySignal::SignIn() {
   session_id_ = rtc::CreateRandomUuid();
-  SignalOnSignedIn_(session_id_);
+//  SignalOnSignedIn_(session_id_);
 }
 
 bool DummySignal::SendCommand(const Json::Value& jmessage) {

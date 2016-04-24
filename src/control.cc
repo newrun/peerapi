@@ -22,8 +22,7 @@ Control::Control(const std::string channel, rtc::scoped_refptr<Signal> signal)
        : channel_name_(channel),
          signal_(signal) {
 
-  signal_->SignalOnSignedIn_.connect(this, &Control::OnSignedIn);
-  signal_->SignalOnCommandReceived_.connect(this, &Control::OnCommandReceived);
+  signal_->SignalOnCommandReceived_.connect(this, &Control::OnSignalCommandReceived);
 }
 
 Control::~Control() {
@@ -84,17 +83,8 @@ bool Control::Send(const char* buffer, const size_t size, const std::string *pee
 //
 
 bool Control::SendCommand(const std::string& command, const Json::Value& data, const std::string& peer_sid) {
-  Json::Value jmessage;
-
-  jmessage["command"] = command;
-  jmessage["data"] = data;
-
-  if (!peer_sid.empty()) {
-    jmessage["peer_sid"] = peer_sid;
-  }
-
-  return false;
-//  return signal_->SendCommand(jmessage);
+  signal_->SendCommand(peer_sid, command, data);
+  return true;
 }
 
 
@@ -119,7 +109,16 @@ void Control::OnData(const std::string& peer_id, const char* buffer, const size_
 //
 
 void Control::OnMessage(rtc::Message* msg) {
-  LOG(LS_INFO) << "OnMessage";
+  switch (msg->message_id) {
+  case MSG_COMMAND_RECEIVED:
+    ControlMessageData* param =
+      static_cast<ControlMessageData*>(msg->pdata);
+    OnCommandReceived(param->data_);
+    delete param;
+    break;
+  }
+
+  return;
 }
 
 //
@@ -136,46 +135,33 @@ void Control::SignIn() {
   return;
 }
 
-//
-// Connect to channel when signed in
-//
-
-void Control::OnSignedIn(const std::string& sid) {
-  session_id_ = sid;
-  
-  signal_->JoinChannel(channel_name_);
-}
 
 
 //
 // Dispatch command from signal server
 //
 
-void Control::OnCommandReceived(const std::string& message) {
+void Control::OnCommandReceived(const Json::Value& message) {
 
-  Json::Reader reader;
-  Json::Value jmessage;
   Json::Value data;
   std::string command;
   std::string peer_sid;
 
-  if (!reader.parse(message, jmessage)) {
-    LOG(WARNING) << "Received unknown message: " << message;
-    return;
-  }
-
-  if (!rtc::GetStringFromJsonObject(jmessage, "command", &command) ||
-      !rtc::GetValueFromJsonObject(jmessage, "data", &data)) {
+  if (!rtc::GetStringFromJsonObject(message, "command", &command) ||
+      !rtc::GetValueFromJsonObject(message, "data", &data)) {
 
     LOG(LS_ERROR) << "Invalid message:" << message;
     return;
   }
 
-  if (!rtc::GetStringFromJsonObject(jmessage, "peer_sid", &peer_sid)) {
+  if (!rtc::GetStringFromJsonObject(message, "peer_sid", &peer_sid)) {
     peer_sid.clear();
   }
 
-  if (command == "createoffer") {
+  if (command == "signin") {
+    OnSignedIn(data);
+  }
+  else if (command == "createoffer") {
     CreateOffer(data);
   }
   else if (command == "offersdp") {
@@ -188,6 +174,12 @@ void Control::OnCommandReceived(const std::string& message) {
     AddIceCandidate(peer_sid, data);
   }
 }
+
+void Control::OnSignalCommandReceived(const Json::Value& message) {
+  ControlMessageData *data = new ControlMessageData(message);
+  signaling_thread_->Post(this, MSG_COMMAND_RECEIVED, data);
+}
+
 
 //
 // Create peer creation factory
@@ -232,19 +224,65 @@ void Control::AddIceCandidate(const std::string& peer_sid, const Json::Value& da
 }
 
 
+
+//
+// 'signin' command
+//
+
+void Control::OnSignedIn(const Json::Value& data) {
+  bool result;
+  if (!rtc::GetBoolFromJsonObject(data, "result", &result)) {
+    LOG(LS_WARNING) << "Unknown signin response";
+    return;
+  }
+
+  if (!result) {
+    LOG(LS_WARNING) << "Signin failed";
+    return;
+  }
+
+  std::string session_id;
+  if (!rtc::GetStringFromJsonObject(data, "session_id", &session_id)) {
+    LOG(LS_WARNING) << "Signin failed - no session_id";
+    return;
+  }
+
+  session_id_ = session_id;
+  signal_->JoinChannel(channel_name_);
+}
+
+
 //
 // 'createoffer' command
 //
 
 void Control::CreateOffer(const Json::Value& data) {
 
-  std::string peer_sid;
-  if (!rtc::GetStringFromJsonObject(data, "peer_sid", &peer_sid)) {
+  Json::Value peers;
+  if (!rtc::GetValueFromJsonObject(data, "peers", &peers)) {
+    LOG(LS_WARNING) << "createoffer failed - no peers value";
     return;
   }
 
-  Peer peer = new rtc::RefCountedObject<PeerControl>(session_id_, peer_sid, this, peer_connection_factory_);
-  peers_.insert(std::pair<std::string, Peer>(peer_sid, peer));
+  if (peers.size() != 1) {
+    LOG(LS_WARNING) << "createoffer failed - This version supports only 1 to 1 connection";
+    return;
+  }
+
+  std::vector<std::string> peer_sids;
+
+  for (size_t i = 0; i < peers.size(); ++i) {
+    std::string sid;
+    if (!rtc::GetStringFromJsonArray(peers, i, &sid)) {
+      LOG(LS_WARNING) << "Peer handshake failed - invalid peer sid";
+      return;
+    }
+
+    peer_sids.push_back(sid);
+  }
+
+  Peer peer = new rtc::RefCountedObject<PeerControl>(session_id_, peer_sids[0], this, peer_connection_factory_);
+  peers_.insert(std::pair<std::string, Peer>(peer_sids[0], peer));
 
   peer->CreateOffer(NULL);
 }

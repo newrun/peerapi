@@ -60,17 +60,16 @@ public:
   virtual void JoinChannel(const std::string channel) = 0;
   virtual void LeaveChannel(const std::string channel) = 0;
   virtual void SendCommand(const std::string channel,
-                           const std::string eventname,
+                           const std::string commandname,
                            const Json::Value& data) = 0;
-  virtual void SendGlobalCommand(const std::string eventname,
+  virtual void SendGlobalCommand(const std::string commandname,
                            const Json::Value& data) = 0;
 
   std::string session_id() { return session_id_; }
   std::string channel() { return channel_; }
  
   // sigslots
-  sigslot::signal1<const std::string&> SignalOnSignedIn_;
-  sigslot::signal1<const std::string&> SignalOnCommandReceived_;
+  sigslot::signal1<const Json::Value&> SignalOnCommandReceived_;
 
 
 protected:
@@ -103,9 +102,9 @@ public:
   virtual void SignIn();
 
   void SendCommand(const std::string channel,
-                   const std::string eventname,
+                   const std::string commandname,
                    const Json::Value& data);
-  void SendGlobalCommand(const std::string eventname,
+  void SendGlobalCommand(const std::string commandname,
                          const Json::Value& data);
 
   void JoinChannel(const std::string channel);
@@ -130,8 +129,7 @@ protected:
 
 private:
   void SendSignInCommand();
-  void OnSignInCommand(Json::Value& data);
-  void OnPeerHandshakeCommand(Json::Value& data);
+  void OnCommandReceived(Json::Value& message);
 
   void RunLoop();
   void ConnectInternal();
