@@ -8,6 +8,7 @@
 #include "peer.h"
 
 #include "webrtc/base/json.h"
+#include "webrtc/base/signalthread.h"
 
 
 
@@ -45,6 +46,8 @@ bool Control::InitializeControl() {
     DeleteControl();
     return false;
   }
+
+  signaling_thread_ = rtc::Thread::Current();
 
   return true;
 }
@@ -111,6 +114,13 @@ void Control::OnData(const std::string& peer_id, const char* buffer, const size_
   SignalOnData_(channel_name_, peer_id, buffer, size);
 }
 
+//
+// Thread message queue
+//
+
+void Control::OnMessage(rtc::Message* msg) {
+  LOG(LS_INFO) << "OnMessage";
+}
 
 //
 // Signin to signal server
@@ -132,7 +142,8 @@ void Control::SignIn() {
 
 void Control::OnSignedIn(const std::string& sid) {
   session_id_ = sid;
-//  signal_->Connect();
+  
+  signal_->JoinChannel(channel_name_);
 }
 
 

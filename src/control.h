@@ -19,7 +19,8 @@ namespace tn {
 class Control
     : public PeerObserver,
       public sigslot::has_slots<>,
-      public rtc::RefCountInterface {
+      public rtc::RefCountInterface,
+      public rtc::MessageHandler {
 public:
   typedef std::vector<rtc::scoped_ptr<PeerDataChannelObserver> >
             DataChannelList;
@@ -54,6 +55,9 @@ public:
   virtual void OnConnected(const std::string peer_id);
   virtual void OnData(const std::string& peer_id, const char* buffer, const size_t size);
 
+  // implements the MessageHandler interface
+  void OnMessage(rtc::Message* msg);
+
   //
   // sigslots
   //
@@ -83,6 +87,7 @@ protected:
       peer_connection_factory_;
 
 private:
+  rtc::Thread* signaling_thread_;
 
 };
 

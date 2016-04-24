@@ -56,6 +56,9 @@ class SignalInterface
     : public rtc::RefCountInterface {
 public:
   virtual void SignIn() = 0;
+
+  virtual void JoinChannel(const std::string channel) = 0;
+  virtual void LeaveChannel(const std::string channel) = 0;
   virtual void SendCommand(const std::string channel,
                            const std::string eventname,
                            const Json::Value& data) = 0;
@@ -105,6 +108,8 @@ public:
   void SendGlobalCommand(const std::string eventname,
                          const Json::Value& data);
 
+  void JoinChannel(const std::string channel);
+  void LeaveChannel(const std::string channel);
 
   void SetConfig(const std::string& url,
                  const std::string& user_id,
@@ -126,6 +131,7 @@ protected:
 private:
   void SendSignInCommand();
   void OnSignInCommand(Json::Value& data);
+  void OnPeerHandshakeCommand(Json::Value& data);
 
   void RunLoop();
   void ConnectInternal();

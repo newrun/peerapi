@@ -31,9 +31,10 @@
 
 
 #include <map>
+#include <list>
 #include "signalconnection.h"
 #include "webrtc/base/logging.h"
-
+#include "webrtc/base/scoped_ptr.h"
 
 namespace tn {
 
@@ -82,6 +83,18 @@ void Signal::SetConfig(const std::string& url,
 
 void Signal::SignIn() {
   Connect();
+}
+
+
+void Signal::JoinChannel(const std::string channel) {
+  Json::Value data;
+  data["name"] = channel;
+  SendCommand(channel, "join", data);
+}
+
+void Signal::LeaveChannel(const std::string channel) {
+  Json::Value data;
+  SendCommand(channel, "leave", data);
 }
 
 
@@ -147,18 +160,18 @@ void Signal::Close()
 {
   con_state_ = con_closing;
   client_.get_io_service().dispatch(websocketpp::lib::bind(&Signal::CloseInternal,
-                                                            this,
-                                                            websocketpp::close::status::normal,
-                                                            "End by user"));
+    this,
+    websocketpp::close::status::normal,
+    "End by user"));
 }
 
 void Signal::SyncClose()
 {
   con_state_ = con_closing;
   client_.get_io_service().dispatch(websocketpp::lib::bind(&Signal::CloseInternal,
-                                                            this,
-                                                            websocketpp::close::status::normal,
-                                                            "End by user"));
+    this,
+    websocketpp::close::status::normal,
+    "End by user"));
   if (network_thread_)
   {
     network_thread_->join();
@@ -204,6 +217,43 @@ void Signal::OnSignInCommand(Json::Value& data) {
   SignalOnSignedIn_(session_id_);
 }
 
+void Signal::OnPeerHandshakeCommand(Json::Value& data) {
+  bool result;
+  if (!rtc::GetBoolFromJsonObject(data, "result", &result)) {
+    LOG(LS_WARNING) << "Unknown peerhandshake response";
+    return;
+  }
+
+  if (!result) {
+    LOG(LS_WARNING) << "peerhandshake failed";
+    return;
+  }
+
+  Json::Value peers;
+  if (!rtc::GetValueFromJsonObject(data, "peers", &peers)) {
+    LOG(LS_WARNING) << "Peer handshake failed - no peers value";
+    return;
+  }
+
+  if (peers.size() != 1) {
+    LOG(LS_WARNING) << "Peer handshake failed - This version supports only 1 to 1 connection";
+    return;
+  }
+
+  std::list<std::string> sids;
+
+  for (size_t i = 0; i < peers.size(); ++i) {
+    std::string sid;
+    if (!rtc::GetStringFromJsonArray(peers, i, &sid)) {
+      LOG(LS_WARNING) << "Peer handshake failed - invalid peer sid";
+      return;
+    }
+
+    sids.push_back(sid);
+  }
+
+  return;
+}
 
 void Signal::RunLoop()
 {
@@ -360,6 +410,9 @@ void Signal::OnMessage(websocketpp::connection_hdl con, client_type::message_ptr
 
   if (eventname == "signin") {
     OnSignInCommand(data);
+  }
+  else if (eventname == "peerhandshake") {
+    OnPeerHandshakeCommand(data);
   }
 
 }
