@@ -18,20 +18,24 @@ Throughnet::Throughnet(const std::string setting)
 Throughnet::Throughnet(const std::string setting, rtc::scoped_refptr<Signal> signal)
    : signal_(signal)
 {
+  // Default settings
+  setting_.signal_uri_ = "wss://signal.throughnet.com/hello";
+
+  // parse settings
   if (!setting.empty()) {
     ParseSetting(setting);
   }
 
+  // create signal client
   if (signal == nullptr) {
     signal_ = new rtc::RefCountedObject<tn::Signal>();
 
     if (signal_) {
-      signal_->SetConfig(setting_.signal_url_,
-                         setting_.signal_id_,
-                         setting_.signal_password_);
+      signal_->SetConfig(setting_.signal_uri_,
+        setting_.signal_id_,
+        setting_.signal_password_);
     }
   }
-
 }
 
 Throughnet::~Throughnet() {
@@ -80,16 +84,16 @@ void Throughnet::Connect(const std::string channel) {
 // Send message to destination peer session id
 //
 
-bool Throughnet::Send(const std::string& peer_sid, const char* buffer, const size_t size) {
+bool Throughnet::Send(const std::string& peer_id, const char* buffer, const size_t size) {
   return control_->Send(buffer, size);
 }
 
-bool Throughnet::Send(const std::string& peer_sid, const char* message) {
-  return Send(peer_sid, message, strlen(message));
+bool Throughnet::Send(const std::string& peer_id, const char* message) {
+  return Send(peer_id, message, strlen(message));
 }
 
-bool Throughnet::Send(const std::string& peer_sid, const std::string& message) {
-  return Send(peer_sid, message.c_str(), message.size());
+bool Throughnet::Send(const std::string& peer_id, const std::string& message) {
+  return Send(peer_id, message.c_str(), message.size());
 }
 
 //
@@ -117,7 +121,7 @@ bool Throughnet::Emit(const std::string& channel, const std::string& message) {
 // Register Event handler
 //
 
-Throughnet& Throughnet::On(std::string msg_id, void(*handler) (Throughnet* this_, std::string peer_sid, Data& data)) {
+Throughnet& Throughnet::On(std::string msg_id, void(*handler) (Throughnet* this_, std::string peer_id, Data& data)) {
 
   if (msg_id == "connected") {
     event_handler_[msg_id] = handler;
@@ -143,7 +147,7 @@ Throughnet& Throughnet::On(std::string msg_id, void(*handler) (Throughnet* this_
 // Register Date handler
 //
 
-Throughnet& Throughnet::On(std::string msg_id, void(*handler) (Throughnet* this_, std::string peer_sid, Buffer& data)) {
+Throughnet& Throughnet::On(std::string msg_id, void(*handler) (Throughnet* this_, std::string peer_id, Buffer& data)) {
 
   if (msg_id.length() > 0) {
     data_handler_[msg_id] = handler;
@@ -156,12 +160,12 @@ Throughnet& Throughnet::On(std::string msg_id, void(*handler) (Throughnet* this_
 // Signal event handler
 //
 
-void Throughnet::OnConnected(const std::string& channel, const std::string& peer_sid) {
+void Throughnet::OnConnected(const std::string& channel, const std::string& peer_id) {
   if (event_handler_.find("connected") == event_handler_.end()) return;
 
   Data data;
   data["channel"] = channel;
-  event_handler_["connected"](this, peer_sid, data);
+  event_handler_["connected"](this, peer_id, data);
 }
 
 //
@@ -187,7 +191,7 @@ bool Throughnet::ParseSetting(const std::string& setting) {
   }
 
   if (rtc::GetStringFromJsonObject(jsetting, "url", &value)) {
-    setting_.signal_url_ = value;
+    setting_.signal_uri_ = value;
   }
 
   if (rtc::GetStringFromJsonObject(jsetting, "user_id", &value)) {
