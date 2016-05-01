@@ -28,6 +28,7 @@ if (NOT (TN_WITH_STATIC OR TN_WITH_SHARED))
 	message(FATAL_ERROR "Makes no sense to compile with neither static nor shared libraries.")
 endif()
 
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # ============================================================================
 # The output directory.
@@ -88,6 +89,7 @@ find_package(Asio)
 set(HEADERS
   "src/throughnet.h"
   "src/control.h"
+  "src/controlobserver.h"
   "src/peer.h"
   "src/signalconnection.h"
   "src/dummysignal.h"
@@ -125,13 +127,10 @@ set(TN_INCLUDE_DIRECTORY
   "${PROJECT_SOURCE_DIR}/src"
   )
 
-set(TN_LIBRARIES)
-
 if (TN_WITH_STATIC)
   add_library(throughnet STATIC
     ${HEADERS}
     ${SOURCES})
-  list(APPEND TN_LIBRARIES throughnet)
   target_compile_definitions(throughnet PRIVATE ${WEBRTC_DEFINES} ${WEBSOCKETPP_DEFINES})
   target_include_directories(throughnet PRIVATE ${_TN_INTERNAL_INCLUDE_DIR} )
 
@@ -142,13 +141,13 @@ if (TN_WITH_STATIC)
       PROPERTIES
       OUTPUT_NAME throughnet_static)
   endif()
+
 endif()
 
 if (TN_WITH_SHARED)
   add_library(throughnet_shared SHARED
     ${HEADERS}
     ${SOURCES})
-  list(APPEND TN_LIBRARIES throughnet_shared)
   target_compile_definitions(throughnet_shared PRIVATE ${WEBRTC_DEFINES} ${WEBSOCKETPP_DEFINES})
   target_include_directories(throughnet_shared PRIVATE ${_TN_INTERNAL_INCLUDE_DIR} )
 
@@ -169,6 +168,7 @@ if (TN_WITH_SHARED)
   if (APPLE)
     set_property(TARGET throughnet_shared PROPERTY MACOSX_RPATH YES)
   endif()
+
 endif()
 
 
@@ -182,9 +182,9 @@ endif()
 # Variables for parent project including throughnet using add_subdirectory()
 # ============================================================================
 
-set(THROUGHNET_LIBRARIES ${TN_LIBRARIES} CACHE STRING "ThroughNet libraries")
+set(THROUGHNET_INCLUDE_DIRECTORY ${TN_INCLUDE_DIRECTORY} CACHE STRING "ThroughNet include directories")
 if (TN_WITH_STATIC)
-  set(THROUGHNET_LIBRARIES_STATIC throughnet CACHE STRING "ThroughNet static library")
+  set(THROUGHNET_LIBRARIES_STATIC throughnet ${WEBRTC_LIBRARIES} CACHE STRING "ThroughNet static library")
 endif()
 if (TN_WITH_SHARED)
   set(THROUGHNET_LIBRARIES_SHARED throughnet_shared CACHE STRING "ThroughNet shared library")
@@ -192,7 +192,7 @@ endif()
 
 
 # ============================================================================
-# Test example
+# Test
 # ============================================================================
 
 add_executable(test_main src/test/test_main.cc)
@@ -201,5 +201,18 @@ add_dependencies(test_main throughnet)
 target_compile_definitions(test_main PRIVATE ${WEBRTC_DEFINES} ${WEBSOCKETPP_DEFINES})
 target_include_directories(test_main PRIVATE ${_TN_INTERNAL_INCLUDE_DIR})
 target_link_libraries(test_main throughnet ${_TN_INTERNAL_LIBRARIES})
+set_target_properties (test_main PROPERTIES FOLDER test)
 
 add_test(test_main test_main)
+
+
+# ============================================================================
+# Example
+# ============================================================================
+
+add_executable(netcat src/examples/through-netcat/main.cc)
+add_dependencies(netcat throughnet)
+
+target_include_directories(netcat PRIVATE ${THROUGHNET_INCLUDE_DIRECTORY})
+target_link_libraries(netcat throughnet ${THROUGHNET_LIBRARIES_STATIC})
+set_target_properties (netcat PROPERTIES FOLDER examples)
