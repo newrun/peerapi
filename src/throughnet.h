@@ -44,6 +44,8 @@ public:
   explicit Throughnet(const std::string setting, rtc::scoped_refptr<Signal> signal);
   ~Throughnet();
 
+  static void Throughnet::Run();
+
   void Connect(const std::string channel);
   bool Send(const std::string& peer_id, const char* buffer, const size_t size);
   bool Send(const std::string& peer_id, const char* buffer);

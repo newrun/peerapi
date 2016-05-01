@@ -7,14 +7,10 @@
 #include <iostream>
 
 #include "throughnet.h"
-#include "control.h"
-#include "dummysignal.h"
-#include "webrtc/base/scoped_ref_ptr.h"
 
 using namespace std;
 
 int main(int argc, char *argv[]) {
-
   Throughnet tn1;
   Throughnet tn2;
   
@@ -30,7 +26,7 @@ int main(int argc, char *argv[]) {
   tn1.Connect("mychannel");
   tn2.Connect("mychannel");
   
-  rtc::ThreadManager::Instance()->CurrentThread()->Run();
+  Throughnet::Run();
 
   return 0;
 }

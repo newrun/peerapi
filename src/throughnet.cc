@@ -41,6 +41,9 @@ Throughnet::Throughnet(const std::string setting, rtc::scoped_refptr<Signal> sig
 Throughnet::~Throughnet() {
 }
 
+void Throughnet::Run() {
+  rtc::ThreadManager::Instance()->CurrentThread()->Run();
+}
 
 void Throughnet::Connect(const std::string channel) {
 
