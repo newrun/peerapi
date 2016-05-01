@@ -38,9 +38,6 @@ public:
   };
 
   typedef std::map<std::string, std::string> Data;
-  typedef std::function<void(Throughnet*, std::string peer_id, Data&)> EventHandler;
-  typedef std::function<void(Throughnet*, std::string peer_id, Buffer&)> DataHandler;
-  typedef std::map<std::string, EventHandler> Events;
 
   explicit Throughnet();
   explicit Throughnet(const std::string setting);
@@ -55,10 +52,35 @@ public:
   bool Emit(const std::string& channel, const char* buffer);
   bool Emit(const std::string& channel, const std::string& message);
 
+  Throughnet& On(std::string msg_id, void(*handler) (Throughnet* this_, std::string peer_id));
   Throughnet& On(std::string msg_id, void(*handler) (Throughnet* this_, std::string peer_id, Data& data));
   Throughnet& On(std::string msg_id, void(*handler) (Throughnet* this_, std::string peer_id, Buffer& data));
 
 protected:
+
+  // The base type that is stored in the collection.
+  struct Handler_t {
+    virtual ~Handler_t() = default;
+  };
+
+  // The derived type that represents a callback.
+  template<typename ...A>
+  struct EventHandler_t : public Handler_t {
+    using cb = std::function<void(A...)>;
+    cb callback_;
+    EventHandler_t(cb p_callback) : callback_(p_callback) {}
+  };
+
+  template<typename ...A>
+  void CallEventHandler(std::string msg_id, A&& ... args);
+
+  using EventHandler_1 = EventHandler_t<Throughnet*>;
+  using EventHandler_2 = EventHandler_t<Throughnet*, std::string>;
+  using EventHandler_3 = EventHandler_t<Throughnet*, std::string, Data&>;
+  using EventHandler_OnData = EventHandler_t<Throughnet*, std::string, Buffer&>;
+  using Events = std::map<std::string, std::unique_ptr<Handler_t>>;
+
+
   void OnConnected(const std::string& channel, const std::string& peer_id);
   void OnData(const std::string& channel, const std::string& peer_id, const char* buffer, const size_t size);
 
@@ -66,7 +88,6 @@ protected:
 
   Setting setting_;
   Events event_handler_;
-  std::map<std::string, DataHandler> data_handler_;
 
   rtc::scoped_refptr<Control> control_;
   rtc::scoped_refptr<Signal> signal_;

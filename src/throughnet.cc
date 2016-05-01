@@ -116,41 +116,50 @@ bool Throughnet::Emit(const std::string& channel, const std::string& message) {
 }
 
 
-
 //
 // Register Event handler
 //
+Throughnet& Throughnet::On(std::string msg_id, void(*handler) (Throughnet* this_, std::string peer_id)) {
 
-Throughnet& Throughnet::On(std::string msg_id, void(*handler) (Throughnet* this_, std::string peer_id, Data& data)) {
+  std::unique_ptr<EventHandler_2> f(new EventHandler_2(handler));
 
   if (msg_id == "connected") {
-    event_handler_[msg_id] = handler;
+    event_handler_.insert(Events::value_type(msg_id, std::move(f)));
   }
   else if (msg_id == "disconnected") {
-    event_handler_[msg_id] = handler;
+    event_handler_.insert(Events::value_type(msg_id, std::move(f)));
   }
   else if (msg_id == "signin") {
-    event_handler_[msg_id] = handler;
+    event_handler_.insert(Events::value_type(msg_id, std::move(f)));
   }
   else if (msg_id == "signout") {
-    event_handler_[msg_id] = handler;
-  }
-  else if (msg_id == "error") {
-    event_handler_[msg_id] = handler;
+    event_handler_.insert(Events::value_type(msg_id, std::move(f)));
   }
 
   return *this;
 }
 
+Throughnet& Throughnet::On(std::string msg_id, void(*handler) (Throughnet* this_, std::string peer_id, Data& data)) {
+  std::unique_ptr<EventHandler_3> f(new EventHandler_3(handler));
+
+  if (msg_id == "disconnected") {
+    event_handler_.insert(Events::value_type(msg_id, std::move(f)));
+  }
+  else if (msg_id == "error") {
+    event_handler_.insert(Events::value_type(msg_id, std::move(f)));
+  }
+
+  return *this;
+}
 
 //
-// Register Date handler
+// Register OnData event handler
 //
-
 Throughnet& Throughnet::On(std::string msg_id, void(*handler) (Throughnet* this_, std::string peer_id, Buffer& data)) {
 
   if (msg_id.length() > 0) {
-    data_handler_[msg_id] = handler;
+    std::unique_ptr<EventHandler_OnData> f(new EventHandler_OnData(handler));
+    event_handler_.insert(Events::value_type(msg_id, std::move(f)));
   }
 
   return *this;
@@ -162,10 +171,7 @@ Throughnet& Throughnet::On(std::string msg_id, void(*handler) (Throughnet* this_
 
 void Throughnet::OnConnected(const std::string& channel, const std::string& peer_id) {
   if (event_handler_.find("connected") == event_handler_.end()) return;
-
-  Data data;
-  data["channel"] = channel;
-  event_handler_["connected"](this, peer_id, data);
+  CallEventHandler("connected", this, peer_id);
 }
 
 //
@@ -173,11 +179,21 @@ void Throughnet::OnConnected(const std::string& channel, const std::string& peer
 //
 
 void Throughnet::OnData(const std::string& channel, const std::string& peer_id, const char* buffer, const size_t size) {
-  if (data_handler_.find(channel) == data_handler_.end()) return;
-
+  if (event_handler_.find(channel) == event_handler_.end()) return;
   Buffer buf(buffer, size);
-  data_handler_[channel](this, peer_id, buf);
+  CallEventHandler(channel, this, peer_id, buf);
 }
+
+template<typename ...A>
+void Throughnet::CallEventHandler(std::string msg_id, A&& ... args)
+{
+  using eventhandler_t = EventHandler_t<A...>;
+  using cb_t = std::function<void(A...)>;
+  const Handler_t& base = *event_handler_[msg_id];
+  const cb_t& func = static_cast<const eventhandler_t&>(base).callback_;
+  func(std::forward<A>(args)...);
+}
+
 
 bool Throughnet::ParseSetting(const std::string& setting) {
   Json::Reader reader;
