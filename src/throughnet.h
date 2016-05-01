@@ -8,19 +8,20 @@
 #define __THROUGHNET_THROUGHENT_H__
 
 #include <map>
+#include <memory>
 #include <functional>
 
-#include "control.h"
-#include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/base/sigslot.h"
+#include "controlobserver.h"
 
 #define function_tn []
 
-using tn::Control;
-using tn::Signal;
+namespace tn {
+  class Control;
+  class Signal;
+}
 
 class Throughnet
-    : public sigslot::has_slots<> {
+    : public tn::ControlObserver {
 public:
 
   struct Setting {
@@ -37,11 +38,13 @@ public:
     const size_t size_;
   };
 
-  typedef std::map<std::string, std::string> Data;
+  using Control = tn::Control;
+  using Signal  = tn::Signal;
+  using Data    = std::map<std::string, std::string>;
 
   explicit Throughnet();
   explicit Throughnet(const std::string setting);
-  explicit Throughnet(const std::string setting, rtc::scoped_refptr<Signal> signal);
+  explicit Throughnet(const std::string setting, std::shared_ptr<tn::Signal> signal);
   ~Throughnet();
 
   static void Throughnet::Run();
@@ -91,8 +94,9 @@ protected:
   Setting setting_;
   Events event_handler_;
 
-  rtc::scoped_refptr<Control> control_;
-  rtc::scoped_refptr<Signal> signal_;
+  std::unique_ptr<tn::Control> control_;
+  std::shared_ptr<tn::Signal> signal_;
 };
+
 
 #endif // __THROUGHNET_THROUGHENT_H__

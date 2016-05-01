@@ -44,16 +44,13 @@
 #include "websocketpp/client.hpp"
 #include "websocketpp/common/thread.hpp"
 
-#include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/base/refcount.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/json.h"
 
 
 namespace tn {
 
-class SignalInterface
-    : public rtc::RefCountInterface {
+class SignalInterface {
 public:
   virtual void SignIn() = 0;
 

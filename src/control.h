@@ -7,11 +7,14 @@
 #ifndef __THROUGHNET_CONTROL_H__
 #define __THROUGHNET_CONTROL_H__
 
-#include "webrtc/base/sigslot.h"
-#include "fakeaudiocapturemodule.h"
+#include <memory>
 
 #include "peer.h"
 #include "signalconnection.h"
+#include "controlobserver.h"
+
+#include "webrtc/base/sigslot.h"
+#include "fakeaudiocapturemodule.h"
 
 
 namespace tn {
@@ -19,15 +22,14 @@ namespace tn {
 class Control
     : public PeerObserver,
       public sigslot::has_slots<>,
-      public rtc::RefCountInterface,
       public rtc::MessageHandler {
 public:
   typedef std::vector<rtc::scoped_ptr<PeerDataChannelObserver> >
             DataChannelList;
 
-  explicit Control(const std::string channel);
-  explicit Control(const std::string channel,
-                   rtc::scoped_refptr<Signal> signal);
+  explicit Control(ControlObserver* oberver, const std::string channel);
+  explicit Control(ControlObserver* oberver, const std::string channel,
+                   std::shared_ptr<Signal> signal);
   ~Control();
 
   //
@@ -78,7 +80,7 @@ protected:
 
   std::string channel_name_;
   std::string session_id_;
-  rtc::scoped_refptr<Signal> signal_;
+  std::shared_ptr<Signal> signal_;
   rtc::scoped_refptr<FakeAudioCaptureModule> fake_audio_capture_module_;
 
   typedef rtc::scoped_refptr<PeerControl> Peer;
@@ -99,6 +101,7 @@ private:
   };
 
   rtc::Thread* signaling_thread_;
+  ControlObserver* observer_;
 
 };
 

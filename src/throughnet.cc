@@ -5,6 +5,7 @@
  */
  
 #include "throughnet.h"
+#include "control.h"
 
 
 Throughnet::Throughnet()
@@ -15,7 +16,7 @@ Throughnet::Throughnet(const std::string setting)
    : Throughnet(setting, nullptr) {
 }
 
-Throughnet::Throughnet(const std::string setting, rtc::scoped_refptr<Signal> signal)
+Throughnet::Throughnet(const std::string setting, std::shared_ptr<Signal> signal)
    : signal_(signal)
 {
   // Default settings
@@ -28,7 +29,7 @@ Throughnet::Throughnet(const std::string setting, rtc::scoped_refptr<Signal> sig
 
   // create signal client
   if (signal == nullptr) {
-    signal_ = new rtc::RefCountedObject<tn::Signal>();
+    signal_ = std::make_shared<tn::Signal>();
 
     if (signal_) {
       signal_->SetConfig(setting_.signal_uri_,
@@ -51,19 +52,12 @@ void Throughnet::Connect(const std::string channel) {
   // Initialize control
   //
 
-  control_ = new rtc::RefCountedObject<Control>(channel, signal_);
+  control_ = std::make_unique<tn::Control>(this, channel, signal_);
 
   if (control_.get() == NULL) {
     LOG(LS_ERROR) << "Failed to create class Control.";
     return;
   }
-
-  //
-  // connect sigslot
-  //
-
-  control_->SignalOnConnected_.connect(this, &Throughnet::OnConnected);
-  control_->SignalOnData_.connect(this, &Throughnet::OnData);
 
   //
   // Initialize peer connection

@@ -14,12 +14,12 @@
 
 namespace tn {
 
-Control::Control(const std::string channel)
-       : Control(channel, nullptr){
+Control::Control(ControlObserver* observer, const std::string channel)
+       : Control(observer, channel, nullptr){
 }
 
-Control::Control(const std::string channel, rtc::scoped_refptr<Signal> signal)
-       : channel_name_(channel),
+Control::Control(ControlObserver* observer, const std::string channel, std::shared_ptr<Signal> signal)
+       : observer_(observer), channel_name_(channel),
          signal_(signal) {
 
   signal_->SignalOnCommandReceived_.connect(this, &Control::OnSignalCommandReceived);
@@ -93,7 +93,8 @@ bool Control::SendCommand(const std::string& command, const Json::Value& data, c
 //
 
 void Control::OnConnected(const std::string peer_id) {
-  SignalOnConnected_(channel_name_, peer_id);
+  if (observer_ == nullptr) return;
+  observer_->OnConnected(channel_name_, peer_id);
 }
 
 //
@@ -101,7 +102,8 @@ void Control::OnConnected(const std::string peer_id) {
 //
 
 void Control::OnData(const std::string& peer_id, const char* buffer, const size_t size) {
-  SignalOnData_(channel_name_, peer_id, buffer, size);
+  if (observer_ == nullptr) return;
+  observer_->OnData(channel_name_, peer_id, buffer, size);
 }
 
 //

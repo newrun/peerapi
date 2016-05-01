@@ -5,12 +5,14 @@
 */
 
 #include <iostream>
+#include <string>
 
 #include "throughnet.h"
 
 using namespace std;
 
 int main(int argc, char *argv[]) {
+
   Throughnet tn1;
   Throughnet tn2;
   
