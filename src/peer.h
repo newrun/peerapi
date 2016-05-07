@@ -95,17 +95,17 @@ public:
 
   void OnPeerOpened();
   void OnPeerMessage(const webrtc::DataBuffer& buffer);
-
+  void OnBufferedAmountChange(const uint64_t previous_amount);
 
 protected:
 
-  bool CreatePeerConnection(const webrtc::MediaConstraintsInterface* constraints);
+  bool CreatePeerConnection();
   void DeletePeerConnection();
   bool CreateDataChannel(const std::string& label,
                          const webrtc::DataChannelInit& init);
   void SetLocalDescription(const std::string& type, const std::string& sdp);
   void SetRemoteDescription(const std::string& type, const std::string& sdp);
-  void SigslotConnect(PeerDataChannelObserver* datachanel);
+  void SigslotConnect(PeerDataChannelObserver* datachannel);
 
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
   rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> peer_connection_factory_;
@@ -129,10 +129,9 @@ public:
   explicit PeerDataChannelObserver(webrtc::DataChannelInterface* channel);
   virtual ~PeerDataChannelObserver();
 
-  void OnBufferedAmountChange(uint64_t previous_amount) override;
-
   void OnStateChange() override;
   void OnMessage(const webrtc::DataBuffer& buffer) override;
+  void OnBufferedAmountChange(uint64_t previous_amount) override;
 
   bool Send(const char* buffer, const size_t size);
   void Close();
@@ -143,6 +142,7 @@ public:
   // sigslots
   sigslot::signal0<> SignalOnOpen_;
   sigslot::signal1<const webrtc::DataBuffer&> SignalOnMessage_;
+  sigslot::signal1<const uint64_t> SignalOnBufferedAmountChange_;
 
 protected:
 

@@ -201,8 +201,8 @@ foreach (lib ${_WEBRTC_LIB_NAMES})
   else(_WEBRTC_LIB_PATH)
     message("\nCurrent WEBRTC_ROOT_DIR is '${WEBRTC_ROOT_DIR}'")
     message("Current WEBRTC_LIBRARY_DIR is '${WEBRTC_LIBRARY_DIR}'\n")
-    message(FATAL_ERROR "WebRTC module '${lib}' was not found. "
-           "Check 'WEBRTC_ROOT_DIR' and 'WEBRTC_LIBRARY_DIR'.\n")
+    message(FATAL_ERROR "WebRTC module '${lib}' was not found. \n"
+           "Check 'WEBRTC_ROOT_DIR'\n")
   endif()
 endforeach()
   

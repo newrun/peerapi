@@ -48,9 +48,7 @@ Signal::Signal() :
 
 #ifdef _DEBUG || DEBUG
   client_.set_access_channels(websocketpp::log::alevel::all);
-  client_.set_access_channels(websocketpp::log::alevel::connect |
-    websocketpp::log::alevel::disconnect |
-    websocketpp::log::alevel::app);
+  client_.clear_access_channels(websocketpp::log::alevel::devel);
 #else
   client_.clear_access_channels(websocketpp::log::alevel::all);
 #endif

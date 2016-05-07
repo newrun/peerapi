@@ -6,8 +6,7 @@
 
 #include "control.h"
 #include "peer.h"
-#include "webrtc/api/test/fakedtlsidentitystore.h"
-#include "webrtc/p2p/client/fakeportallocator.h"
+#include "webrtc/api/test/fakeconstraints.h"
 #include "webrtc/api/test/mockpeerconnectionobservers.h"
 
 
@@ -27,7 +26,7 @@ PeerControl::PeerControl(const std::string local_session_id,
       observer_(observer),
       peer_connection_factory_(peer_connection_factory){
 
-  if (!CreatePeerConnection(NULL)) {
+  if (!CreatePeerConnection()) {
     LOG(LS_ERROR) << "CreatePeerConnection failed";
     DeletePeerConnection();
   }
@@ -132,6 +131,9 @@ void PeerControl::OnPeerMessage(const webrtc::DataBuffer& buffer) {
   observer_->OnData(remote_session_id_, buffer.data.data<char>(), buffer.data.size());
 }
 
+void PeerControl::OnBufferedAmountChange(const uint64_t previous_amount) {
+}
+
 
 bool PeerControl::CreateDataChannel(
                     const std::string& label,
@@ -163,13 +165,13 @@ void PeerControl::AddIceCandidate(const std::string& sdp_mid, int sdp_mline_inde
 }
 
 
-bool PeerControl::CreatePeerConnection(
-        const webrtc::MediaConstraintsInterface* constraints) {
+bool PeerControl::CreatePeerConnection() {
   ASSERT(peer_connection_factory_.get() != NULL);
   ASSERT(peer_connection_.get() == NULL);
 
-  rtc::scoped_ptr<cricket::PortAllocator> port_allocator(
-    new cricket::FakePortAllocator(rtc::Thread::Current(), nullptr));
+  // Enable DTLS
+  webrtc::FakeConstraints constraints;
+  constraints.AddOptional(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp, "true");
 
   // CreatePeerConnection with RTCConfiguration.
   webrtc::PeerConnectionInterface::RTCConfiguration config;
@@ -177,13 +179,8 @@ bool PeerControl::CreatePeerConnection(
   ice_server.uri = "stun:stun.l.google.com:19302";
   config.servers.push_back(ice_server);
 
-  rtc::scoped_ptr<webrtc::DtlsIdentityStoreInterface> dtls_identity_store(
-    rtc::SSLStreamAdapter::HaveDtlsSrtp() ?
-    new FakeDtlsIdentityStore() : nullptr);
-
   peer_connection_ = peer_connection_factory_->CreatePeerConnection(
-    config, constraints, std::move(port_allocator),
-    std::move(dtls_identity_store), this);
+    config, &constraints, NULL, NULL, this);
 
   return peer_connection_.get() != NULL;
 }
@@ -215,9 +212,10 @@ void PeerControl::SetRemoteDescription(const std::string& type,
     observer, webrtc::CreateSessionDescription(type, sdp, NULL));
 }
 
-void PeerControl::SigslotConnect(PeerDataChannelObserver* datachanel) {
-  datachanel->SignalOnOpen_.connect(this, &PeerControl::OnPeerOpened);
-  datachanel->SignalOnMessage_.connect(this, &PeerControl::OnPeerMessage);
+void PeerControl::SigslotConnect(PeerDataChannelObserver* datachannel) {
+  datachannel->SignalOnOpen_.connect(this, &PeerControl::OnPeerOpened);
+  datachannel->SignalOnMessage_.connect(this, &PeerControl::OnPeerMessage);
+  datachannel->SignalOnBufferedAmountChange_.connect(this, &PeerControl::OnBufferedAmountChange);
 }
 
 
@@ -239,6 +237,7 @@ PeerDataChannelObserver::~PeerDataChannelObserver() {
 }
 
 void PeerDataChannelObserver::OnBufferedAmountChange(uint64_t previous_amount) {
+  SignalOnBufferedAmountChange_(previous_amount);
   return;
 }
 
