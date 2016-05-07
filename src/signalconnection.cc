@@ -46,11 +46,13 @@ Signal::Signal() :
       reconn_delay_(5000),
       reconn_delay_max_(25000) {
 
-#ifndef DEBUG
-  client_.clear_access_channels(websocketpp::log::alevel::all);
+#ifdef _DEBUG || DEBUG
+  client_.set_access_channels(websocketpp::log::alevel::all);
   client_.set_access_channels(websocketpp::log::alevel::connect |
-                              websocketpp::log::alevel::disconnect |
-                              websocketpp::log::alevel::app);
+    websocketpp::log::alevel::disconnect |
+    websocketpp::log::alevel::app);
+#else
+  client_.clear_access_channels(websocketpp::log::alevel::all);
 #endif
 
   // Initialize ASIO
