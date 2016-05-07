@@ -210,9 +210,10 @@ add_test(test_main test_main)
 # Example
 # ============================================================================
 
-add_executable(netcat src/examples/through-netcat/main.cc)
-add_dependencies(netcat throughnet)
+# echo
+add_executable(echo_example examples/echo/main.cc)
+add_dependencies(echo_example throughnet)
 
-target_include_directories(netcat PRIVATE ${THROUGHNET_INCLUDE_DIRECTORY})
-target_link_libraries(netcat throughnet ${THROUGHNET_LIBRARIES_STATIC})
-set_target_properties (netcat PROPERTIES FOLDER examples)
+target_include_directories(echo_example PRIVATE ${THROUGHNET_INCLUDE_DIRECTORY})
+target_link_libraries(echo_example throughnet ${THROUGHNET_LIBRARIES_STATIC})
+set_target_properties (echo_example PROPERTIES FOLDER examples)
