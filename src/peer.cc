@@ -18,11 +18,13 @@ namespace tn {
 
 PeerControl::PeerControl(const std::string local_session_id,
                          const std::string remote_session_id,
+                         const bool server_mode,
                          PeerObserver* observer,
                          rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
                              peer_connection_factory)
     : local_session_id_(local_session_id),
       remote_session_id_(remote_session_id),
+      server_mode_(server_mode),
       observer_(observer),
       peer_connection_factory_(peer_connection_factory){
 

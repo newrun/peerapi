@@ -163,6 +163,9 @@ void Control::OnCommandReceived(const Json::Value& message) {
   if (command == "signin") {
     OnSignedIn(data);
   }
+  else if (command == "join") {
+    OnJoined(data);
+  }
   else if (command == "createoffer") {
     CreateOffer(data);
   }
@@ -255,6 +258,14 @@ void Control::OnSignedIn(const Json::Value& data) {
 
 
 //
+// 'join' command
+//
+
+void Control::OnJoined(const Json::Value& data) {
+}
+
+
+//
 // 'createoffer' command
 //
 
@@ -266,27 +277,18 @@ void Control::CreateOffer(const Json::Value& data) {
     return;
   }
 
-  if (peers.size() != 1) {
-    LOG(LS_WARNING) << "createoffer failed - This version supports only 1 to 1 connection";
-    return;
-  }
-
-  std::vector<std::string> peer_sids;
-
   for (size_t i = 0; i < peers.size(); ++i) {
-    std::string sid;
-    if (!rtc::GetStringFromJsonArray(peers, i, &sid)) {
+    std::string remote_sid;
+    if (!rtc::GetStringFromJsonArray(peers, i, &remote_sid)) {
       LOG(LS_WARNING) << "Peer handshake failed - invalid peer sid";
       return;
     }
 
-    peer_sids.push_back(sid);
+    Peer peer = new rtc::RefCountedObject<PeerControl>(session_id_, remote_sid, true, this, peer_connection_factory_);
+    peers_.insert(std::pair<std::string, Peer>(remote_sid, peer));
+
+    peer->CreateOffer(NULL);
   }
-
-  Peer peer = new rtc::RefCountedObject<PeerControl>(session_id_, peer_sids[0], this, peer_connection_factory_);
-  peers_.insert(std::pair<std::string, Peer>(peer_sids[0], peer));
-
-  peer->CreateOffer(NULL);
 }
 
 //
@@ -298,7 +300,7 @@ void Control::ReceiveOfferSdp(const std::string& peer_sid, const Json::Value& da
 
   if (!rtc::GetStringFromJsonObject(data, "sdp", &sdp)) return;
 
-  Peer peer = new rtc::RefCountedObject<PeerControl>(session_id_, peer_sid, this, peer_connection_factory_);
+  Peer peer = new rtc::RefCountedObject<PeerControl>(session_id_, peer_sid, false, this, peer_connection_factory_);
   peers_.insert(std::pair<std::string, Peer>(peer_sid, peer));
 
   peer->ReceiveOfferSdp(sdp);

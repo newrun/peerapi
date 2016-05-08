@@ -72,6 +72,7 @@ public:
 
 protected:
   void OnSignedIn(const Json::Value& data);
+  void OnJoined(const Json::Value& data);
   bool CreatePeerFactory(const webrtc::MediaConstraintsInterface* constraints);
   void CreateOffer(const Json::Value& data);
   void AddIceCandidate(const std::string& peer_sid, const Json::Value& data);

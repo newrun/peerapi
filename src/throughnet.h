@@ -13,7 +13,7 @@
 
 #include "controlobserver.h"
 
-#define function_tn []
+#define function_tn [&]
 
 namespace tn {
   class Control;
@@ -53,16 +53,11 @@ public:
   bool Send(const std::string& peer_id, const char* buffer, const size_t size);
   bool Send(const std::string& peer_id, const char* buffer);
   bool Send(const std::string& peer_id, const std::string& message);
-  bool Emit(const std::string& channel, const char* buffer, const size_t size);
-  bool Emit(const std::string& channel, const char* buffer);
-  bool Emit(const std::string& channel, const std::string& message);
 
-  Throughnet& On(std::string msg_id, void(*handler) (Throughnet* this_, std::string peer_id));
-  Throughnet& On(std::string msg_id, void(*handler) (Throughnet* this_, std::string peer_id, Data& data));
-  Throughnet& On(std::string msg_id, void(*handler) (Throughnet* this_, std::string peer_id, Buffer& data));
+  Throughnet& On(std::string msg_id, std::function<void(Throughnet*, std::string)>);
+  Throughnet& OnData(std::string msg_id, std::function<void(Throughnet*, std::string, Buffer&)>);
 
 protected:
-
   // The base type that is stored in the collection.
   struct Handler_t {
     virtual ~Handler_t() = default;
@@ -84,7 +79,6 @@ protected:
   using EventHandler_3 = EventHandler_t<Throughnet*, std::string, Data&>;
   using EventHandler_OnData = EventHandler_t<Throughnet*, std::string, Buffer&>;
   using Events = std::map<std::string, std::unique_ptr<Handler_t>>;
-
 
   void OnConnected(const std::string& channel, const std::string& peer_id);
   void OnData(const std::string& channel, const std::string& peer_id, const char* buffer, const size_t size);

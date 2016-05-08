@@ -41,6 +41,7 @@ class PeerControl
 public:
   explicit PeerControl(const std::string local_session_id,
                        const std::string remote_session_id,
+                       const bool server_mode,
                        PeerObserver* observer,
                        rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
                            peer_connection_factory);
@@ -51,7 +52,7 @@ public:
   const std::string& remote_session_id() const { return remote_session_id_; }
 
   bool Send(const char* buffer, const size_t size);
-
+  bool server_mode() { return server_mode_; }
 
   //
   // PeerConnection
@@ -110,6 +111,7 @@ protected:
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
   rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> peer_connection_factory_;
 
+  bool server_mode_;
   std::string local_session_id_;
   std::string remote_session_id_;
   rtc::scoped_ptr<PeerDataChannelObserver> local_data_channel_;
