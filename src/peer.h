@@ -21,8 +21,8 @@ namespace tn {
 
 class PeerObserver {
 public:
-  virtual bool SendCommand(const std::string& command, const Json::Value& data, const std::string& peer_sid) = 0;
-  virtual void OnConnected(const std::string peer_id) = 0;
+  virtual bool SendCommand(const std::string& id, const std::string& command, const Json::Value& data) = 0;
+  virtual void OnConnected(const std::string id) = 0;
   virtual void OnPeerMessage(const std::string& id, const char* buffer, const size_t size) = 0;
 };
 
@@ -41,18 +41,16 @@ class PeerControl
 public:
   explicit PeerControl(const std::string local_session_id,
                        const std::string remote_session_id,
-                       const bool server_mode,
                        PeerObserver* observer,
                        rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
                            peer_connection_factory);
 
   ~PeerControl();
 
-  const std::string& local_session_id() const { return local_session_id_; }
-  const std::string& remote_session_id() const { return remote_session_id_; }
+  const std::string& local_id() const { return local_id_; }
+  const std::string& remote_id() const { return remote_id_; }
 
   bool Send(const char* buffer, const size_t size);
-  bool server_mode() { return server_mode_; }
 
   //
   // PeerConnection
@@ -111,9 +109,8 @@ protected:
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
   rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> peer_connection_factory_;
 
-  bool server_mode_;
-  std::string local_session_id_;
-  std::string remote_session_id_;
+  std::string local_id_;
+  std::string remote_id_;
   rtc::scoped_ptr<PeerDataChannelObserver> local_data_channel_;
   rtc::scoped_ptr<PeerDataChannelObserver> remote_data_channel_;
 

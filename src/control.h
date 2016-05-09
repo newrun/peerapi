@@ -43,7 +43,7 @@ public:
   // Negotiation and send/emit data
   //
 
-  void Send(const char* buffer, const size_t size, const std::string to);
+  void Send(const std::string to, const char* buffer, const size_t size);
 
   void SignIn();
   void Join(const std::string id);
@@ -54,15 +54,12 @@ public:
   // PeerObserver implementation
   //
 
-  virtual bool SendCommand(const std::string& command, const Json::Value& data, const std::string& peer_sid);
-  virtual void OnConnected(const std::string peer_id);
+  virtual bool SendCommand(const std::string& id, const std::string& command, const Json::Value& data);
+  virtual void OnConnected(const std::string id);
   virtual void OnPeerMessage(const std::string& id, const char* buffer, const size_t size);
 
   // implements the MessageHandler interface
   void OnMessage(rtc::Message* msg);
-
-  const std::string& channel_name() { return channel_name_; }
-
 
 protected:
   void OnSignedIn(const Json::Value& data);
@@ -70,12 +67,11 @@ protected:
   void OnJoined(const Json::Value& data);
   bool CreatePeerFactory(const webrtc::MediaConstraintsInterface* constraints);
   void CreateOffer(const Json::Value& data);
-  void AddIceCandidate(const std::string& peer_sid, const Json::Value& data);
-  void ReceiveOfferSdp(const std::string& peer_sid, const Json::Value& data);
-  void ReceiveAnswerSdp(const std::string& peer_sid, const Json::Value& data);
+  void AddIceCandidate(const std::string& peer_id, const Json::Value& data);
+  void ReceiveOfferSdp(const std::string& peer_id, const Json::Value& data);
+  void ReceiveAnswerSdp(const std::string& peer_id, const Json::Value& data);
 
   std::string id_;
-  std::string channel_name_;
   std::string session_id_;
   std::shared_ptr<Signal> signal_;
   rtc::scoped_refptr<FakeAudioCaptureModule> fake_audio_capture_module_;

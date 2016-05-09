@@ -97,28 +97,28 @@ void Throughnet::Connect(const std::string id) {
 // Send message to destination peer session id
 //
 
-void Throughnet::Send(const std::string& peer_id, const char* buffer, const size_t size) {
-  control_->Send(buffer, size, peer_id);
+void Throughnet::Send(const std::string& id, const char* buffer, const size_t size) {
+  control_->Send(id, buffer, size);
 }
 
-void Throughnet::Send(const std::string& peer_id, const char* message) {
-  Send(peer_id, message, strlen(message));
+void Throughnet::Send(const std::string& id, const char* message) {
+  Send(id, message, strlen(message));
 }
 
-void Throughnet::Send(const std::string& peer_id, const std::string& message) {
-  Send(peer_id, message.c_str(), message.size());
+void Throughnet::Send(const std::string& id, const std::string& message) {
+  Send(id, message.c_str(), message.size());
 }
 
 
 //
 // Register Event handler
 //
-Throughnet& Throughnet::On(std::string msg_id, std::function<void(Throughnet*, std::string)> handler) {
+Throughnet& Throughnet::On(std::string event_id, std::function<void(Throughnet*, std::string)> handler) {
 
-  if (msg_id.empty()) return *this;
+  if (event_id.empty()) return *this;
 
   std::unique_ptr<EventHandler_2> f(new EventHandler_2(handler));
-  event_handler_.insert(Events::value_type(msg_id, std::move(f)));
+  event_handler_.insert(Events::value_type(event_id, std::move(f)));
 
   return *this;
 }

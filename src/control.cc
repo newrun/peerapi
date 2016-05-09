@@ -62,7 +62,7 @@ void Control::DeleteControl() {
 // Send data to peer or emit data to channel
 //
 
-void Control::Send(const char* buffer, const size_t size, const std::string to) {
+void Control::Send(const std::string to, const char* buffer, const size_t size) {
 
   typedef std::map<std::string, rtc::scoped_refptr<PeerControl>>::iterator it_type;
 
@@ -78,8 +78,8 @@ void Control::Send(const char* buffer, const size_t size, const std::string to) 
 // Send command to other peer by signal server
 //
 
-bool Control::SendCommand(const std::string& command, const Json::Value& data, const std::string& peer_sid) {
-  signal_->SendCommand(peer_sid, command, data);
+bool Control::SendCommand(const std::string& id, const std::string& command, const Json::Value& data) {
+  signal_->SendCommand(id, command, data);
   return true;
 }
 
@@ -88,9 +88,9 @@ bool Control::SendCommand(const std::string& command, const Json::Value& data, c
 // Signal connected
 //
 
-void Control::OnConnected(const std::string peer_id) {
+void Control::OnConnected(const std::string id) {
   if (observer_ == nullptr) return;
-  observer_->OnPeerConnected(peer_id);
+  observer_->OnPeerConnected(id);
 }
 
 
@@ -152,7 +152,7 @@ void Control::OnCommandReceived(const Json::Value& message) {
 
   Json::Value data;
   std::string command;
-  std::string peer_sid;
+  std::string peer_id;
 
   if (!rtc::GetStringFromJsonObject(message, "command", &command) ||
       !rtc::GetValueFromJsonObject(message, "data", &data)) {
@@ -161,8 +161,8 @@ void Control::OnCommandReceived(const Json::Value& message) {
     return;
   }
 
-  if (!rtc::GetStringFromJsonObject(message, "peer_id", &peer_sid)) {
-    peer_sid.clear();
+  if (!rtc::GetStringFromJsonObject(message, "peer_id", &peer_id)) {
+    peer_id.clear();
   }
 
   if (command == "signedin") {
@@ -178,13 +178,13 @@ void Control::OnCommandReceived(const Json::Value& message) {
     CreateOffer(data);
   }
   else if (command == "offersdp") {
-    ReceiveOfferSdp(peer_sid, data);
+    ReceiveOfferSdp(peer_id, data);
   }
   else if (command == "answersdp") {
-    ReceiveAnswerSdp(peer_sid, data);
+    ReceiveAnswerSdp(peer_id, data);
   }
   else if (command == "ice_candidate") {
-    AddIceCandidate(peer_sid, data);
+    AddIceCandidate(peer_id, data);
   }
 }
 
@@ -222,7 +222,7 @@ bool Control::CreatePeerFactory(
 // Add ice candidate to local peer from remote peer
 //
 
-void Control::AddIceCandidate(const std::string& peer_sid, const Json::Value& data) {
+void Control::AddIceCandidate(const std::string& peer_id, const Json::Value& data) {
 
   std::string sdp_mid;
   int sdp_mline_index;
@@ -232,8 +232,8 @@ void Control::AddIceCandidate(const std::string& peer_sid, const Json::Value& da
   if (!rtc::GetIntFromJsonObject(data, "sdp_mline_index", &sdp_mline_index)) return;
   if (!rtc::GetStringFromJsonObject(data, "candidate", &candidate)) return;
 
-  if (peers_.find(peer_sid) == peers_.end()) return;
-  peers_[peer_sid]->AddIceCandidate(sdp_mid, sdp_mline_index, candidate);
+  if (peers_.find(peer_id) == peers_.end()) return;
+  peers_[peer_id]->AddIceCandidate(sdp_mid, sdp_mline_index, candidate);
 }
 
 
@@ -311,14 +311,14 @@ void Control::CreateOffer(const Json::Value& data) {
   }
 
   for (size_t i = 0; i < peers.size(); ++i) {
-    std::string remote_sid;
-    if (!rtc::GetStringFromJsonArray(peers, i, &remote_sid)) {
-      LOG(LS_WARNING) << "Peer handshake failed - invalid peer sid";
+    std::string remote_id;
+    if (!rtc::GetStringFromJsonArray(peers, i, &remote_id)) {
+      LOG(LS_WARNING) << "Peer handshake failed - invalid peer id";
       return;
     }
 
-    Peer peer = new rtc::RefCountedObject<PeerControl>(id_, remote_sid, true, this, peer_connection_factory_);
-    peers_.insert(std::pair<std::string, Peer>(remote_sid, peer));
+    Peer peer = new rtc::RefCountedObject<PeerControl>(id_, remote_id, this, peer_connection_factory_);
+    peers_.insert(std::pair<std::string, Peer>(remote_id, peer));
 
     peer->CreateOffer(NULL);
   }
@@ -328,13 +328,13 @@ void Control::CreateOffer(const Json::Value& data) {
 // 'offersdp' command
 //
 
-void Control::ReceiveOfferSdp(const std::string& peer_sid, const Json::Value& data) {
+void Control::ReceiveOfferSdp(const std::string& peer_id, const Json::Value& data) {
   std::string sdp;
 
   if (!rtc::GetStringFromJsonObject(data, "sdp", &sdp)) return;
 
-  Peer peer = new rtc::RefCountedObject<PeerControl>(id_, peer_sid, false, this, peer_connection_factory_);
-  peers_.insert(std::pair<std::string, Peer>(peer_sid, peer));
+  Peer peer = new rtc::RefCountedObject<PeerControl>(id_, peer_id, this, peer_connection_factory_);
+  peers_.insert(std::pair<std::string, Peer>(peer_id, peer));
 
   peer->ReceiveOfferSdp(sdp);
 }
@@ -344,13 +344,13 @@ void Control::ReceiveOfferSdp(const std::string& peer_sid, const Json::Value& da
 // 'answersdp' command
 //
 
-void Control::ReceiveAnswerSdp(const std::string& peer_sid, const Json::Value& data) {
+void Control::ReceiveAnswerSdp(const std::string& peer_id, const Json::Value& data) {
   std::string sdp;
 
   if (!rtc::GetStringFromJsonObject(data, "sdp", &sdp)) return;
-  if (peers_.find(peer_sid) == peers_.end()) return;
+  if (peers_.find(peer_id) == peers_.end()) return;
 
-  peers_[peer_sid]->ReceiveAnswerSdp(sdp);
+  peers_[peer_id]->ReceiveAnswerSdp(sdp);
 }
 
 

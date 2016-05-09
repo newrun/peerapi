@@ -16,15 +16,13 @@ namespace tn {
 // class PeerControl
 //
 
-PeerControl::PeerControl(const std::string local_session_id,
-                         const std::string remote_session_id,
-                         const bool server_mode,
+PeerControl::PeerControl(const std::string local_id,
+                         const std::string remote_id,
                          PeerObserver* observer,
                          rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
                              peer_connection_factory)
-    : local_session_id_(local_session_id),
-      remote_session_id_(remote_session_id),
-      server_mode_(server_mode),
+    : local_id_(local_id),
+      remote_id_(remote_id),
       observer_(observer),
       peer_connection_factory_(peer_connection_factory){
 
@@ -34,7 +32,7 @@ PeerControl::PeerControl(const std::string local_session_id,
   }
 
   webrtc::DataChannelInit init;
-  const std::string data_channel_name = std::string("tn_data_") + remote_session_id_;
+  const std::string data_channel_name = std::string("tn_data_") + remote_id_;
   if (!CreateDataChannel(data_channel_name, init)) {
     LOG(LS_ERROR) << "CreateDataChannel failed";
     DeletePeerConnection();
@@ -90,7 +88,7 @@ void PeerControl::OnIceCandidate(const webrtc::IceCandidateInterface* candidate)
   data["sdp_mline_index"] = candidate->sdp_mline_index();
   data["candidate"] = sdp;
 
-  observer_->SendCommand("ice_candidate", data, remote_session_id_);
+  observer_->SendCommand(remote_id_, "ice_candidate", data);
 }
 
 void PeerControl::OnSuccess(webrtc::SessionDescriptionInterface* desc) {
@@ -110,11 +108,11 @@ void PeerControl::OnSuccess(webrtc::SessionDescriptionInterface* desc) {
 
   if (desc->type() == webrtc::SessionDescriptionInterface::kOffer) {
     data["sdp"] = sdp;
-    observer_->SendCommand("offersdp", data, remote_session_id_);
+    observer_->SendCommand(remote_id_, "offersdp", data);
   }
   else if (desc->type() == webrtc::SessionDescriptionInterface::kAnswer) {
     data["sdp"] = sdp;
-    observer_->SendCommand("answersdp", data, remote_session_id_);
+    observer_->SendCommand(remote_id_, "answersdp", data);
   }
 }
 
@@ -123,14 +121,14 @@ void PeerControl::OnPeerOpened() {
     local_data_channel_->state() == webrtc::DataChannelInterface::DataState::kOpen &&
     remote_data_channel_->state() == webrtc::DataChannelInterface::DataState::kOpen
     ) {
-    observer_->OnConnected(remote_session_id_);
+    observer_->OnConnected(remote_id_);
   }
 }
 
 
 void PeerControl::OnPeerMessage(const webrtc::DataBuffer& buffer) {
   std::string data;
-  observer_->OnPeerMessage(remote_session_id_, buffer.data.data<char>(), buffer.data.size());
+  observer_->OnPeerMessage(remote_id_, buffer.data.data<char>(), buffer.data.size());
 }
 
 void PeerControl::OnBufferedAmountChange(const uint64_t previous_amount) {

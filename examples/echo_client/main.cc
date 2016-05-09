@@ -29,13 +29,13 @@ int main(int argc, char *argv[]) {
   });
 
   tn.On("connected", function_tn(Throughnet* tn, string id) {
-    std::cout << "Peer " << id << " has been connected." << std::endl;
     tn->Send(id, "Hello world");
+    std::cout << "Sent 'Hello world' message to " << id << "." << std::endl;
   });
 
   tn.OnMessage(function_tn(Throughnet* tn, string id, Throughnet::Buffer& data) {
-    std::cout << "Message " << std::string(data.buf_, data.size_) << 
-                 " has been received." << std::endl;
+    std::cout << "Message '" << std::string(data.buf_, data.size_) << 
+                 "' has been received." << std::endl;
   });
 
   tn.GetReady();

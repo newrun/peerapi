@@ -56,14 +56,13 @@ public:
 
   virtual void JoinChannel(const std::string channel) = 0;
   virtual void LeaveChannel(const std::string channel) = 0;
-  virtual void SendCommand(const std::string channel,
+  virtual void SendCommand(const std::string id,
                            const std::string commandname,
                            const Json::Value& data) = 0;
   virtual void SendGlobalCommand(const std::string commandname,
                            const Json::Value& data) = 0;
 
   std::string session_id() { return session_id_; }
-  std::string channel() { return channel_; }
  
   // sigslots
   sigslot::signal1<const Json::Value&> SignalOnCommandReceived_;
@@ -71,7 +70,6 @@ public:
 
 protected:
   std::string session_id_;
-  std::string channel_;
 };
 
 

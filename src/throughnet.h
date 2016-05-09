@@ -52,11 +52,11 @@ public:
 
   void GetReady();
   void Connect(const std::string id);
-  void Send(const std::string& peer_id, const char* buffer, const size_t size);
-  void Send(const std::string& peer_id, const char* buffer);
-  void Send(const std::string& peer_id, const std::string& message);
+  void Send(const std::string& id, const char* buffer, const size_t size);
+  void Send(const std::string& id, const char* buffer);
+  void Send(const std::string& id, const std::string& message);
 
-  Throughnet& On(std::string msg_id, std::function<void(Throughnet*, std::string)>);
+  Throughnet& On(std::string event_id, std::function<void(Throughnet*, std::string)>);
   Throughnet& OnMessage(std::function<void(Throughnet*, std::string, Buffer&)>);
 
 protected:
