@@ -9,15 +9,19 @@
 
 
 Throughnet::Throughnet()
-   : Throughnet("", nullptr){
+   : Throughnet("", "", nullptr){
 }
 
-Throughnet::Throughnet(const std::string setting)
-   : Throughnet(setting, nullptr) {
+Throughnet::Throughnet(const std::string id)
+  : Throughnet(id, "", nullptr) {
 }
 
-Throughnet::Throughnet(const std::string setting, std::shared_ptr<Signal> signal)
-   : signal_(signal)
+Throughnet::Throughnet(const std::string id, const std::string setting)
+   : Throughnet(id, setting, nullptr) {
+}
+
+Throughnet::Throughnet(const std::string id, const std::string setting, std::shared_ptr<Signal> signal)
+   : signal_(signal), id_(id)
 {
   // Default settings
   setting_.signal_uri_ = "wss://signal.throughnet.com/hello";
@@ -25,6 +29,10 @@ Throughnet::Throughnet(const std::string setting, std::shared_ptr<Signal> signal
   // parse settings
   if (!setting.empty()) {
     ParseSetting(setting);
+  }
+
+  if (id_.empty()) {
+    id_ = rtc::CreateRandomUuid();
   }
 
   // create signal client
@@ -46,13 +54,14 @@ void Throughnet::Run() {
   rtc::ThreadManager::Instance()->CurrentThread()->Run();
 }
 
-void Throughnet::Connect(const std::string channel) {
+
+void Throughnet::GetReady() {
 
   //
   // Initialize control
   //
 
-  control_ = std::make_unique<tn::Control>(this, channel, signal_);
+  control_ = std::make_unique<tn::Control>(this, id_, signal_);
 
   if (control_.get() == NULL) {
     LOG(LS_ERROR) << "Failed to create class Control.";
@@ -74,6 +83,13 @@ void Throughnet::Connect(const std::string channel) {
 
   control_->SignIn();
   return;
+
+}
+
+void Throughnet::Connect(const std::string id) {
+
+  signal_->JoinChannel(id);
+  return;
 }
 
 
@@ -81,16 +97,16 @@ void Throughnet::Connect(const std::string channel) {
 // Send message to destination peer session id
 //
 
-bool Throughnet::Send(const std::string& peer_id, const char* buffer, const size_t size) {
-  return control_->Send(buffer, size);
+void Throughnet::Send(const std::string& peer_id, const char* buffer, const size_t size) {
+  control_->Send(buffer, size, peer_id);
 }
 
-bool Throughnet::Send(const std::string& peer_id, const char* message) {
-  return Send(peer_id, message, strlen(message));
+void Throughnet::Send(const std::string& peer_id, const char* message) {
+  Send(peer_id, message, strlen(message));
 }
 
-bool Throughnet::Send(const std::string& peer_id, const std::string& message) {
-  return Send(peer_id, message.c_str(), message.size());
+void Throughnet::Send(const std::string& peer_id, const std::string& message) {
+  Send(peer_id, message.c_str(), message.size());
 }
 
 
@@ -98,39 +114,21 @@ bool Throughnet::Send(const std::string& peer_id, const std::string& message) {
 // Register Event handler
 //
 Throughnet& Throughnet::On(std::string msg_id, std::function<void(Throughnet*, std::string)> handler) {
-  
-  std::unique_ptr<EventHandler_2> f(new EventHandler_2(handler));
 
-  if (msg_id == "connect") {
-    event_handler_.insert(Events::value_type(msg_id, std::move(f)));
-  }
-  else if (msg_id == "disconnect") {
-    event_handler_.insert(Events::value_type(msg_id, std::move(f)));
-  }
-  else if (msg_id == "signin") {
-    event_handler_.insert(Events::value_type(msg_id, std::move(f)));
-  }
-  else if (msg_id == "signout") {
-    event_handler_.insert(Events::value_type(msg_id, std::move(f)));
-  }
-  else if (msg_id == "error") {
-    event_handler_.insert(Events::value_type(msg_id, std::move(f)));
-  }
+  if (msg_id.empty()) return *this;
+
+  std::unique_ptr<EventHandler_2> f(new EventHandler_2(handler));
+  event_handler_.insert(Events::value_type(msg_id, std::move(f)));
 
   return *this;
 }
 
-
 //
-// Register OnData event handler
+// Register Message handler
 //
-Throughnet& Throughnet::OnData(std::string msg_id, std::function<void(Throughnet*, std::string, Buffer&)> handler) {
 
-  if (msg_id.length() > 0) {
-    std::unique_ptr<EventHandler_OnData> f(new EventHandler_OnData(handler));
-    event_handler_.insert(Events::value_type(msg_id, std::move(f)));
-  }
-
+Throughnet& Throughnet::OnMessage(std::function<void(Throughnet*, std::string, Buffer&)> handler) {
+  message_handler_ = handler;
   return *this;
 }
 
@@ -138,19 +136,23 @@ Throughnet& Throughnet::OnData(std::string msg_id, std::function<void(Throughnet
 // Signal event handler
 //
 
-void Throughnet::OnConnected(const std::string& channel, const std::string& peer_id) {
-  if (event_handler_.find("connect") == event_handler_.end()) return;
-  CallEventHandler("connect", this, peer_id);
+void Throughnet::OnPeerConnected(const std::string& id) {
+  if (event_handler_.find("connected") == event_handler_.end()) return;
+  CallEventHandler("connected", this, id);
+}
+
+void Throughnet::OnReady(const std::string& id) {
+  if (event_handler_.find("ready") == event_handler_.end()) return;
+  CallEventHandler("ready", this, id);
 }
 
 //
 // Signal data handler
 //
 
-void Throughnet::OnData(const std::string& channel, const std::string& peer_id, const char* buffer, const size_t size) {
-  if (event_handler_.find(channel) == event_handler_.end()) return;
+void Throughnet::OnPeerMessage(const std::string& id, const char* buffer, const size_t size) {
   Buffer buf(buffer, size);
-  CallEventHandler(channel, this, peer_id, buf);
+  message_handler_(this, id, buf);
 }
 
 template<typename ...A>

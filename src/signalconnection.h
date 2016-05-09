@@ -104,6 +104,7 @@ public:
   void SendGlobalCommand(const std::string commandname,
                          const Json::Value& data);
 
+  void CreateChannel(const std::string channel);
   void JoinChannel(const std::string channel);
   void LeaveChannel(const std::string channel);
 

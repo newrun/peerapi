@@ -210,10 +210,18 @@ add_test(test_main test_main)
 # Example
 # ============================================================================
 
-# echo
-add_executable(echo_example examples/echo/main.cc)
-add_dependencies(echo_example throughnet)
+# echo server
+add_executable(echo_server examples/echo_server/main.cc)
+add_dependencies(echo_server throughnet)
 
-target_include_directories(echo_example PRIVATE ${THROUGHNET_INCLUDE_DIRECTORY})
-target_link_libraries(echo_example throughnet ${THROUGHNET_LIBRARIES_STATIC})
-set_target_properties (echo_example PROPERTIES FOLDER examples)
+target_include_directories(echo_server PRIVATE ${THROUGHNET_INCLUDE_DIRECTORY})
+target_link_libraries(echo_server throughnet ${THROUGHNET_LIBRARIES_STATIC})
+set_target_properties (echo_server PROPERTIES FOLDER examples)
+
+# echo client
+add_executable(echo_client examples/echo_client/main.cc)
+add_dependencies(echo_client throughnet)
+
+target_include_directories(echo_client PRIVATE ${THROUGHNET_INCLUDE_DIRECTORY})
+target_link_libraries(echo_client throughnet ${THROUGHNET_LIBRARIES_STATIC})
+set_target_properties (echo_client PROPERTIES FOLDER examples)

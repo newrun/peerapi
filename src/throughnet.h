@@ -43,19 +43,21 @@ public:
   using Data    = std::map<std::string, std::string>;
 
   explicit Throughnet();
-  explicit Throughnet(const std::string setting);
-  explicit Throughnet(const std::string setting, std::shared_ptr<tn::Signal> signal);
+  explicit Throughnet(const std::string id);
+  explicit Throughnet(const std::string id, std::string setting);
+  explicit Throughnet(const std::string id, const std::string setting, std::shared_ptr<tn::Signal> signal);
   ~Throughnet();
 
   static void Throughnet::Run();
 
-  void Connect(const std::string channel);
-  bool Send(const std::string& peer_id, const char* buffer, const size_t size);
-  bool Send(const std::string& peer_id, const char* buffer);
-  bool Send(const std::string& peer_id, const std::string& message);
+  void GetReady();
+  void Connect(const std::string id);
+  void Send(const std::string& peer_id, const char* buffer, const size_t size);
+  void Send(const std::string& peer_id, const char* buffer);
+  void Send(const std::string& peer_id, const std::string& message);
 
   Throughnet& On(std::string msg_id, std::function<void(Throughnet*, std::string)>);
-  Throughnet& OnData(std::string msg_id, std::function<void(Throughnet*, std::string, Buffer&)>);
+  Throughnet& OnMessage(std::function<void(Throughnet*, std::string, Buffer&)>);
 
 protected:
   // The base type that is stored in the collection.
@@ -77,16 +79,19 @@ protected:
   using EventHandler_1 = EventHandler_t<Throughnet*>;
   using EventHandler_2 = EventHandler_t<Throughnet*, std::string>;
   using EventHandler_3 = EventHandler_t<Throughnet*, std::string, Data&>;
-  using EventHandler_OnData = EventHandler_t<Throughnet*, std::string, Buffer&>;
   using Events = std::map<std::string, std::unique_ptr<Handler_t>>;
+  using MessageHandler = std::function<void(Throughnet*, std::string, Buffer&)>;
 
-  void OnConnected(const std::string& channel, const std::string& peer_id);
-  void OnData(const std::string& channel, const std::string& peer_id, const char* buffer, const size_t size);
+  void OnPeerConnected(const std::string& id);
+  void OnReady(const std::string& id);
+  void OnPeerMessage(const std::string& id, const char* buffer, const size_t size);
 
   bool ParseSetting(const std::string& setting);
 
+  std::string id_;
   Setting setting_;
   Events event_handler_;
+  MessageHandler message_handler_;
 
   std::unique_ptr<tn::Control> control_;
   std::shared_ptr<tn::Signal> signal_;

@@ -46,7 +46,7 @@ Signal::Signal() :
       reconn_delay_(5000),
       reconn_delay_max_(25000) {
 
-#ifdef _DEBUG || DEBUG
+#if _DEBUG || DEBUG
   client_.set_access_channels(websocketpp::log::alevel::all);
   client_.clear_access_channels(websocketpp::log::alevel::devel);
 #else
@@ -85,6 +85,11 @@ void Signal::SignIn() {
   Connect();
 }
 
+void Signal::CreateChannel(const std::string channel) {
+  Json::Value data;
+  data["name"] = channel;
+  SendCommand(channel, "create", data);
+}
 
 void Signal::JoinChannel(const std::string channel) {
   Json::Value data;

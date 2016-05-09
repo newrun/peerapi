@@ -23,7 +23,7 @@ class PeerObserver {
 public:
   virtual bool SendCommand(const std::string& command, const Json::Value& data, const std::string& peer_sid) = 0;
   virtual void OnConnected(const std::string peer_id) = 0;
-  virtual void OnData(const std::string& peer_id, const char* buffer, const size_t size) = 0;
+  virtual void OnPeerMessage(const std::string& id, const char* buffer, const size_t size) = 0;
 };
 
 class PeerDataChannelObserver;

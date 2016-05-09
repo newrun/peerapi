@@ -130,7 +130,7 @@ void PeerControl::OnPeerOpened() {
 
 void PeerControl::OnPeerMessage(const webrtc::DataBuffer& buffer) {
   std::string data;
-  observer_->OnData(remote_session_id_, buffer.data.data<char>(), buffer.data.size());
+  observer_->OnPeerMessage(remote_session_id_, buffer.data.data<char>(), buffer.data.size());
 }
 
 void PeerControl::OnBufferedAmountChange(const uint64_t previous_amount) {

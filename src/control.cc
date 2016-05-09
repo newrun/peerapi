@@ -14,12 +14,12 @@
 
 namespace tn {
 
-Control::Control(ControlObserver* observer, const std::string channel)
-       : Control(observer, channel, nullptr){
+Control::Control(ControlObserver* observer, const std::string id)
+       : Control(observer, id, nullptr){
 }
 
-Control::Control(ControlObserver* observer, const std::string channel, std::shared_ptr<Signal> signal)
-       : observer_(observer), channel_name_(channel),
+Control::Control(ControlObserver* observer, const std::string id, std::shared_ptr<Signal> signal)
+       : observer_(observer), id_(id),
          signal_(signal) {
 
   signal_->SignalOnCommandReceived_.connect(this, &Control::OnSignalCommandReceived);
@@ -62,19 +62,15 @@ void Control::DeleteControl() {
 // Send data to peer or emit data to channel
 //
 
-bool Control::Send(const char* buffer, const size_t size, const std::string *peer_id) {
-  bool ret = true;
+void Control::Send(const char* buffer, const size_t size, const std::string to) {
 
   typedef std::map<std::string, rtc::scoped_refptr<PeerControl>>::iterator it_type;
-  for (it_type iterator = peers_.begin(); iterator != peers_.end(); iterator++) {
-    if (peer_id == nullptr || iterator->second->remote_session_id() == *peer_id) {
-      if (!iterator->second->Send(buffer, size)) {
-        ret = false;
-      }
-    }
-  }
 
-  return ret;
+  it_type it = peers_.find(to);
+  if (it == peers_.end()) return;
+
+  it->second->Send(buffer, size);
+  return;
 }
 
 
@@ -94,16 +90,17 @@ bool Control::SendCommand(const std::string& command, const Json::Value& data, c
 
 void Control::OnConnected(const std::string peer_id) {
   if (observer_ == nullptr) return;
-  observer_->OnConnected(channel_name_, peer_id);
+  observer_->OnPeerConnected(peer_id);
 }
+
 
 //
 // Signal receiving data
 //
 
-void Control::OnData(const std::string& peer_id, const char* buffer, const size_t size) {
+void Control::OnPeerMessage(const std::string& id, const char* buffer, const size_t size) {
   if (observer_ == nullptr) return;
-  observer_->OnData(channel_name_, peer_id, buffer, size);
+  observer_->OnPeerMessage(id, buffer, size);
 }
 
 //
@@ -137,7 +134,15 @@ void Control::SignIn() {
   return;
 }
 
+void Control::Join(const std::string id) {
+  if (signal_.get() == NULL) {
+    LOG(LS_ERROR) << "Join failed, no signal server";
+    return;
+  }
 
+  signal_->JoinChannel(id);
+  return;
+}
 
 //
 // Dispatch command from signal server
@@ -156,14 +161,17 @@ void Control::OnCommandReceived(const Json::Value& message) {
     return;
   }
 
-  if (!rtc::GetStringFromJsonObject(message, "peer_sid", &peer_sid)) {
+  if (!rtc::GetStringFromJsonObject(message, "peer_id", &peer_sid)) {
     peer_sid.clear();
   }
 
-  if (command == "signin") {
+  if (command == "signedin") {
     OnSignedIn(data);
   }
-  else if (command == "join") {
+  else if (command == "created") {
+    OnCreated(data);
+  }
+  else if (command == "joined") {
     OnJoined(data);
   }
   else if (command == "createoffer") {
@@ -253,15 +261,40 @@ void Control::OnSignedIn(const Json::Value& data) {
   }
 
   session_id_ = session_id;
-  signal_->JoinChannel(channel_name_);
+  signal_->CreateChannel(id_);
 }
 
+//
+// 'create' command
+//
+
+void Control::OnCreated(const Json::Value& data) {
+  bool result;
+  if (!rtc::GetBoolFromJsonObject(data, "result", &result)) {
+    LOG(LS_WARNING) << "Unknown signin response";
+    return;
+  }
+
+  if (!result) {
+    LOG(LS_WARNING) << "Create channel failed";
+    return;
+  }
+
+  std::string channel;
+  if (!rtc::GetStringFromJsonObject(data, "name", &channel)) {
+    LOG(LS_WARNING) << "Create channel failed - no channel name";
+    return;
+  }
+
+  observer_->OnReady(channel);
+}
 
 //
 // 'join' command
 //
 
 void Control::OnJoined(const Json::Value& data) {
+
 }
 
 
@@ -284,7 +317,7 @@ void Control::CreateOffer(const Json::Value& data) {
       return;
     }
 
-    Peer peer = new rtc::RefCountedObject<PeerControl>(session_id_, remote_sid, true, this, peer_connection_factory_);
+    Peer peer = new rtc::RefCountedObject<PeerControl>(id_, remote_sid, true, this, peer_connection_factory_);
     peers_.insert(std::pair<std::string, Peer>(remote_sid, peer));
 
     peer->CreateOffer(NULL);
@@ -300,7 +333,7 @@ void Control::ReceiveOfferSdp(const std::string& peer_sid, const Json::Value& da
 
   if (!rtc::GetStringFromJsonObject(data, "sdp", &sdp)) return;
 
-  Peer peer = new rtc::RefCountedObject<PeerControl>(session_id_, peer_sid, false, this, peer_connection_factory_);
+  Peer peer = new rtc::RefCountedObject<PeerControl>(id_, peer_sid, false, this, peer_connection_factory_);
   peers_.insert(std::pair<std::string, Peer>(peer_sid, peer));
 
   peer->ReceiveOfferSdp(sdp);

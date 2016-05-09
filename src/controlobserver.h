@@ -11,8 +11,9 @@ namespace tn {
 
 class ControlObserver {
 public:
-  virtual void OnConnected(const std::string& channel, const std::string& peer_id) = 0;
-  virtual void OnData(const std::string& channel, const std::string& peer_id, const char* buffer, const size_t size) = 0;
+  virtual void OnPeerConnected(const std::string& id) = 0;
+  virtual void OnReady(const std::string& id) = 0;
+  virtual void OnPeerMessage(const std::string& id, const char* buffer, const size_t size) = 0;
 };
 
 } // namespace tn
