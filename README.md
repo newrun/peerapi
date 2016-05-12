@@ -28,6 +28,8 @@ tn.On("connected", function_tn(Throughnet* tn, string id) {
 });
 ```
 
+### Practical use
+
 You can make your own application with ThroughnNet
 - Connect VR game players without server costs
 - Connect IoT device and smart phone
