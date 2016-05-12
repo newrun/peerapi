@@ -2,18 +2,18 @@
 
 Throughnet is a network library for peer to peer (serverless) network programming.
 
-- Network connection by unique id or your email
+- Network connection by random id or your email
 - Support NAT traversal and WebRTC
 - Forget ip address and port number
 
 ### How to use
 Peer A (listen)
 ```
-  Throughnet tn("your@email");
+Throughnet tn("your@email");
 
-  tn.OnMessage(function_tn(Throughnet* tn, string id, Throughnet::Buffer& data) {
-    std::cout << "A message has been received." << std::endl;
-  });
+tn.OnMessage(function_tn(Throughnet* tn, string id, Throughnet::Buffer& data) {
+  std::cout << "A message has been received." << std::endl;
+});
  ```
 Peer B (connect)
 ```
