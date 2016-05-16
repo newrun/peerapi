@@ -49,6 +49,10 @@ bool PeerControl::Send(const char* buffer, const size_t size) {
   return local_data_channel_->Send(buffer, size);
 }
 
+void PeerControl::Close() {
+  local_data_channel_->Close();
+}
+
 
 void PeerControl::CreateOffer(const webrtc::MediaConstraintsInterface* constraints) {
   peer_connection_->CreateOffer(this, constraints);
@@ -77,6 +81,16 @@ void PeerControl::OnDataChannel(webrtc::DataChannelInterface* data_channel) {
   remote_data_channel_ = rtc::scoped_ptr<PeerDataChannelObserver>(Observer);
   SigslotConnect(remote_data_channel_.get());
 }
+
+void PeerControl::OnIceConnectionChange(webrtc::PeerConnectionInterface::IceConnectionState new_state) {
+  switch (new_state) {
+  case webrtc::PeerConnectionInterface::IceConnectionState::kIceConnectionDisconnected:
+//    observer_->OnDisconnected(remote_id_);
+    break;
+  }
+}
+
+
 
 void PeerControl::OnIceCandidate(const webrtc::IceCandidateInterface* candidate) {
   std::string sdp;
@@ -123,6 +137,10 @@ void PeerControl::OnPeerOpened() {
     ) {
     observer_->OnConnected(remote_id_);
   }
+}
+
+void PeerControl::OnPeerClosed() {
+//  observer_->OnDisconnected(remote_id_);
 }
 
 
@@ -214,6 +232,7 @@ void PeerControl::SetRemoteDescription(const std::string& type,
 
 void PeerControl::SigslotConnect(PeerDataChannelObserver* datachannel) {
   datachannel->SignalOnOpen_.connect(this, &PeerControl::OnPeerOpened);
+  datachannel->SignalOnClosed_.connect(this, &PeerControl::OnPeerClosed);
   datachannel->SignalOnMessage_.connect(this, &PeerControl::OnPeerMessage);
   datachannel->SignalOnBufferedAmountChange_.connect(this, &PeerControl::OnBufferedAmountChange);
 }
@@ -246,6 +265,9 @@ void PeerDataChannelObserver::OnStateChange() {
   if (state_ == webrtc::DataChannelInterface::DataState::kOpen) {
     SignalOnOpen_();
   }
+  else if (state_ == webrtc::DataChannelInterface::DataState::kClosed) {
+    SignalOnClosed_();
+  }
 }
 
 void PeerDataChannelObserver::OnMessage(const webrtc::DataBuffer& buffer) {
@@ -260,6 +282,7 @@ bool PeerDataChannelObserver::Send(const char* buffer, const size_t size) {
 }
 
 void PeerDataChannelObserver::Close() {
+  LOG(LS_WARNING) << "Close data channel";
   channel_->Close();
 }
 

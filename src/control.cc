@@ -93,6 +93,14 @@ void Control::OnConnected(const std::string id) {
   observer_->OnPeerConnected(id);
 }
 
+//
+// Signal disconnected
+//
+
+void Control::OnDisconnected(const std::string id) {
+  if (observer_ == nullptr) return;
+  observer_->OnPeerDisconnected(id);
+}
 
 //
 // Signal receiving data
@@ -173,6 +181,9 @@ void Control::OnCommandReceived(const Json::Value& message) {
   }
   else if (command == "joined") {
     OnJoined(data);
+  }
+  else if (command == "leaved") {
+    OnLeaved(data);
   }
   else if (command == "createoffer") {
     CreateOffer(data);
@@ -295,6 +306,28 @@ void Control::OnCreated(const Json::Value& data) {
 
 void Control::OnJoined(const Json::Value& data) {
 
+}
+
+
+//
+// 'leave' command
+//
+
+void Control::OnLeaved(const Json::Value& data) {
+
+  std::string channel;
+  if (!rtc::GetStringFromJsonObject(data, "name", &channel)) {
+    LOG(LS_WARNING) << "OnLeave failed - no name";
+    return;
+  }
+
+  for (auto const &peer : peers_) {
+    if (peer.second->remote_id() == channel) {
+      peer.second->Close();
+    }
+
+    observer_->OnPeerDisconnected(channel);
+  }
 }
 
 

@@ -56,6 +56,7 @@ public:
 
   virtual bool SendCommand(const std::string& id, const std::string& command, const Json::Value& data);
   virtual void OnConnected(const std::string id);
+  virtual void OnDisconnected(const std::string id);
   virtual void OnPeerMessage(const std::string& id, const char* buffer, const size_t size);
 
   // implements the MessageHandler interface
@@ -65,6 +66,7 @@ protected:
   void OnSignedIn(const Json::Value& data);
   void OnCreated(const Json::Value& data);
   void OnJoined(const Json::Value& data);
+  void OnLeaved(const Json::Value& data);
   bool CreatePeerFactory(const webrtc::MediaConstraintsInterface* constraints);
   void CreateOffer(const Json::Value& data);
   void AddIceCandidate(const std::string& peer_id, const Json::Value& data);

@@ -23,6 +23,13 @@ Throughnet::Throughnet(const std::string id, const std::string setting)
 Throughnet::Throughnet(const std::string id, const std::string setting, std::shared_ptr<Signal> signal)
    : signal_(signal), id_(id)
 {
+  // Log level
+#if DEBUG || _DEBUG
+  rtc::LogMessage::LogToDebug(rtc::LS_ERROR);
+#else
+  rtc::LogMessage::LogToDebug(rtc::LS_NONE);
+#endif
+
   // Default settings
   setting_.signal_uri_ = "wss://signal.throughnet.com/hello";
 
@@ -52,6 +59,10 @@ Throughnet::~Throughnet() {
 
 void Throughnet::Run() {
   rtc::ThreadManager::Instance()->CurrentThread()->Run();
+}
+
+void Throughnet::Stop() {
+  rtc::ThreadManager::Instance()->CurrentThread()->Quit();
 }
 
 
@@ -87,8 +98,12 @@ void Throughnet::GetReady() {
 }
 
 void Throughnet::Connect(const std::string id) {
-
   signal_->JoinChannel(id);
+  return;
+}
+
+void Throughnet::Disconnect(const std::string id) {
+  signal_->LeaveChannel(id);
   return;
 }
 
@@ -109,6 +124,9 @@ void Throughnet::Send(const std::string& id, const std::string& message) {
   Send(id, message.c_str(), message.size());
 }
 
+std::string Throughnet::CreateRandomUuid() {
+  return rtc::CreateRandomUuid();
+}
 
 //
 // Register Event handler
@@ -139,6 +157,11 @@ Throughnet& Throughnet::OnMessage(std::function<void(Throughnet*, std::string, B
 void Throughnet::OnPeerConnected(const std::string& id) {
   if (event_handler_.find("connected") == event_handler_.end()) return;
   CallEventHandler("connected", this, id);
+}
+
+void Throughnet::OnPeerDisconnected(const std::string& id) {
+  if (event_handler_.find("disconnected") == event_handler_.end()) return;
+  CallEventHandler("disconnected", this, id);
 }
 
 void Throughnet::OnReady(const std::string& id) {

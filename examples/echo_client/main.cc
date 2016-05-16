@@ -33,6 +33,11 @@ int main(int argc, char *argv[]) {
     std::cout << "Sent 'Hello world' message to " << id << "." << std::endl;
   });
 
+  tn.On("disconnected", function_tn(Throughnet* tn, string id) {
+    std::cout << "Peer " << id << " has been disconnected" << std::endl;
+    Throughnet::Stop();
+  });
+
   tn.OnMessage(function_tn(Throughnet* tn, string id, Throughnet::Buffer& data) {
     std::cout << "Message '" << std::string(data.buf_, data.size_) << 
                  "' has been received." << std::endl;
@@ -48,5 +53,5 @@ void usage(const char* prg) {
   std::cerr << std::endl;
   std::cerr << "Usage: " << prg << " id" << std::endl << std::endl;
   std::cerr << "Example: " << std::endl << std::endl;
-  std::cerr << "   > " << prg << " echo@myserver.com" << std::endl;
+  std::cerr << "   > " << prg << " myrandom" << std::endl;
 }

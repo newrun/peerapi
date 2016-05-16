@@ -23,6 +23,7 @@ class PeerObserver {
 public:
   virtual bool SendCommand(const std::string& id, const std::string& command, const Json::Value& data) = 0;
   virtual void OnConnected(const std::string id) = 0;
+  virtual void OnDisconnected(const std::string id) = 0;
   virtual void OnPeerMessage(const std::string& id, const char* buffer, const size_t size) = 0;
 };
 
@@ -51,6 +52,7 @@ public:
   const std::string& remote_id() const { return remote_id_; }
 
   bool Send(const char* buffer, const size_t size);
+  void Close();
 
   //
   // PeerConnection
@@ -69,15 +71,14 @@ public:
   //
 
   void OnSignalingChange(
-         webrtc::PeerConnectionInterface::SignalingState new_state) override {};
+    webrtc::PeerConnectionInterface::SignalingState new_state) override {}
   void OnAddStream(webrtc::MediaStreamInterface* stream) override {};
-  void OnRemoveStream(webrtc::MediaStreamInterface* stream) override {};
+  void OnRemoveStream(webrtc::MediaStreamInterface* stream) override {}
   void OnDataChannel(webrtc::DataChannelInterface* channel) override;
   void OnRenegotiationNeeded() override {}
-  void OnIceConnectionChange(
-          webrtc::PeerConnectionInterface::IceConnectionState new_state) override {};
+  void OnIceConnectionChange(webrtc::PeerConnectionInterface::IceConnectionState new_state) override; 
   void OnIceGatheringChange(
-          webrtc::PeerConnectionInterface::IceGatheringState new_state) override {};
+    webrtc::PeerConnectionInterface::IceGatheringState new_state) override {}
   void OnIceCandidate(const webrtc::IceCandidateInterface* candidate) override;
   void OnIceConnectionReceivingChange(bool receiving) override {}
 
@@ -93,6 +94,7 @@ public:
   //
 
   void OnPeerOpened();
+  void OnPeerClosed();
   void OnPeerMessage(const webrtc::DataBuffer& buffer);
   void OnBufferedAmountChange(const uint64_t previous_amount);
 
@@ -140,6 +142,7 @@ public:
 
   // sigslots
   sigslot::signal0<> SignalOnOpen_;
+  sigslot::signal0<> SignalOnClosed_;
   sigslot::signal1<const webrtc::DataBuffer&> SignalOnMessage_;
   sigslot::signal1<const uint64_t> SignalOnBufferedAmountChange_;
 

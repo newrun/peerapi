@@ -42,22 +42,35 @@ public:
   using Signal  = tn::Signal;
   using Data    = std::map<std::string, std::string>;
 
+  //
+  // APIs
+  //
+
+  static void Throughnet::Run();
+  static void Throughnet::Stop();
+
+  void Connect(const std::string id);
+  void Disconnect(const std::string id);
+  void Send(const std::string& id, const char* buffer, const size_t size);
+  void Send(const std::string& id, const char* buffer);
+  void Send(const std::string& id, const std::string& message);
+  void GetReady();
+  static std::string CreateRandomUuid();
+
+  Throughnet& On(std::string event_id, std::function<void(Throughnet*, std::string)>);
+  Throughnet& OnMessage(std::function<void(Throughnet*, std::string, Buffer&)>);
+
+
+  //
+  // Member functions
+  //
+
   explicit Throughnet();
   explicit Throughnet(const std::string id);
   explicit Throughnet(const std::string id, std::string setting);
   explicit Throughnet(const std::string id, const std::string setting, std::shared_ptr<tn::Signal> signal);
   ~Throughnet();
 
-  static void Throughnet::Run();
-
-  void GetReady();
-  void Connect(const std::string id);
-  void Send(const std::string& id, const char* buffer, const size_t size);
-  void Send(const std::string& id, const char* buffer);
-  void Send(const std::string& id, const std::string& message);
-
-  Throughnet& On(std::string event_id, std::function<void(Throughnet*, std::string)>);
-  Throughnet& OnMessage(std::function<void(Throughnet*, std::string, Buffer&)>);
 
 protected:
   // The base type that is stored in the collection.
@@ -83,6 +96,7 @@ protected:
   using MessageHandler = std::function<void(Throughnet*, std::string, Buffer&)>;
 
   void OnPeerConnected(const std::string& id);
+  void OnPeerDisconnected(const std::string& id);
   void OnReady(const std::string& id);
   void OnPeerMessage(const std::string& id, const char* buffer, const size_t size);
 
