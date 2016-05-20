@@ -84,6 +84,13 @@ bool Control::SendCommand(const std::string& id, const std::string& command, con
 }
 
 
+
+void Control::QueueDisconnect(const std::string id) {
+  ControlMessageData *data = new ControlMessageData(id);
+  signaling_thread_->Post(this, MSG_QUEUE_DISCONNECT, data);
+}
+
+
 //
 // Signal connected
 //
@@ -99,7 +106,23 @@ void Control::OnConnected(const std::string id) {
 
 void Control::OnDisconnected(const std::string id) {
   if (observer_ == nullptr) return;
-  observer_->OnPeerDisconnected(id);
+
+  bool erased;
+  std::map<std::string, Peer>::iterator it;
+
+  for (it = peers_.begin(); it != peers_.end(); ) {
+    if (it->second->remote_id() == id) {
+      erased = true;
+      peers_.erase(it++);
+    }
+    else {
+      ++it;
+    }
+  }
+
+  if (erased) {
+    observer_->OnPeerDisconnected(id);
+  }
 }
 
 //
@@ -116,15 +139,21 @@ void Control::OnPeerMessage(const std::string& id, const char* buffer, const siz
 //
 
 void Control::OnMessage(rtc::Message* msg) {
-  switch (msg->message_id) {
+  ControlMessageData* param = nullptr;
+    switch (msg->message_id) {
   case MSG_COMMAND_RECEIVED:
-    ControlMessageData* param =
-      static_cast<ControlMessageData*>(msg->pdata);
+    param = static_cast<ControlMessageData*>(msg->pdata);
     OnCommandReceived(param->data_);
-    delete param;
+    break;
+  case MSG_QUEUE_DISCONNECT:
+    param = static_cast<ControlMessageData*>(msg->pdata);
+    Disconnect(param->data_string_);
+    break;
+  default:
     break;
   }
 
+  if (param != nullptr) delete param;
   return;
 }
 
@@ -321,13 +350,7 @@ void Control::OnLeaved(const Json::Value& data) {
     return;
   }
 
-  for (auto const &peer : peers_) {
-    if (peer.second->remote_id() == channel) {
-      peer.second->Close();
-    }
-
-    observer_->OnPeerDisconnected(channel);
-  }
+  DisconnectPeer(channel);
 }
 
 
@@ -384,6 +407,39 @@ void Control::ReceiveAnswerSdp(const std::string& peer_id, const Json::Value& da
   if (peers_.find(peer_id) == peers_.end()) return;
 
   peers_[peer_id]->ReceiveAnswerSdp(sdp);
+}
+
+void Control::Disconnect(const std::string id) {
+  // 1. Leave channel on signal server
+  // In DisconnectPeer(): 2. Close remote data channel
+  // In DisconnectPeer(): 3. Close local data channel
+  // In DisconnectPeer(): 4. Close ice connection
+  // In DisconnectPeer(): 5. Erase peer
+
+  signal_->LeaveChannel(id);
+}
+
+void Control::DisconnectPeer(const std::string id) {
+  // 1. Close remote data channel
+  // 2. Close local data channel
+  // 3. Close ice connection
+  // 4. Erase peer
+
+  // Use while loop because peer.second->Close() will erase
+  // peer on current thread
+  while (true) {
+    bool closed = false;
+    for (auto peer : peers_) {
+      if (peer.second->remote_id() == id) {
+        peer.second->Close();
+        closed = true;
+        break;
+      }
+    }
+    if (closed == false) {
+      break;
+    }
+  }
 }
 
 

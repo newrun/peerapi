@@ -46,7 +46,8 @@ public:
   void Send(const std::string to, const char* buffer, const size_t size);
 
   void SignIn();
-  void Join(const std::string id);
+  void Join(const std::string id);  // TODO: Rename to connect
+  void Disconnect(const std::string id);
   void OnCommandReceived(const Json::Value& message);
   void OnSignalCommandReceived(const Json::Value& message);
 
@@ -55,6 +56,7 @@ public:
   //
 
   virtual bool SendCommand(const std::string& id, const std::string& command, const Json::Value& data);
+  virtual void QueueDisconnect(const std::string id);
   virtual void OnConnected(const std::string id);
   virtual void OnDisconnected(const std::string id);
   virtual void OnPeerMessage(const std::string& id, const char* buffer, const size_t size);
@@ -73,6 +75,8 @@ protected:
   void ReceiveOfferSdp(const std::string& peer_id, const Json::Value& data);
   void ReceiveAnswerSdp(const std::string& peer_id, const Json::Value& data);
 
+  void DisconnectPeer(const std::string id);
+
   std::string id_;
   std::string session_id_;
   std::shared_ptr<Signal> signal_;
@@ -87,12 +91,15 @@ protected:
 private:
 
   enum {
-    MSG_COMMAND_RECEIVED
+    MSG_COMMAND_RECEIVED,
+    MSG_QUEUE_DISCONNECT
   };
 
   struct ControlMessageData : public rtc::MessageData {
     explicit ControlMessageData(Json::Value data) : data_(data) {}
+    explicit ControlMessageData(const std::string data) : data_string_(data) {}
     Json::Value data_;
+    std::string data_string_;
   };
 
   rtc::Thread* signaling_thread_;

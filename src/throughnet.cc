@@ -103,7 +103,7 @@ void Throughnet::Connect(const std::string id) {
 }
 
 void Throughnet::Disconnect(const std::string id) {
-  signal_->LeaveChannel(id);
+  control_->Disconnect(id);
   return;
 }
 

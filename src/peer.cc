@@ -51,6 +51,7 @@ bool PeerControl::Send(const char* buffer, const size_t size) {
 
 void PeerControl::Close() {
   local_data_channel_->Close();
+  remote_data_channel_->Close();
 }
 
 
@@ -84,8 +85,19 @@ void PeerControl::OnDataChannel(webrtc::DataChannelInterface* data_channel) {
 
 void PeerControl::OnIceConnectionChange(webrtc::PeerConnectionInterface::IceConnectionState new_state) {
   switch (new_state) {
+  case webrtc::PeerConnectionInterface::IceConnectionState::kIceConnectionClosed:
+    //
+    // Peer closed by calling close()
+    //
+    observer_->OnDisconnected(remote_id_);
+    break;
   case webrtc::PeerConnectionInterface::IceConnectionState::kIceConnectionDisconnected:
-//    observer_->OnDisconnected(remote_id_);
+    //
+    // Peer disconnected unexpectedly without close()
+    //
+    observer_->QueueDisconnect(remote_id_);
+    break;
+  default:
     break;
   }
 }
@@ -132,15 +144,23 @@ void PeerControl::OnSuccess(webrtc::SessionDescriptionInterface* desc) {
 
 void PeerControl::OnPeerOpened() {
   if (local_data_channel_.get() != nullptr && remote_data_channel_.get() != nullptr &&
-    local_data_channel_->state() == webrtc::DataChannelInterface::DataState::kOpen &&
-    remote_data_channel_->state() == webrtc::DataChannelInterface::DataState::kOpen
+      local_data_channel_->state() == webrtc::DataChannelInterface::DataState::kOpen &&
+      remote_data_channel_->state() == webrtc::DataChannelInterface::DataState::kOpen
     ) {
     observer_->OnConnected(remote_id_);
   }
 }
 
 void PeerControl::OnPeerClosed() {
-//  observer_->OnDisconnected(remote_id_);
+  // Called if local_data_channel_ or remote_data_channel_
+  // has been closed.
+
+  if (local_data_channel_.get() != nullptr && remote_data_channel_.get() != nullptr &&
+      local_data_channel_->state() == webrtc::DataChannelInterface::DataState::kClosed &&
+      remote_data_channel_->state() == webrtc::DataChannelInterface::DataState::kClosed
+    ) {
+    peer_connection_->Close();
+  }
 }
 
 
