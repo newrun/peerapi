@@ -92,7 +92,8 @@ private:
 
   enum {
     MSG_COMMAND_RECEIVED,
-    MSG_QUEUE_DISCONNECT
+    MSG_QUEUE_DISCONNECT,
+    MSG_QUQUE_DISCONNECT_PEER
   };
 
   struct ControlMessageData : public rtc::MessageData {
@@ -102,7 +103,7 @@ private:
     std::string data_string_;
   };
 
-  rtc::Thread* signaling_thread_;
+  rtc::Thread* webrtc_thread_;
   ControlObserver* observer_;
 
 };

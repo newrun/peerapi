@@ -119,7 +119,18 @@ void Signal::SendCommand(const std::string channel,
   message["data"] = data;
   if (!channel.empty()) message["channel"] = channel;
 
-  client_.send(con_hdl_, writer.write(message), websocketpp::frame::opcode::text);
+  try {
+    client_.send(con_hdl_, writer.write(message), websocketpp::frame::opcode::text);
+  }
+  catch (websocketpp::lib::error_code& ec) {
+    LOG(LS_ERROR) << "SendCommand Error: " << ec;
+  }
+  catch (std::exception& e) {
+    LOG(LS_ERROR) << "SendCommand Error: " << e.what();
+  }
+  catch (...) {
+    LOG(LS_ERROR) << "SendCommand Error: ";
+  }
 }
 
 void Signal::SendGlobalCommand(const std::string commandname,

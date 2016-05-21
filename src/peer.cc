@@ -87,13 +87,17 @@ void PeerControl::OnIceConnectionChange(webrtc::PeerConnectionInterface::IceConn
   switch (new_state) {
   case webrtc::PeerConnectionInterface::IceConnectionState::kIceConnectionClosed:
     //
-    // Peer closed by calling close()
+    // Ice connection has been closed.
+    // Notify it to Control so the Control will remove peer in peers_
     //
     observer_->OnDisconnected(remote_id_);
     break;
   case webrtc::PeerConnectionInterface::IceConnectionState::kIceConnectionDisconnected:
     //
-    // Peer disconnected unexpectedly without close()
+    // Peer disconnected unexpectedly before close()
+    // Queue disconnection requeue to Control.
+    //  - Leave channel in signal server
+    //  - Close peer data channel and ice connecition
     //
     observer_->QueueDisconnect(remote_id_);
     break;
@@ -143,6 +147,8 @@ void PeerControl::OnSuccess(webrtc::SessionDescriptionInterface* desc) {
 }
 
 void PeerControl::OnPeerOpened() {
+
+  // Both local_data_channel_ and remote_data_channel_ has been opened
   if (local_data_channel_.get() != nullptr && remote_data_channel_.get() != nullptr &&
       local_data_channel_->state() == webrtc::DataChannelInterface::DataState::kOpen &&
       remote_data_channel_->state() == webrtc::DataChannelInterface::DataState::kOpen
@@ -152,9 +158,8 @@ void PeerControl::OnPeerOpened() {
 }
 
 void PeerControl::OnPeerClosed() {
-  // Called if local_data_channel_ or remote_data_channel_
-  // has been closed.
 
+  // Both local_data_channel_ and remote_data_channel_ has been closed
   if (local_data_channel_.get() != nullptr && remote_data_channel_.get() != nullptr &&
       local_data_channel_->state() == webrtc::DataChannelInterface::DataState::kClosed &&
       remote_data_channel_->state() == webrtc::DataChannelInterface::DataState::kClosed

@@ -46,7 +46,7 @@ bool Control::InitializeControl() {
     return false;
   }
 
-  signaling_thread_ = rtc::Thread::Current();
+  webrtc_thread_ = rtc::Thread::Current();
 
   return true;
 }
@@ -86,13 +86,26 @@ bool Control::SendCommand(const std::string& id, const std::string& command, con
 
 
 void Control::QueueDisconnect(const std::string id) {
+
   ControlMessageData *data = new ControlMessageData(id);
-  signaling_thread_->Post(this, MSG_QUEUE_DISCONNECT, data);
+
+  // 1. Leave channel on signal server
+  signal_->LeaveChannel(id);
+
+  // 2. Close remote data channel
+  // 3. Close local data channel
+  // 4. Close ice connection
+  // 5. Erase peer
+  webrtc_thread_->Post(this, MSG_QUQUE_DISCONNECT_PEER, data);
 }
 
 
 //
-// Signal connected
+// Both peer local and remote data channel has been opened.
+// It means that ice connection had been opened already and
+// now we can send and receive data from/to data channel.
+//
+// Implements PeerObserver::OnConnected()
 //
 
 void Control::OnConnected(const std::string id) {
@@ -101,7 +114,10 @@ void Control::OnConnected(const std::string id) {
 }
 
 //
-// Signal disconnected
+// Ice connection state has been changed to close.
+// It means that peer data channel had been closed already.
+//
+// Implements PeerObserver::OnDisconnected()
 //
 
 void Control::OnDisconnected(const std::string id) {
@@ -148,6 +164,10 @@ void Control::OnMessage(rtc::Message* msg) {
   case MSG_QUEUE_DISCONNECT:
     param = static_cast<ControlMessageData*>(msg->pdata);
     Disconnect(param->data_string_);
+    break;
+  case MSG_QUQUE_DISCONNECT_PEER:
+    param = static_cast<ControlMessageData*>(msg->pdata);
+    DisconnectPeer(param->data_string_);
     break;
   default:
     break;
@@ -230,7 +250,7 @@ void Control::OnCommandReceived(const Json::Value& message) {
 
 void Control::OnSignalCommandReceived(const Json::Value& message) {
   ControlMessageData *data = new ControlMessageData(message);
-  signaling_thread_->Post(this, MSG_COMMAND_RECEIVED, data);
+  webrtc_thread_->Post(this, MSG_COMMAND_RECEIVED, data);
 }
 
 
@@ -344,13 +364,13 @@ void Control::OnJoined(const Json::Value& data) {
 
 void Control::OnLeaved(const Json::Value& data) {
 
-  std::string channel;
-  if (!rtc::GetStringFromJsonObject(data, "name", &channel)) {
-    LOG(LS_WARNING) << "OnLeave failed - no name";
-    return;
-  }
+  //std::string channel;
+  //if (!rtc::GetStringFromJsonObject(data, "name", &channel)) {
+  //  LOG(LS_WARNING) << "OnLeave failed - no name";
+  //  return;
+  //}
 
-  DisconnectPeer(channel);
+  //DisconnectPeer(channel);
 }
 
 
@@ -411,12 +431,12 @@ void Control::ReceiveAnswerSdp(const std::string& peer_id, const Json::Value& da
 
 void Control::Disconnect(const std::string id) {
   // 1. Leave channel on signal server
-  // In DisconnectPeer(): 2. Close remote data channel
-  // In DisconnectPeer(): 3. Close local data channel
-  // In DisconnectPeer(): 4. Close ice connection
-  // In DisconnectPeer(): 5. Erase peer
+  // 2. Close remote data channel
+  // 3. Close local data channel
+  // 4. Close ice connection
+  // 5. Erase peer
 
-  signal_->LeaveChannel(id);
+  QueueDisconnect(id);
 }
 
 void Control::DisconnectPeer(const std::string id) {
