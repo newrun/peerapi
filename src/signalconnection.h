@@ -52,7 +52,7 @@ namespace tn {
 
 class SignalInterface {
 public:
-  virtual void SignIn() = 0;
+  virtual void SignIn(const std::string& id, const std::string& password) = 0;
 
   virtual void JoinChannel(const std::string channel) = 0;
   virtual void LeaveChannel(const std::string channel) = 0;
@@ -94,7 +94,7 @@ public:
   Signal::Signal();
   Signal::~Signal();
 
-  virtual void SignIn();
+  virtual void SignIn(const std::string& id, const std::string& password);
 
   void SendCommand(const std::string channel,
                    const std::string commandname,
@@ -106,10 +106,7 @@ public:
   void JoinChannel(const std::string channel);
   void LeaveChannel(const std::string channel);
 
-  void SetConfig(const std::string& url,
-                 const std::string& user_id,
-                 const std::string& user_password);
-
+  void SetConfig(const std::string& url);
 
   bool opened() const { return con_state_ == con_opened; }
   void set_reconnect_attempts(unsigned attempts) { reconn_attempts_ = attempts; }

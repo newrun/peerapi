@@ -73,13 +73,9 @@ Signal::~Signal() {
 }
 
 
-void Signal::SetConfig(const std::string& url,
-  const std::string& user_id,
-  const std::string& user_password) {
+void Signal::SetConfig(const std::string& url) {
 
   url_ = url;
-  user_id_ = user_id;
-  user_password_ = user_password;
 
   // Default settings
   if (url_.empty()) {
@@ -87,7 +83,9 @@ void Signal::SetConfig(const std::string& url,
   }
 }
 
-void Signal::SignIn() {
+void Signal::SignIn(const std::string& id, const std::string& password) {
+  user_id_ = id;
+  user_password_ = password;
   Connect();
 }
 

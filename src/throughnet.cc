@@ -7,16 +7,15 @@
 #include "throughnet.h"
 #include "control.h"
 
+#include <string>
+#include <locale>
+
 
 Throughnet::Throughnet()
-   : Throughnet("", ""){
+   : Throughnet(""){
 }
 
-Throughnet::Throughnet(const std::string id)
-  : Throughnet(id, "") {
-}
-
-Throughnet::Throughnet(const std::string id, const std::string setting) {
+Throughnet::Throughnet(const std::string setting) {
   // Log level
 #if DEBUG || _DEBUG
   rtc::LogMessage::LogToDebug(rtc::LS_ERROR);
@@ -29,18 +28,12 @@ Throughnet::Throughnet(const std::string id, const std::string setting) {
     ParseSetting(setting);
   }
 
-  if (id_.empty()) {
-    id_ = rtc::CreateRandomUuid();
-  }
-
   // create signal client
-  if (signal == nullptr) {
+  if (signal_ == nullptr) {
     signal_ = std::make_shared<tn::Signal>();
 
     if (signal_) {
-      signal_->SetConfig(setting_.signal_uri_,
-        setting_.signal_id_,
-        setting_.signal_password_);
+      signal_->SetConfig(setting_.signal_uri_);
     }
   }
 }
@@ -57,13 +50,14 @@ void Throughnet::Stop() {
 }
 
 
-void Throughnet::GetReady() {
+void Throughnet::SignIn(const std::string alias, const std::string id, const std::string password) {
 
   //
   // Initialize control
   //
 
-  control_ = std::make_unique<tn::Control>(this, id_, signal_);
+  control_ = std::make_unique<tn::Control>(signal_);
+  control_->RegisterObserver(this);
 
   if (control_.get() == NULL) {
     LOG(LS_ERROR) << "Failed to create class Control.";
@@ -80,16 +74,33 @@ void Throughnet::GetReady() {
   }
 
   //
+  // Set user_id and open_id
+  //
+
+  std::string user_id;
+  std::string open_id;
+
+  user_id = tolower(id);
+  if (user_id == "anonymous") user_id = "";
+
+  open_id = tolower(alias);
+  if (open_id.empty()) open_id = tolower(rtc::CreateRandomUuid());
+
+  //
   // Connect to signal server
   //
 
-  control_->SignIn();
+  control_->SignIn(user_id, password, open_id);
   return;
+}
 
+void Throughnet::SignOut() {
+  // Not implemented
+  control_->UnregisterObserver();
 }
 
 void Throughnet::Connect(const std::string id) {
-  signal_->JoinChannel(id);
+  control_->Connect(id);
   return;
 }
 
@@ -145,6 +156,11 @@ Throughnet& Throughnet::OnMessage(std::function<void(Throughnet*, std::string, B
 // Signal event handler
 //
 
+void Throughnet::OnSignedIn(const std::string& id) {
+  if (event_handler_.find("signedin") == event_handler_.end()) return;
+  CallEventHandler("signedin", this, id);
+}
+
 void Throughnet::OnPeerConnected(const std::string& id) {
   if (event_handler_.find("connected") == event_handler_.end()) return;
   CallEventHandler("connected", this, id);
@@ -155,19 +171,12 @@ void Throughnet::OnPeerDisconnected(const std::string& id) {
   CallEventHandler("disconnected", this, id);
 }
 
-void Throughnet::OnReady(const std::string& id) {
-  if (event_handler_.find("ready") == event_handler_.end()) return;
-  CallEventHandler("ready", this, id);
-}
-
-//
-// Signal data handler
-//
-
 void Throughnet::OnPeerMessage(const std::string& id, const char* buffer, const size_t size) {
   Buffer buf(buffer, size);
   message_handler_(this, id, buf);
 }
+
+
 
 template<typename ...A>
 void Throughnet::CallEventHandler(std::string msg_id, A&& ... args)
@@ -204,4 +213,13 @@ bool Throughnet::ParseSetting(const std::string& setting) {
   }
 
   return true;
+}
+
+std::string Throughnet::tolower(const std::string& str) {
+  std::locale loc;
+  std::string lower_str;
+  for (auto elem : str) {
+    lower_str += std::tolower(elem, loc);
+  }
+  return lower_str;
 }

@@ -27,9 +27,8 @@ public:
   typedef std::vector<rtc::scoped_ptr<PeerDataChannelObserver> >
             DataChannelList;
 
-  explicit Control(ControlObserver* oberver, const std::string id);
-  explicit Control(ControlObserver* oberver, const std::string id,
-                   std::shared_ptr<Signal> signal);
+  explicit Control();
+  explicit Control(std::shared_ptr<Signal> signal);
   ~Control();
 
   //
@@ -45,8 +44,8 @@ public:
 
   void Send(const std::string to, const char* buffer, const size_t size);
 
-  void SignIn();
-  void Join(const std::string id);  // TODO: Rename to connect
+  void SignIn(const std::string& user_id, const std::string& user_password, const std::string& open_id);
+  void Connect(const std::string id);
   void Disconnect(const std::string id);
   void OnCommandReceived(const Json::Value& message);
   void OnSignalCommandReceived(const Json::Value& message);
@@ -60,6 +59,10 @@ public:
   virtual void OnConnected(const std::string id);
   virtual void OnDisconnected(const std::string id);
   virtual void OnPeerMessage(const std::string& id, const char* buffer, const size_t size);
+
+  // Register/Unregister observer
+  void RegisterObserver(ControlObserver* observer);
+  void UnregisterObserver();
 
   // implements the MessageHandler interface
   void OnMessage(rtc::Message* msg);
@@ -77,8 +80,13 @@ protected:
 
   void DisconnectPeer(const std::string id);
 
-  std::string id_;
+  // open_id_: other peers can find this peer by open_id_ and it is user_id or alias
+  // user_id_: A user id to sign in signal server (could be 'anonymous' for guest user)
+  // session_id_: A unique id for signal server connection
+  std::string open_id_;
+  std::string user_id_;
   std::string session_id_;
+
   std::shared_ptr<Signal> signal_;
   rtc::scoped_refptr<FakeAudioCaptureModule> fake_audio_capture_module_;
 

@@ -49,12 +49,13 @@ public:
   static void Throughnet::Run();
   static void Throughnet::Stop();
 
+  void SignIn(const std::string alias = "", const std::string id = "", const std::string password = "");
+  void SignOut();
   void Connect(const std::string id);
   void Disconnect(const std::string id);
   void Send(const std::string& id, const char* buffer, const size_t size);
   void Send(const std::string& id, const char* buffer);
   void Send(const std::string& id, const std::string& message);
-  void GetReady();
   static std::string CreateRandomUuid();
 
   Throughnet& On(std::string event_id, std::function<void(Throughnet*, std::string)>);
@@ -66,8 +67,7 @@ public:
   //
 
   explicit Throughnet();
-  explicit Throughnet(const std::string id);
-  explicit Throughnet(const std::string id, std::string setting);
+  explicit Throughnet(std::string setting);
   ~Throughnet();
 
 
@@ -94,14 +94,14 @@ protected:
   using Events = std::map<std::string, std::unique_ptr<Handler_t>>;
   using MessageHandler = std::function<void(Throughnet*, std::string, Buffer&)>;
 
+  void OnSignedIn(const std::string& id);
   void OnPeerConnected(const std::string& id);
   void OnPeerDisconnected(const std::string& id);
-  void OnReady(const std::string& id);
   void OnPeerMessage(const std::string& id, const char* buffer, const size_t size);
 
   bool ParseSetting(const std::string& setting);
+  std::string tolower(const std::string& str);
 
-  std::string id_;
   Setting setting_;
   Events event_handler_;
   MessageHandler message_handler_;

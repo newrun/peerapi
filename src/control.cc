@@ -14,13 +14,12 @@
 
 namespace tn {
 
-Control::Control(ControlObserver* observer, const std::string id)
-       : Control(observer, id, nullptr){
+Control::Control()
+       : Control(nullptr){
 }
 
-Control::Control(ControlObserver* observer, const std::string id, std::shared_ptr<Signal> signal)
-       : observer_(observer), id_(id),
-         signal_(signal) {
+Control::Control(std::shared_ptr<Signal> signal)
+       : signal_(signal) {
 
   signal_->SignalOnCommandReceived_.connect(this, &Control::OnSignalCommandReceived);
 }
@@ -58,6 +57,50 @@ void Control::DeleteControl() {
 }
 
 
+
+void Control::SignIn(const std::string& user_id, const std::string& user_password, const std::string& open_id) {
+  // 1. Connect to signal server
+  // 2. Send signin command to signal server
+  // 3. Send createchannel command to signal server (channel name is id or alias)
+  //    Other peers connect to this peer by channel name, that is id or alias
+  // 4. Generate 'signedin' event to Throughnet
+
+  if (signal_.get() == NULL) {
+    LOG(LS_ERROR) << "SignIn failed, no signal server";
+    return;
+  }
+
+  open_id_ = open_id;
+  user_id_ = user_id;
+
+  signal_->SignIn(user_id, user_password);
+  return;
+}
+
+void Control::Connect(const std::string id) {
+  // 1. Join channel on signal server
+  // 2. Server(remote) peer createoffer
+  // 3. Client(local) peer answeroffer
+  // 4. Conect datachannel
+
+  if (signal_.get() == NULL) {
+    LOG(LS_ERROR) << "Join failed, no signal server";
+    return;
+  }
+
+  signal_->JoinChannel(id);
+  return;
+}
+
+void Control::Disconnect(const std::string id) {
+  // 1. Leave channel on signal server
+  // 2. Close remote data channel
+  // 3. Close local data channel
+  // 4. Close ice connection
+  // 5. Erase peer
+
+  QueueDisconnect(id);
+}
 
 //
 // Send data to peer or emit data to channel
@@ -151,6 +194,14 @@ void Control::OnPeerMessage(const std::string& id, const char* buffer, const siz
   observer_->OnPeerMessage(id, buffer, size);
 }
 
+void Control::RegisterObserver(ControlObserver* observer) {
+  observer_ = observer;
+}
+
+void Control::UnregisterObserver() {
+  observer_ = nullptr;
+}
+
 //
 // Thread message queue
 //
@@ -175,30 +226,6 @@ void Control::OnMessage(rtc::Message* msg) {
   }
 
   if (param != nullptr) delete param;
-  return;
-}
-
-//
-// Signin to signal server
-//
-
-void Control::SignIn() {
-  if (signal_.get() == NULL) {
-    LOG(LS_ERROR) << "SignIn failed, no signal server";
-    return;
-  }
-
-  signal_->SignIn();
-  return;
-}
-
-void Control::Join(const std::string id) {
-  if (signal_.get() == NULL) {
-    LOG(LS_ERROR) << "Join failed, no signal server";
-    return;
-  }
-
-  signal_->JoinChannel(id);
   return;
 }
 
@@ -322,7 +349,7 @@ void Control::OnSignedIn(const Json::Value& data) {
   }
 
   session_id_ = session_id;
-  signal_->CreateChannel(id_);
+  signal_->CreateChannel(open_id_);
 }
 
 //
@@ -347,7 +374,7 @@ void Control::OnCreated(const Json::Value& data) {
     return;
   }
 
-  observer_->OnReady(channel);
+  observer_->OnSignedIn(channel);
 }
 
 //
@@ -365,13 +392,6 @@ void Control::OnJoined(const Json::Value& data) {
 
 void Control::OnLeaved(const Json::Value& data) {
 
-  //std::string channel;
-  //if (!rtc::GetStringFromJsonObject(data, "name", &channel)) {
-  //  LOG(LS_WARNING) << "OnLeave failed - no name";
-  //  return;
-  //}
-
-  //DisconnectPeer(channel);
 }
 
 
@@ -394,7 +414,7 @@ void Control::CreateOffer(const Json::Value& data) {
       return;
     }
 
-    Peer peer = new rtc::RefCountedObject<PeerControl>(id_, remote_id, this, peer_connection_factory_);
+    Peer peer = new rtc::RefCountedObject<PeerControl>(open_id_, remote_id, this, peer_connection_factory_);
     peers_.insert(std::pair<std::string, Peer>(remote_id, peer));
 
     peer->CreateOffer(NULL);
@@ -410,7 +430,7 @@ void Control::ReceiveOfferSdp(const std::string& peer_id, const Json::Value& dat
 
   if (!rtc::GetStringFromJsonObject(data, "sdp", &sdp)) return;
 
-  Peer peer = new rtc::RefCountedObject<PeerControl>(id_, peer_id, this, peer_connection_factory_);
+  Peer peer = new rtc::RefCountedObject<PeerControl>(open_id_, peer_id, this, peer_connection_factory_);
   peers_.insert(std::pair<std::string, Peer>(peer_id, peer));
 
   peer->ReceiveOfferSdp(sdp);
@@ -430,15 +450,6 @@ void Control::ReceiveAnswerSdp(const std::string& peer_id, const Json::Value& da
   peers_[peer_id]->ReceiveAnswerSdp(sdp);
 }
 
-void Control::Disconnect(const std::string id) {
-  // 1. Leave channel on signal server
-  // 2. Close remote data channel
-  // 3. Close local data channel
-  // 4. Close ice connection
-  // 5. Erase peer
-
-  QueueDisconnect(id);
-}
 
 void Control::DisconnectPeer(const std::string id) {
   // 1. Close remote data channel

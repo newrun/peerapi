@@ -17,9 +17,9 @@ int main(int argc, char *argv[]) {
     usage(argv[0]);
     return 1;
   }
-  string id = argv[1];
+  string name = argv[1];
 
-  Throughnet tn(id);
+  Throughnet tn;
 
   tn.On("connected", function_tn(Throughnet* tn, string id) {
     std::cout << "Peer " << id << " has been connected." << std::endl;
@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
     tn->Send(id, data.buf_, data.size_);
   });
 
-  tn.GetReady();
+  tn.SignIn(name);
   Throughnet::Run();
 
   return 0;
@@ -43,7 +43,7 @@ int main(int argc, char *argv[]) {
 
 void usage(const char* prg) {
   std::cerr << std::endl;
-  std::cerr << "Usage: " << prg << " id" << std::endl << std::endl;
+  std::cerr << "Usage: " << prg << " name" << std::endl << std::endl;
   std::cerr << "Example: " << std::endl << std::endl;
   std::cerr << "   > " << prg << " myrandom" << std::endl;
 }
