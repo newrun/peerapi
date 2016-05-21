@@ -68,7 +68,6 @@ public:
   explicit Throughnet();
   explicit Throughnet(const std::string id);
   explicit Throughnet(const std::string id, std::string setting);
-  explicit Throughnet(const std::string id, const std::string setting, std::shared_ptr<tn::Signal> signal);
   ~Throughnet();
 
 

@@ -27,6 +27,7 @@ Control::Control(ControlObserver* observer, const std::string id, std::shared_pt
 
 Control::~Control() {
   peers_.clear();
+  signal_->SignalOnCommandReceived_.disconnect(this);
 }
 
 
@@ -96,7 +97,7 @@ void Control::QueueDisconnect(const std::string id) {
   // 3. Close local data channel
   // 4. Close ice connection
   // 5. Erase peer
-  webrtc_thread_->Post(this, MSG_QUQUE_DISCONNECT_PEER, data);
+  webrtc_thread_->Post(this, MSG_QUEUE_DISCONNECT_PEER, data);
 }
 
 
@@ -165,7 +166,7 @@ void Control::OnMessage(rtc::Message* msg) {
     param = static_cast<ControlMessageData*>(msg->pdata);
     Disconnect(param->data_string_);
     break;
-  case MSG_QUQUE_DISCONNECT_PEER:
+  case MSG_QUEUE_DISCONNECT_PEER:
     param = static_cast<ControlMessageData*>(msg->pdata);
     DisconnectPeer(param->data_string_);
     break;

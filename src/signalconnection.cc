@@ -76,9 +76,15 @@ Signal::~Signal() {
 void Signal::SetConfig(const std::string& url,
   const std::string& user_id,
   const std::string& user_password) {
+
   url_ = url;
   user_id_ = user_id;
   user_password_ = user_password;
+
+  // Default settings
+  if (url_.empty()) {
+    url_ = "wss://signal.throughnet.com/hello";
+  }
 }
 
 void Signal::SignIn() {

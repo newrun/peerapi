@@ -93,7 +93,7 @@ private:
   enum {
     MSG_COMMAND_RECEIVED,
     MSG_QUEUE_DISCONNECT,
-    MSG_QUQUE_DISCONNECT_PEER
+    MSG_QUEUE_DISCONNECT_PEER
   };
 
   struct ControlMessageData : public rtc::MessageData {

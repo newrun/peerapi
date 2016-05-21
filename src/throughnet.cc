@@ -9,29 +9,20 @@
 
 
 Throughnet::Throughnet()
-   : Throughnet("", "", nullptr){
+   : Throughnet("", ""){
 }
 
 Throughnet::Throughnet(const std::string id)
-  : Throughnet(id, "", nullptr) {
+  : Throughnet(id, "") {
 }
 
-Throughnet::Throughnet(const std::string id, const std::string setting)
-   : Throughnet(id, setting, nullptr) {
-}
-
-Throughnet::Throughnet(const std::string id, const std::string setting, std::shared_ptr<Signal> signal)
-   : signal_(signal), id_(id)
-{
+Throughnet::Throughnet(const std::string id, const std::string setting) {
   // Log level
 #if DEBUG || _DEBUG
   rtc::LogMessage::LogToDebug(rtc::LS_ERROR);
 #else
   rtc::LogMessage::LogToDebug(rtc::LS_NONE);
 #endif
-
-  // Default settings
-  setting_.signal_uri_ = "wss://signal.throughnet.com/hello";
 
   // parse settings
   if (!setting.empty()) {

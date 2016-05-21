@@ -107,7 +107,8 @@ protected:
                          const webrtc::DataChannelInit& init);
   void SetLocalDescription(const std::string& type, const std::string& sdp);
   void SetRemoteDescription(const std::string& type, const std::string& sdp);
-  void SigslotConnect(PeerDataChannelObserver* datachannel);
+  void Attach(PeerDataChannelObserver* datachannel);
+  void Detach(PeerDataChannelObserver* datachannel);
 
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
   rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> peer_connection_factory_;

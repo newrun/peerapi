@@ -80,7 +80,7 @@ void PeerControl::ReceiveAnswerSdp(const std::string& sdp) {
 void PeerControl::OnDataChannel(webrtc::DataChannelInterface* data_channel) {
   PeerDataChannelObserver* Observer = new PeerDataChannelObserver(data_channel);
   remote_data_channel_ = rtc::scoped_ptr<PeerDataChannelObserver>(Observer);
-  SigslotConnect(remote_data_channel_.get());
+  Attach(remote_data_channel_.get());
 }
 
 void PeerControl::OnIceConnectionChange(webrtc::PeerConnectionInterface::IceConnectionState new_state) {
@@ -194,7 +194,7 @@ bool PeerControl::CreateDataChannel(
     return false;
   }
 
-  SigslotConnect(local_data_channel_.get());
+  Attach(local_data_channel_.get());
   return true;
 }
 
@@ -229,6 +229,9 @@ bool PeerControl::CreatePeerConnection() {
 }
 
 void PeerControl::DeletePeerConnection() {
+  Detach(remote_data_channel_.get());
+  Detach(local_data_channel_.get());
+
   remote_data_channel_ = NULL;
   local_data_channel_ = NULL;
   peer_connection_ = NULL;
@@ -255,13 +258,19 @@ void PeerControl::SetRemoteDescription(const std::string& type,
     observer, webrtc::CreateSessionDescription(type, sdp, NULL));
 }
 
-void PeerControl::SigslotConnect(PeerDataChannelObserver* datachannel) {
+void PeerControl::Attach(PeerDataChannelObserver* datachannel) {
   datachannel->SignalOnOpen_.connect(this, &PeerControl::OnPeerOpened);
   datachannel->SignalOnClosed_.connect(this, &PeerControl::OnPeerClosed);
   datachannel->SignalOnMessage_.connect(this, &PeerControl::OnPeerMessage);
   datachannel->SignalOnBufferedAmountChange_.connect(this, &PeerControl::OnBufferedAmountChange);
 }
 
+void PeerControl::Detach(PeerDataChannelObserver* datachannel) {
+  datachannel->SignalOnOpen_.disconnect(this);
+  datachannel->SignalOnClosed_.disconnect(this);
+  datachannel->SignalOnMessage_.disconnect(this);
+  datachannel->SignalOnBufferedAmountChange_.disconnect(this);
+}
 
 
 
