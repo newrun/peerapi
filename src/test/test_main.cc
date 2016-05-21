@@ -18,8 +18,8 @@ int main(int argc, char *argv[]) {
   std::string server = Throughnet::CreateRandomUuid();
   std::string client = Throughnet::CreateRandomUuid();
 
-  Throughnet tn1(server);
-  Throughnet tn2(client);
+  Throughnet tn1;
+  Throughnet tn2;
 
   tn1.On("signedin", function_tn(Throughnet* tn, string id) {
     std::cout << "tn1: signedin" << std::endl;
