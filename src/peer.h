@@ -21,10 +21,10 @@ namespace tn {
 
 class PeerObserver {
 public:
-  virtual bool SendCommand(const std::string& id, const std::string& command, const Json::Value& data) = 0;
-  virtual void QueueDisconnect(const std::string id) = 0;
-  virtual void OnConnected(const std::string id) = 0;
-  virtual void OnDisconnected(const std::string id) = 0;
+  virtual void SendCommand(const std::string& id, const std::string& command, const Json::Value& data) = 0;
+  virtual void QueuePeerDisconnect(const std::string id) = 0;
+  virtual void OnPeerConnected(const std::string id) = 0;
+  virtual void OnPeerDisconnected(const std::string id) = 0;
   virtual void OnPeerMessage(const std::string& id, const char* buffer, const size_t size) = 0;
 };
 

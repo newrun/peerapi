@@ -88,8 +88,7 @@ void Control::Connect(const std::string id) {
     return;
   }
 
-  signal_->JoinChannel(id);
-  return;
+  JoinChannel(id);
 }
 
 void Control::Disconnect(const std::string id) {
@@ -99,7 +98,7 @@ void Control::Disconnect(const std::string id) {
   // 4. Close ice connection
   // 5. Erase peer
 
-  QueueDisconnect(id);
+  QueuePeerDisconnect(id);
 }
 
 //
@@ -122,25 +121,24 @@ void Control::Send(const std::string to, const char* buffer, const size_t size) 
 // Send command to other peer by signal server
 //
 
-bool Control::SendCommand(const std::string& id, const std::string& command, const Json::Value& data) {
+void Control::SendCommand(const std::string& id, const std::string& command, const Json::Value& data) {
   signal_->SendCommand(id, command, data);
-  return true;
 }
 
 
 
-void Control::QueueDisconnect(const std::string id) {
+void Control::QueuePeerDisconnect(const std::string id) {
 
   ControlMessageData *data = new ControlMessageData(id);
 
   // 1. Leave channel on signal server
-  signal_->LeaveChannel(id);
+  LeaveChannel(id);
 
   // 2. Close remote data channel
   // 3. Close local data channel
   // 4. Close ice connection
   // 5. Erase peer
-  webrtc_thread_->Post(this, MSG_QUEUE_DISCONNECT_PEER, data);
+  webrtc_thread_->Post(this, MSG_QUEUE_PEER_DISCONNECT, data);
 }
 
 
@@ -149,10 +147,10 @@ void Control::QueueDisconnect(const std::string id) {
 // It means that ice connection had been opened already and
 // now we can send and receive data from/to data channel.
 //
-// Implements PeerObserver::OnConnected()
+// Implements PeerObserver::OnPeerConnected()
 //
 
-void Control::OnConnected(const std::string id) {
+void Control::OnPeerConnected(const std::string id) {
   if (observer_ == nullptr) return;
   observer_->OnPeerConnected(id);
 }
@@ -164,7 +162,7 @@ void Control::OnConnected(const std::string id) {
 // Implements PeerObserver::OnDisconnected()
 //
 
-void Control::OnDisconnected(const std::string id) {
+void Control::OnPeerDisconnected(const std::string id) {
   if (observer_ == nullptr) return;
 
   bool erased;
@@ -217,7 +215,7 @@ void Control::OnMessage(rtc::Message* msg) {
     param = static_cast<ControlMessageData*>(msg->pdata);
     Disconnect(param->data_string_);
     break;
-  case MSG_QUEUE_DISCONNECT_PEER:
+  case MSG_QUEUE_PEER_DISCONNECT:
     param = static_cast<ControlMessageData*>(msg->pdata);
     DisconnectPeer(param->data_string_);
     break;
@@ -253,14 +251,14 @@ void Control::OnCommandReceived(const Json::Value& message) {
   if (command == "signedin") {
     OnSignedIn(data);
   }
-  else if (command == "created") {
-    OnCreated(data);
+  else if (command == "channelcreated") {
+    OnChannelCreated(data);
   }
-  else if (command == "joined") {
-    OnJoined(data);
+  else if (command == "channeljoined") {
+    OnChannelJoined(data);
   }
-  else if (command == "leaved") {
-    OnLeaved(data);
+  else if (command == "channelleaved") {
+    OnChannelLeaved(data);
   }
   else if (command == "createoffer") {
     CreateOffer(data);
@@ -279,6 +277,29 @@ void Control::OnCommandReceived(const Json::Value& message) {
 void Control::OnSignalCommandReceived(const Json::Value& message) {
   ControlMessageData *data = new ControlMessageData(message);
   webrtc_thread_->Post(this, MSG_COMMAND_RECEIVED, data);
+}
+
+
+//
+// Commands to signal server
+//
+
+void Control::CreateChannel(const std::string name) {
+  Json::Value data;
+  data["name"] = name;
+  SendCommand(name, "createchannel", data);
+}
+
+void Control::JoinChannel(const std::string name) {
+  Json::Value data;
+  data["name"] = name;
+  SendCommand(name, "joinchannel", data);
+}
+
+void Control::LeaveChannel(const std::string name) {
+  Json::Value data;
+  data["name"] = name;
+  SendCommand(name, "leavechannel", data);
 }
 
 
@@ -349,14 +370,16 @@ void Control::OnSignedIn(const Json::Value& data) {
   }
 
   session_id_ = session_id;
-  signal_->CreateChannel(open_id_);
+
+  //
+  // Create channel
+  //
+
+  CreateChannel(open_id_);
 }
 
-//
-// 'create' command
-//
 
-void Control::OnCreated(const Json::Value& data) {
+void Control::OnChannelCreated(const Json::Value& data) {
   bool result;
   if (!rtc::GetBoolFromJsonObject(data, "result", &result)) {
     LOG(LS_WARNING) << "Unknown signin response";
@@ -377,12 +400,8 @@ void Control::OnCreated(const Json::Value& data) {
   observer_->OnSignedIn(channel);
 }
 
-//
-// 'join' command
-//
-
-void Control::OnJoined(const Json::Value& data) {
-
+void Control::OnChannelJoined(const Json::Value& data) {
+  // Nothing
 }
 
 
@@ -390,8 +409,8 @@ void Control::OnJoined(const Json::Value& data) {
 // 'leave' command
 //
 
-void Control::OnLeaved(const Json::Value& data) {
-
+void Control::OnChannelLeaved(const Json::Value& data) {
+  // Nothing
 }
 
 

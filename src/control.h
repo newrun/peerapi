@@ -54,10 +54,10 @@ public:
   // PeerObserver implementation
   //
 
-  virtual bool SendCommand(const std::string& id, const std::string& command, const Json::Value& data);
-  virtual void QueueDisconnect(const std::string id);
-  virtual void OnConnected(const std::string id);
-  virtual void OnDisconnected(const std::string id);
+  virtual void SendCommand(const std::string& id, const std::string& command, const Json::Value& data);
+  virtual void QueuePeerDisconnect(const std::string id);
+  virtual void OnPeerConnected(const std::string id);
+  virtual void OnPeerDisconnected(const std::string id);
   virtual void OnPeerMessage(const std::string& id, const char* buffer, const size_t size);
 
   // Register/Unregister observer
@@ -68,17 +68,20 @@ public:
   void OnMessage(rtc::Message* msg);
 
 protected:
-  void OnSignedIn(const Json::Value& data);
-  void OnCreated(const Json::Value& data);
-  void OnJoined(const Json::Value& data);
-  void OnLeaved(const Json::Value& data);
+  void CreateChannel(const std::string name);
+  void JoinChannel(const std::string name);
+  void LeaveChannel(const std::string name);
   bool CreatePeerFactory(const webrtc::MediaConstraintsInterface* constraints);
   void CreateOffer(const Json::Value& data);
   void AddIceCandidate(const std::string& peer_id, const Json::Value& data);
   void ReceiveOfferSdp(const std::string& peer_id, const Json::Value& data);
   void ReceiveAnswerSdp(const std::string& peer_id, const Json::Value& data);
-
   void DisconnectPeer(const std::string id);
+
+  void OnSignedIn(const Json::Value& data);
+  void OnChannelCreated(const Json::Value& data);
+  void OnChannelJoined(const Json::Value& data);
+  void OnChannelLeaved(const Json::Value& data);
 
   // open_id_: other peers can find this peer by open_id_ and it is user_id or alias
   // user_id_: A user id to sign in signal server (could be 'anonymous' for guest user)
@@ -99,9 +102,9 @@ protected:
 private:
 
   enum {
-    MSG_COMMAND_RECEIVED,
-    MSG_QUEUE_DISCONNECT,
-    MSG_QUEUE_DISCONNECT_PEER
+    MSG_COMMAND_RECEIVED,       // Command has been received from signal server
+    MSG_QUEUE_DISCONNECT,       // Queue disconnection request (+subsequent peer disconnection)
+    MSG_QUEUE_PEER_DISCONNECT   // Queue peer disconnection request
   };
 
   struct ControlMessageData : public rtc::MessageData {

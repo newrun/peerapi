@@ -29,6 +29,9 @@
   SOFTWARE.
 */
 
+#if defined(WEBRTC_WIN)
+#pragma warning(disable:4503)
+#endif
 
 #include <map>
 #include <list>
@@ -74,7 +77,6 @@ Signal::~Signal() {
 
 
 void Signal::SetConfig(const std::string& url) {
-
   url_ = url;
 
   // Default settings
@@ -89,24 +91,9 @@ void Signal::SignIn(const std::string& id, const std::string& password) {
   Connect();
 }
 
-void Signal::CreateChannel(const std::string channel) {
-  Json::Value data;
-  data["name"] = channel;
-  SendCommand(channel, "create", data);
+void Signal::SignOut() {
+  Close();
 }
-
-void Signal::JoinChannel(const std::string channel) {
-  Json::Value data;
-  data["name"] = channel;
-  SendCommand(channel, "join", data);
-}
-
-void Signal::LeaveChannel(const std::string channel) {
-  Json::Value data;
-  data["name"] = channel;
-  SendCommand(channel, "leave", data);
-}
-
 
 void Signal::SendCommand(const std::string channel,
                          const std::string commandname,
@@ -182,18 +169,18 @@ void Signal::Close()
 {
   con_state_ = con_closing;
   client_.get_io_service().dispatch(websocketpp::lib::bind(&Signal::CloseInternal,
-    this,
-    websocketpp::close::status::normal,
-    "End by user"));
+                                    this,
+                                    websocketpp::close::status::normal,
+                                    "End by user"));
 }
 
 void Signal::SyncClose()
 {
   con_state_ = con_closing;
   client_.get_io_service().dispatch(websocketpp::lib::bind(&Signal::CloseInternal,
-    this,
-    websocketpp::close::status::normal,
-    "End by user"));
+                                    this,
+                                    websocketpp::close::status::normal,
+                                    "End by user"));
   if (network_thread_)
   {
     network_thread_->join();

@@ -90,7 +90,7 @@ void PeerControl::OnIceConnectionChange(webrtc::PeerConnectionInterface::IceConn
     // Ice connection has been closed.
     // Notify it to Control so the Control will remove peer in peers_
     //
-    observer_->OnDisconnected(remote_id_);
+    observer_->OnPeerDisconnected(remote_id_);
     break;
   case webrtc::PeerConnectionInterface::IceConnectionState::kIceConnectionDisconnected:
     //
@@ -99,7 +99,7 @@ void PeerControl::OnIceConnectionChange(webrtc::PeerConnectionInterface::IceConn
     //  - Leave channel in signal server
     //  - Close peer data channel and ice connecition
     //
-    observer_->QueueDisconnect(remote_id_);
+    observer_->QueuePeerDisconnect(remote_id_);
     break;
   default:
     break;
@@ -153,7 +153,7 @@ void PeerControl::OnPeerOpened() {
       local_data_channel_->state() == webrtc::DataChannelInterface::DataState::kOpen &&
       remote_data_channel_->state() == webrtc::DataChannelInterface::DataState::kOpen
     ) {
-    observer_->OnConnected(remote_id_);
+    observer_->OnPeerConnected(remote_id_);
   }
 }
 

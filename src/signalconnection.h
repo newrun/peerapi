@@ -53,15 +53,14 @@ namespace tn {
 class SignalInterface {
 public:
   virtual void SignIn(const std::string& id, const std::string& password) = 0;
+  virtual void SignOut() = 0;
 
-  virtual void JoinChannel(const std::string channel) = 0;
-  virtual void LeaveChannel(const std::string channel) = 0;
   virtual void SendCommand(const std::string id,
                            const std::string commandname,
                            const Json::Value& data) = 0;
   virtual void SendGlobalCommand(const std::string commandname,
                            const Json::Value& data) = 0;
-
+  virtual void SetConfig(const std::string& url) = 0;
   std::string session_id() { return session_id_; }
  
   // sigslots
@@ -94,17 +93,15 @@ public:
   Signal::Signal();
   Signal::~Signal();
 
-  virtual void SignIn(const std::string& id, const std::string& password);
+  void SignIn(const std::string& id, const std::string& password);
+  void SignOut();
+
 
   void SendCommand(const std::string channel,
                    const std::string commandname,
                    const Json::Value& data);
   void SendGlobalCommand(const std::string commandname,
                          const Json::Value& data);
-
-  void CreateChannel(const std::string channel);
-  void JoinChannel(const std::string channel);
-  void LeaveChannel(const std::string channel);
 
   void SetConfig(const std::string& url);
 
