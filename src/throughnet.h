@@ -95,6 +95,7 @@ protected:
   using MessageHandler = std::function<void(Throughnet*, std::string, Buffer&)>;
 
   void OnSignedIn(const std::string& id);
+  void OnSignedOut(const std::string& id);
   void OnPeerConnected(const std::string& id);
   void OnPeerDisconnected(const std::string& id);
   void OnPeerMessage(const std::string& id, const char* buffer, const size_t size);
@@ -102,6 +103,7 @@ protected:
   bool ParseSetting(const std::string& setting);
   std::string tolower(const std::string& str);
 
+  bool signout_;
   Setting setting_;
   Events event_handler_;
   MessageHandler message_handler_;

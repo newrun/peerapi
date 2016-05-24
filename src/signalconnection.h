@@ -65,6 +65,7 @@ public:
  
   // sigslots
   sigslot::signal1<const Json::Value&> SignalOnCommandReceived_;
+  sigslot::signal1<const websocketpp::close::status::value> SignalOnClosed_;
 
 
 protected:
@@ -104,8 +105,9 @@ public:
                          const Json::Value& data);
 
   void SetConfig(const std::string& url);
+  void Teardown();
 
-  bool opened() const { return con_state_ == con_opened; }
+  bool opened() const { return con_state_ == con_opened;}
   void set_reconnect_attempts(unsigned attempts) { reconn_attempts_ = attempts; }
   void set_reconnect_delay(unsigned millis) { reconn_delay_ = millis; if (reconn_delay_max_<millis) reconn_delay_max_ = millis; }
   void set_reconnect_delay_max(unsigned millis) { reconn_delay_max_ = millis; if (reconn_delay_>millis) reconn_delay_ = millis; }

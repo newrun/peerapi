@@ -72,7 +72,7 @@ Signal::Signal() :
 }
 
 Signal::~Signal() {
-  SyncClose();
+  Teardown();
 }
 
 
@@ -92,7 +92,7 @@ void Signal::SignIn(const std::string& id, const std::string& password) {
 }
 
 void Signal::SignOut() {
-  Close();
+  if (opened()) Close();
 }
 
 void Signal::SendCommand(const std::string channel,
@@ -101,6 +101,11 @@ void Signal::SendCommand(const std::string channel,
 
   if (commandname.empty()) {
     LOG(LS_WARNING) << "SendCommand with empty commandname";
+    return;
+  }
+
+  if (!opened()) {
+    LOG(LS_WARNING) << "Signal server is not opened";
     return;
   }
 
@@ -187,6 +192,13 @@ void Signal::SyncClose()
     network_thread_.reset();
   }
 }
+
+void Signal::Teardown()
+{
+  // TODO: Asyncronous close with Throughnet::Stop()
+  SyncClose();
+}
+
 
 asio::io_service& Signal::GetIoService()
 {
@@ -308,7 +320,6 @@ void Signal::OnOpen(websocketpp::connection_hdl con)
 
 void Signal::OnClose(websocketpp::connection_hdl con)
 {
-  LOG(LS_INFO) << "Client Disconnected.";
   con_state_ = con_closed;
   websocketpp::lib::error_code ec;
   websocketpp::close::status::value code = websocketpp::close::status::normal;
@@ -322,6 +333,8 @@ void Signal::OnClose(websocketpp::connection_hdl con)
   }
 
   con_hdl_.reset();
+
+  SignalOnClosed_(code);
 
   if (code == websocketpp::close::status::normal)
   {

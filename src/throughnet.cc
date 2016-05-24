@@ -10,7 +10,6 @@
 #include <string>
 #include <locale>
 
-
 Throughnet::Throughnet()
    : Throughnet(""){
 }
@@ -27,6 +26,8 @@ Throughnet::Throughnet(const std::string setting) {
   if (!setting.empty()) {
     ParseSetting(setting);
   }
+
+  signout_ = false;
 
   // create signal client
   if (signal_ == nullptr) {
@@ -53,6 +54,15 @@ void Throughnet::Stop() {
 void Throughnet::SignIn(const std::string alias, const std::string id, const std::string password) {
 
   //
+  // Check if already signed in
+  //
+
+  if (control_.get() != nullptr) {
+    LOG(LS_ERROR) << "Already signined in.";
+    return;
+  }
+
+  //
   // Initialize control
   //
 
@@ -70,6 +80,7 @@ void Throughnet::SignIn(const std::string alias, const std::string id, const std
 
   if (!control_->InitializeControl()) {
     LOG(LS_ERROR) << "Failed to initialize Control.";
+    control_.reset();
     return;
   }
 
@@ -95,8 +106,8 @@ void Throughnet::SignIn(const std::string alias, const std::string id, const std
 }
 
 void Throughnet::SignOut() {
-  // Not implemented
-  control_->UnregisterObserver();
+  signout_ = true;
+  control_->SignOut();
 }
 
 void Throughnet::Connect(const std::string id) {
@@ -157,8 +168,20 @@ Throughnet& Throughnet::OnMessage(std::function<void(Throughnet*, std::string, B
 //
 
 void Throughnet::OnSignedIn(const std::string& id) {
+  signout_ = false;
+
   if (event_handler_.find("signedin") == event_handler_.end()) return;
   CallEventHandler("signedin", this, id);
+}
+
+void Throughnet::OnSignedOut(const std::string& id) {
+  if (signout_) {
+    if (event_handler_.find("signedout") == event_handler_.end()) return;
+    CallEventHandler("signedout", this, id);
+  }
+
+  control_->UnregisterObserver();
+  control_.reset();
 }
 
 void Throughnet::OnPeerConnected(const std::string& id) {

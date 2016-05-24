@@ -22,11 +22,14 @@ Control::Control(std::shared_ptr<Signal> signal)
        : signal_(signal) {
 
   signal_->SignalOnCommandReceived_.connect(this, &Control::OnSignalCommandReceived);
+  signal_->SignalOnClosed_.connect(this, &Control::OnSignalConnectionClosed);
 }
 
 Control::~Control() {
   peers_.clear();
+  DeleteControl();
   signal_->SignalOnCommandReceived_.disconnect(this);
+  signal_->SignalOnClosed_.disconnect(this);
 }
 
 
@@ -73,8 +76,14 @@ void Control::SignIn(const std::string& user_id, const std::string& user_passwor
   open_id_ = open_id;
   user_id_ = user_id;
 
+  // Start by signing in
   signal_->SignIn(user_id, user_password);
   return;
+}
+
+void Control::SignOut() {
+  signal_->SignOut();
+  DisconnectAll();
 }
 
 void Control::Connect(const std::string id) {
@@ -100,6 +109,19 @@ void Control::Disconnect(const std::string id) {
 
   QueuePeerDisconnect(id);
 }
+
+void Control::DisconnectAll() {
+  std::vector<std::string> peer_ids;
+  for (auto peer : peers_) {
+    peer_ids.push_back(peer.second->remote_id());
+  }
+
+  for (auto id : peer_ids) {
+    Disconnect(id);
+  }
+}
+
+
 
 //
 // Send data to peer or emit data to channel
@@ -138,7 +160,7 @@ void Control::QueuePeerDisconnect(const std::string id) {
   // 3. Close local data channel
   // 4. Close ice connection
   // 5. Erase peer
-  webrtc_thread_->Post(this, MSG_QUEUE_PEER_DISCONNECT, data);
+  webrtc_thread_->Post(this, MSG_PEER_DISCONNECT, data);
 }
 
 
@@ -180,6 +202,7 @@ void Control::OnPeerDisconnected(const std::string id) {
 
   if (erased) {
     observer_->OnPeerDisconnected(id);
+    OnSignedOut(id);
   }
 }
 
@@ -209,15 +232,19 @@ void Control::OnMessage(rtc::Message* msg) {
     switch (msg->message_id) {
   case MSG_COMMAND_RECEIVED:
     param = static_cast<ControlMessageData*>(msg->pdata);
-    OnCommandReceived(param->data_);
+    OnCommandReceived(param->data_json_);
     break;
-  case MSG_QUEUE_DISCONNECT:
+  case MSG_DISCONNECT:
     param = static_cast<ControlMessageData*>(msg->pdata);
     Disconnect(param->data_string_);
     break;
-  case MSG_QUEUE_PEER_DISCONNECT:
+  case MSG_PEER_DISCONNECT:
     param = static_cast<ControlMessageData*>(msg->pdata);
     DisconnectPeer(param->data_string_);
+    break;
+  case MSG_SIGNAL_SERVER_CLOSED:
+    param = static_cast<ControlMessageData*>(msg->pdata);
+    OnSignedOut(param->data_string_);
     break;
   default:
     break;
@@ -277,6 +304,21 @@ void Control::OnCommandReceived(const Json::Value& message) {
 void Control::OnSignalCommandReceived(const Json::Value& message) {
   ControlMessageData *data = new ControlMessageData(message);
   webrtc_thread_->Post(this, MSG_COMMAND_RECEIVED, data);
+}
+
+void Control::OnSignalConnectionClosed(websocketpp::close::status::value code) {
+
+  if (code == websocketpp::close::status::normal) {
+    ControlMessageData *data = new ControlMessageData(open_id_);
+    webrtc_thread_->Post(this, MSG_SIGNAL_SERVER_CLOSED, data);
+  }
+}
+
+void Control::OnSignedOut(const std::string& id) {
+  if (signal_->opened()) return;
+  if (peers_.size() != 0) return;
+
+  observer_->OnSignedOut(id);
 }
 
 
@@ -471,9 +513,9 @@ void Control::ReceiveAnswerSdp(const std::string& peer_id, const Json::Value& da
 
 
 void Control::DisconnectPeer(const std::string id) {
-  // 1. Close remote data channel
-  // 2. Close local data channel
-  // 3. Close ice connection
+  // 1. Close remote data channel (remote_data_channel_)
+  // 2. Close local data channel (local_data_channel_)
+  // 3. Close ice connection (peer_connection_)
   // 4. Erase peer
 
   // Use while loop because peer.second->Close() will erase

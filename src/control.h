@@ -45,10 +45,14 @@ public:
   void Send(const std::string to, const char* buffer, const size_t size);
 
   void SignIn(const std::string& user_id, const std::string& user_password, const std::string& open_id);
+  void SignOut();
   void Connect(const std::string id);
   void Disconnect(const std::string id);
+  void DisconnectAll();
   void OnCommandReceived(const Json::Value& message);
   void OnSignalCommandReceived(const Json::Value& message);
+  void OnSignalConnectionClosed(websocketpp::close::status::value code);
+  void OnSignedOut(const std::string& id);
 
   //
   // PeerObserver implementation
@@ -102,16 +106,19 @@ protected:
 private:
 
   enum {
-    MSG_COMMAND_RECEIVED,       // Command has been received from signal server
-    MSG_QUEUE_DISCONNECT,       // Queue disconnection request (+subsequent peer disconnection)
-    MSG_QUEUE_PEER_DISCONNECT   // Queue peer disconnection request
+    MSG_COMMAND_RECEIVED,           // Command has been received from signal server
+    MSG_DISCONNECT,                 // Queue disconnection request (+subsequent peer disconnection)
+    MSG_PEER_DISCONNECT,            // Queue peer disconnection request
+    MSG_SIGNAL_SERVER_CLOSED        // Connection to signal server has been closed
   };
 
   struct ControlMessageData : public rtc::MessageData {
-    explicit ControlMessageData(Json::Value data) : data_(data) {}
+    explicit ControlMessageData(Json::Value data) : data_json_(data) {}
     explicit ControlMessageData(const std::string data) : data_string_(data) {}
-    Json::Value data_;
+    explicit ControlMessageData(const uint32_t data) : data_int32_(data) {}
+    Json::Value data_json_;
     std::string data_string_;
+    uint32_t data_int32_;
   };
 
   rtc::Thread* webrtc_thread_;

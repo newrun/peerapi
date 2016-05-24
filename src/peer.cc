@@ -286,6 +286,7 @@ PeerDataChannelObserver::PeerDataChannelObserver(webrtc::DataChannelInterface* c
 
 PeerDataChannelObserver::~PeerDataChannelObserver() {
   channel_->Close();
+  state_ = channel_->state();
   channel_->UnregisterObserver();
 }
 
