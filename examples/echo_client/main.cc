@@ -24,16 +24,16 @@ int main(int argc, char *argv[]) {
 
   Throughnet tn;
 
-  tn.On("signedin", function_tn(Throughnet* tn, string id) {
+  tn.On("signin", function_tn(Throughnet* tn, string id) {
     tn->Connect(name);
   });
 
-  tn.On("connected", function_tn(Throughnet* tn, string id) {
+  tn.On("connect", function_tn(Throughnet* tn, string id) {
     tn->Send(id, "Hello world");
     std::cout << "Sent 'Hello world' message to " << id << "." << std::endl;
   });
 
-  tn.On("disconnected", function_tn(Throughnet* tn, string id) {
+  tn.On("disconnect", function_tn(Throughnet* tn, string id) {
     std::cout << "Peer " << id << " has been disconnected" << std::endl;
     Throughnet::Stop();
   });

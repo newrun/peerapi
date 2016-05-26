@@ -170,28 +170,28 @@ Throughnet& Throughnet::OnMessage(std::function<void(Throughnet*, std::string, B
 void Throughnet::OnSignedIn(const std::string id) {
   signout_ = false;
 
-  if (event_handler_.find("signedin") == event_handler_.end()) return;
-  CallEventHandler("signedin", this, id);
+  if (event_handler_.find("signin") == event_handler_.end()) return;
+  CallEventHandler("signin", this, id);
 }
 
 void Throughnet::OnSignedOut(const std::string id) {
   if (!signout_) return;
-  if (event_handler_.find("signedout") == event_handler_.end()) return;
+  if (event_handler_.find("signout") == event_handler_.end()) return;
 
-  CallEventHandler("signedout", this, id);
+  CallEventHandler("signout", this, id);
 
   control_->UnregisterObserver();
   control_.reset();
 }
 
 void Throughnet::OnPeerConnected(const std::string id) {
-  if (event_handler_.find("connected") == event_handler_.end()) return;
-  CallEventHandler("connected", this, id);
+  if (event_handler_.find("connect") == event_handler_.end()) return;
+  CallEventHandler("connect", this, id);
 }
 
 void Throughnet::OnPeerDisconnected(const std::string id) {
-  if (event_handler_.find("disconnected") == event_handler_.end()) return;
-  CallEventHandler("disconnected", this, id);
+  if (event_handler_.find("disconnect") == event_handler_.end()) return;
+  CallEventHandler("disconnect", this, id);
 }
 
 void Throughnet::OnPeerMessage(const std::string id, const char* buffer, const size_t size) {

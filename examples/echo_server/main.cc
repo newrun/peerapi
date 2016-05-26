@@ -21,11 +21,11 @@ int main(int argc, char *argv[]) {
 
   Throughnet tn;
 
-  tn.On("connected", function_tn(Throughnet* tn, string id) {
+  tn.On("connect", function_tn(Throughnet* tn, string id) {
     std::cout << "Peer " << id << " has been connected." << std::endl;
   });
 
-  tn.On("disconnected", function_tn(Throughnet* tn, string id) {
+  tn.On("disconnect", function_tn(Throughnet* tn, string id) {
     std::cout << "Peer " << id << " has been disconnected." << std::endl;
   });
 

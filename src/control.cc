@@ -279,7 +279,7 @@ void Control::OnCommandReceived(const Json::Value& message) {
     peer_id.clear();
   }
 
-  if (command == "signedin") {
+  if (command == "signin") {
     OnSignedIn(data);
   }
   else if (command == "channelcreated") {
