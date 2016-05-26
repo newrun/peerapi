@@ -66,8 +66,8 @@ void Throughnet::SignIn(const std::string alias, const std::string id, const std
   // Initialize control
   //
 
-  control_ = std::make_unique<tn::Control>(signal_);
-  control_->RegisterObserver(this);
+  control_ = std::make_shared<tn::Control>(signal_);
+  control_->RegisterObserver(this, control_);
 
   if (control_.get() == NULL) {
     LOG(LS_ERROR) << "Failed to create class Control.";
@@ -167,34 +167,34 @@ Throughnet& Throughnet::OnMessage(std::function<void(Throughnet*, std::string, B
 // Signal event handler
 //
 
-void Throughnet::OnSignedIn(const std::string& id) {
+void Throughnet::OnSignedIn(const std::string id) {
   signout_ = false;
 
   if (event_handler_.find("signedin") == event_handler_.end()) return;
   CallEventHandler("signedin", this, id);
 }
 
-void Throughnet::OnSignedOut(const std::string& id) {
-  if (signout_) {
-    if (event_handler_.find("signedout") == event_handler_.end()) return;
-    CallEventHandler("signedout", this, id);
-  }
+void Throughnet::OnSignedOut(const std::string id) {
+  if (!signout_) return;
+  if (event_handler_.find("signedout") == event_handler_.end()) return;
+
+  CallEventHandler("signedout", this, id);
 
   control_->UnregisterObserver();
   control_.reset();
 }
 
-void Throughnet::OnPeerConnected(const std::string& id) {
+void Throughnet::OnPeerConnected(const std::string id) {
   if (event_handler_.find("connected") == event_handler_.end()) return;
   CallEventHandler("connected", this, id);
 }
 
-void Throughnet::OnPeerDisconnected(const std::string& id) {
+void Throughnet::OnPeerDisconnected(const std::string id) {
   if (event_handler_.find("disconnected") == event_handler_.end()) return;
   CallEventHandler("disconnected", this, id);
 }
 
-void Throughnet::OnPeerMessage(const std::string& id, const char* buffer, const size_t size) {
+void Throughnet::OnPeerMessage(const std::string id, const char* buffer, const size_t size) {
   Buffer buf(buffer, size);
   message_handler_(this, id, buf);
 }

@@ -22,13 +22,14 @@ int main(int argc, char *argv[]) {
   Throughnet tn2;
 
   tn1.On("signedin", function_tn(Throughnet* tn, string id) {
+    assert(id == server);
     std::cout << "tn1: signedin" << std::endl;
     tn2.SignIn(client);
   });
 
   tn1.On("connected", function_tn(Throughnet* tn, string id) {
     assert(id == client);
-    std::cout << "tn1: tn2 connected" << std::endl;
+    std::cout << "tn1: tn2(" << id <<") connected" << std::endl;
   });
 
   tn1.On("disconnected", function_tn(Throughnet* tn, string id) {
@@ -36,29 +37,41 @@ int main(int argc, char *argv[]) {
     std::cout << "tn1: tn2 disconnected" << std::endl;
   });
   
+  tn1.On("signedout", function_tn(Throughnet* tn, string id) {
+    assert(id == server);
+    std::cout << "tn1: signed out" << std::endl;
+    tn2.SignOut();
+  });
+
   tn1.OnMessage(function_tn(Throughnet* tn, string id, Throughnet::Buffer& data) {
     assert(std::string(data.buf_, data.size_) == "Ping");
     assert(id == client);
     std::cout << "tn1: a message has been received" << std::endl;
-    tn->Disconnect(client);
-//    tn->Send(client, "Pong");
+    tn->Send(client, "Pong");
   });
 
 
   tn2.On("signedin", function_tn(Throughnet* tn, string id) {
+    assert(id == client);
     std::cout << "tn2: signedin" << std::endl;
     tn->Connect(server);
   });
 
   tn2.On("connected", function_tn(Throughnet* tn, string id) {
     assert(id == server);
-    std::cout << "tn2: tn1 connected" << std::endl;
+    std::cout << "tn2: tn1(" << id << ") connected" << std::endl;
     tn->Send(server, "Ping");
   });
 
   tn2.On("disconnected", function_tn(Throughnet* tn, string id) {
     assert(id == server);
     std::cout << "tn2: tn1 disconnected" << std::endl;
+    tn1.SignOut();
+  });
+
+  tn2.On("signedout", function_tn(Throughnet* tn, string id){
+    assert(id == client);
+    std::cout << "tn2: signed out" << std::endl;
     Throughnet::Stop();
   });
 

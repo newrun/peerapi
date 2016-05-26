@@ -94,11 +94,16 @@ protected:
   using Events = std::map<std::string, std::unique_ptr<Handler_t>>;
   using MessageHandler = std::function<void(Throughnet*, std::string, Buffer&)>;
 
-  void OnSignedIn(const std::string& id);
-  void OnSignedOut(const std::string& id);
-  void OnPeerConnected(const std::string& id);
-  void OnPeerDisconnected(const std::string& id);
-  void OnPeerMessage(const std::string& id, const char* buffer, const size_t size);
+  //
+  // ControlObserver implementation
+  //
+
+  void OnSignedIn(const std::string id);
+  void OnSignedOut(const std::string id);
+  void OnPeerConnected(const std::string id);
+  void OnPeerDisconnected(const std::string id);
+  void OnPeerMessage(const std::string id, const char* buffer, const size_t size);
+
 
   bool ParseSetting(const std::string& setting);
   std::string tolower(const std::string& str);
@@ -108,7 +113,7 @@ protected:
   Events event_handler_;
   MessageHandler message_handler_;
 
-  std::unique_ptr<tn::Control> control_;
+  std::shared_ptr<tn::Control> control_;
   std::shared_ptr<tn::Signal> signal_;
 };
 

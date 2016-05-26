@@ -65,7 +65,7 @@ public:
   virtual void OnPeerMessage(const std::string& id, const char* buffer, const size_t size);
 
   // Register/Unregister observer
-  void RegisterObserver(ControlObserver* observer);
+  void RegisterObserver(ControlObserver* observer, std::shared_ptr<Control> ref);
   void UnregisterObserver();
 
   // implements the MessageHandler interface
@@ -113,17 +113,20 @@ private:
   };
 
   struct ControlMessageData : public rtc::MessageData {
-    explicit ControlMessageData(Json::Value data) : data_json_(data) {}
-    explicit ControlMessageData(const std::string data) : data_string_(data) {}
-    explicit ControlMessageData(const uint32_t data) : data_int32_(data) {}
+    explicit ControlMessageData(Json::Value data, std::shared_ptr<Control> ref) : data_json_(data), ref_(ref) {}
+    explicit ControlMessageData(const std::string data, std::shared_ptr<Control> ref) : data_string_(data), ref_(ref) {}
+    explicit ControlMessageData(const uint32_t data, std::shared_ptr<Control> ref) : data_int32_(data), ref_(ref) {}
     Json::Value data_json_;
     std::string data_string_;
     uint32_t data_int32_;
+
+  private:
+    std::shared_ptr<Control> ref_;
   };
 
   rtc::Thread* webrtc_thread_;
   ControlObserver* observer_;
-
+  std::shared_ptr<Control> ref_;
 };
 
 } // namespace tn

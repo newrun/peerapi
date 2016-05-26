@@ -151,7 +151,7 @@ void Control::SendCommand(const std::string& id, const std::string& command, con
 
 void Control::QueuePeerDisconnect(const std::string id) {
 
-  ControlMessageData *data = new ControlMessageData(id);
+  ControlMessageData *data = new ControlMessageData(id, ref_);
 
   // 1. Leave channel on signal server
   LeaveChannel(id);
@@ -202,7 +202,9 @@ void Control::OnPeerDisconnected(const std::string id) {
 
   if (erased) {
     observer_->OnPeerDisconnected(id);
-    OnSignedOut(id);
+    if (peers_.size() == 0) {
+      OnSignedOut(open_id_);
+    }
   }
 }
 
@@ -215,12 +217,14 @@ void Control::OnPeerMessage(const std::string& id, const char* buffer, const siz
   observer_->OnPeerMessage(id, buffer, size);
 }
 
-void Control::RegisterObserver(ControlObserver* observer) {
+void Control::RegisterObserver(ControlObserver* observer, std::shared_ptr<Control> ref) {
+  ref_ = ref;
   observer_ = observer;
 }
 
 void Control::UnregisterObserver() {
   observer_ = nullptr;
+  ref_.reset();
 }
 
 //
@@ -302,23 +306,23 @@ void Control::OnCommandReceived(const Json::Value& message) {
 }
 
 void Control::OnSignalCommandReceived(const Json::Value& message) {
-  ControlMessageData *data = new ControlMessageData(message);
+  ControlMessageData *data = new ControlMessageData(message, ref_);
   webrtc_thread_->Post(this, MSG_COMMAND_RECEIVED, data);
 }
 
 void Control::OnSignalConnectionClosed(websocketpp::close::status::value code) {
 
   if (code == websocketpp::close::status::normal) {
-    ControlMessageData *data = new ControlMessageData(open_id_);
+    ControlMessageData *data = new ControlMessageData(open_id_, ref_);
     webrtc_thread_->Post(this, MSG_SIGNAL_SERVER_CLOSED, data);
   }
 }
 
 void Control::OnSignedOut(const std::string& id) {
-  if (signal_->opened()) return;
+  if (signal_==nullptr || signal_->opened()) return;
   if (peers_.size() != 0) return;
 
-  observer_->OnSignedOut(id);
+  if (observer_!=nullptr) observer_->OnSignedOut(id);
 }
 
 
