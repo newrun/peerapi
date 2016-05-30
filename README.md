@@ -1,45 +1,34 @@
 # ThroughNet
 
-Throughnet is a network library for peer to peer (serverless) network programming.
+A Throughnet is a P2P network socket library.
 
-- Network connection by random id or your email
+- Network connection by random id or email address
+- No ip address and port number
 - Support NAT traversal and WebRTC
-- Forget ip address and port number
+
 
 ### How to use
 Peer A (listen)
 ```
-Throughnet tn("your@email");
-
+Throughnet tn;
 tn.OnMessage(function_tn(Throughnet* tn, string id, Throughnet::Buffer& data) {
   std::cout << "A message has been received." << std::endl;
 });
+tn.SignIn("PEER_A");
  ```
+
 Peer B (connect)
 ```
 Throughnet tn;
-
-tn.On("ready", function_tn(Throughnet* tn, string id) {
-  tn->Connect("your@email");
+tn.On("signin", function_tn(Throughnet* tn, string id) {
+  tn->Connect("PEER_A");
 });
-
-tn.On("connected", function_tn(Throughnet* tn, string id) {
-  tn->Send("your@email", "Hello world");
+tn.On("connect", function_tn(Throughnet* tn, string id) {
+  tn->Send("PEER_A", "Hello");
 });
+tn.SignIn("PEER_B");
 ```
-
-### Practical use
-
-You can make your own application with ThroughnNet
-- Connect VR game players without server costs
-- Connect IoT device and smart phone
-- Connect people who want to share big file or data
-- Connect every single device and network (home/office network, printer, pc, phone, ..)
 
 ### How it works
 
-
 ### How to build
-
-
-### Support
