@@ -122,9 +122,8 @@ void Control::DisconnectAll() {
 }
 
 
-
 //
-// Send data to peer or emit data to channel
+// Send data to peer
 //
 
 void Control::Send(const std::string to, const char* buffer, const size_t size) {
@@ -136,6 +135,16 @@ void Control::Send(const std::string to, const char* buffer, const size_t size) 
 
   it->second->Send(buffer, size);
   return;
+}
+
+bool Control::SyncSend(const std::string to, const char* buffer, const size_t size) {
+
+  typedef std::map<std::string, rtc::scoped_refptr<PeerControl>>::iterator it_type;
+
+  it_type it = peers_.find(to);
+  if (it == peers_.end()) return false;
+
+  return it->second->SyncSend(buffer, size);
 }
 
 
@@ -216,6 +225,12 @@ void Control::OnPeerMessage(const std::string& id, const char* buffer, const siz
   if (observer_ == nullptr) return;
   observer_->OnPeerMessage(id, buffer, size);
 }
+
+void Control::OnPeerWritable(const std::string& id) {
+  if (observer_ == nullptr) return;
+  observer_->OnPeerWritable(id);
+}
+
 
 void Control::RegisterObserver(ControlObserver* observer, std::shared_ptr<Control> ref) {
   ref_ = ref;

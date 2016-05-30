@@ -49,6 +49,14 @@ bool PeerControl::Send(const char* buffer, const size_t size) {
   return local_data_channel_->Send(buffer, size);
 }
 
+bool PeerControl::SyncSend(const char* buffer, const size_t size) {
+  return local_data_channel_->SyncSend(buffer, size);
+}
+
+bool PeerControl::IsWritable() {
+  return local_data_channel_->IsWritable();
+}
+
 void PeerControl::Close() {
   local_data_channel_->Close();
   remote_data_channel_->Close();
@@ -154,6 +162,7 @@ void PeerControl::OnPeerOpened() {
       remote_data_channel_->state() == webrtc::DataChannelInterface::DataState::kOpen
     ) {
     observer_->OnPeerConnected(remote_id_);
+    observer_->OnPeerWritable(local_id_);
   }
 }
 
@@ -175,6 +184,8 @@ void PeerControl::OnPeerMessage(const webrtc::DataBuffer& buffer) {
 }
 
 void PeerControl::OnBufferedAmountChange(const uint64_t previous_amount) {
+  if (!local_data_channel_->IsWritable()) return;
+  observer_->OnPeerWritable(remote_id_);
 }
 
 
@@ -279,7 +290,7 @@ void PeerControl::Detach(PeerDataChannelObserver* datachannel) {
 //
 
 PeerDataChannelObserver::PeerDataChannelObserver(webrtc::DataChannelInterface* channel)
-  : channel_(channel), received_message_count_(0) {
+  : channel_(channel) {
   channel_->RegisterObserver(this);
   state_ = channel_->state();
 }
@@ -292,6 +303,12 @@ PeerDataChannelObserver::~PeerDataChannelObserver() {
 
 void PeerDataChannelObserver::OnBufferedAmountChange(uint64_t previous_amount) {
   SignalOnBufferedAmountChange_(previous_amount);
+
+  if (channel_->buffered_amount() == 0) {
+    std::lock_guard<std::mutex> lk(send_lock_);
+    send_cv_.notify_all();
+  }
+
   return;
 }
 
@@ -307,13 +324,29 @@ void PeerDataChannelObserver::OnStateChange() {
 
 void PeerDataChannelObserver::OnMessage(const webrtc::DataBuffer& buffer) {
   SignalOnMessage_(buffer);
-  ++received_message_count_;
 }
 
 bool PeerDataChannelObserver::Send(const char* buffer, const size_t size) {
   rtc::Buffer rtcbuffer(buffer, size);
   webrtc::DataBuffer databuffer(rtcbuffer, true);
+
+  if (channel_->buffered_amount() >= max_buffer_size_) return false;
   return channel_->Send(databuffer);
+}
+
+bool PeerDataChannelObserver::SyncSend(const char* buffer, const size_t size) {
+  rtc::Buffer rtcbuffer(buffer, size);
+  webrtc::DataBuffer databuffer(rtcbuffer, true);
+
+  std::unique_lock<std::mutex> lock(send_lock_);
+  if (!channel_->Send(databuffer)) return false;
+
+  if (!send_cv_.wait_for(lock, std::chrono::milliseconds(60*1000),
+                         [this] () { return channel_->buffered_amount() == 0; })) {
+    return false;
+  }
+
+  return true;
 }
 
 void PeerDataChannelObserver::Close() {
@@ -326,13 +359,21 @@ bool PeerDataChannelObserver::IsOpen() const {
   return state_ == webrtc::DataChannelInterface::kOpen;
 }
 
+uint64_t PeerDataChannelObserver::BufferedAmount() {
+  return channel_->buffered_amount();
+}
+
+bool PeerDataChannelObserver::IsWritable() {
+  if (channel_ == nullptr) return false;
+  if (!IsOpen() || channel_->buffered_amount() >= 0) return false;
+  return true;
+}
+
+
 const webrtc::DataChannelInterface::DataState
 PeerDataChannelObserver::state() const {
   return channel_->state();
 }
 
-size_t PeerDataChannelObserver::received_message_count() const {
-  return received_message_count_;
-}
 
 } // namespace tn

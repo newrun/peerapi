@@ -7,6 +7,8 @@
 #ifndef __THROUGHNET_PEER_H__
 #define __THROUGHNET_PEER_H__
 
+#include <condition_variable>
+#include <mutex>
 #include "webrtc/api/datachannelinterface.h"
 #include "webrtc/api/peerconnectioninterface.h"
 #include "webrtc/base/scoped_ref_ptr.h"
@@ -26,6 +28,7 @@ public:
   virtual void OnPeerConnected(const std::string id) = 0;
   virtual void OnPeerDisconnected(const std::string id) = 0;
   virtual void OnPeerMessage(const std::string& id, const char* buffer, const size_t size) = 0;
+  virtual void OnPeerWritable(const std::string& id) = 0;
 };
 
 class PeerDataChannelObserver;
@@ -53,6 +56,8 @@ public:
   const std::string& remote_id() const { return remote_id_; }
 
   bool Send(const char* buffer, const size_t size);
+  bool SyncSend(const char* buffer, const size_t size);
+  bool IsWritable();
   void Close();
 
   //
@@ -71,15 +76,13 @@ public:
   // PeerConnectionObserver implementation.
   //
 
-  void OnSignalingChange(
-    webrtc::PeerConnectionInterface::SignalingState new_state) override {}
+  void OnSignalingChange(webrtc::PeerConnectionInterface::SignalingState new_state) override {}
   void OnAddStream(webrtc::MediaStreamInterface* stream) override {};
   void OnRemoveStream(webrtc::MediaStreamInterface* stream) override {}
   void OnDataChannel(webrtc::DataChannelInterface* channel) override;
   void OnRenegotiationNeeded() override {}
   void OnIceConnectionChange(webrtc::PeerConnectionInterface::IceConnectionState new_state) override; 
-  void OnIceGatheringChange(
-    webrtc::PeerConnectionInterface::IceGatheringState new_state) override {}
+  void OnIceGatheringChange(webrtc::PeerConnectionInterface::IceGatheringState new_state) override {}
   void OnIceCandidate(const webrtc::IceCandidateInterface* candidate) override;
   void OnIceConnectionReceivingChange(bool receiving) override {}
 
@@ -137,10 +140,12 @@ public:
   void OnBufferedAmountChange(uint64_t previous_amount) override;
 
   bool Send(const char* buffer, const size_t size);
+  bool SyncSend(const char* buffer, const size_t size);
   void Close();
   bool IsOpen() const;
+  uint64_t BufferedAmount();
+  bool IsWritable();
   const webrtc::DataChannelInterface::DataState state() const;
-  size_t received_message_count() const;
 
   // sigslots
   sigslot::signal0<> SignalOnOpen_;
@@ -151,9 +156,13 @@ public:
 protected:
 
 private:
+
+  const size_t max_buffer_size_ = 16 * 1024 * 1024;
+
   rtc::scoped_refptr<webrtc::DataChannelInterface> channel_;
   webrtc::DataChannelInterface::DataState state_;
-  size_t received_message_count_;
+  std::condition_variable send_cv_;
+  std::mutex send_lock_;
 };
 
 } // namespace tn

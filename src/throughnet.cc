@@ -137,6 +137,22 @@ void Throughnet::Send(const std::string& id, const std::string& message) {
   Send(id, message.c_str(), message.size());
 }
 
+bool Throughnet::SyncSend(const std::string& id, const char* buffer, const size_t size) {
+  return control_->SyncSend(id, buffer, size);
+}
+
+bool Throughnet::SyncSend(const std::string& id, const char* message) {
+  return SyncSend(id, message, strlen(message));
+}
+
+bool Throughnet::SyncSend(const std::string& id, const std::string& message) {
+  return SyncSend(id, message.c_str(), message.size());
+}
+
+
+
+
+
 std::string Throughnet::CreateRandomUuid() {
   return rtc::CreateRandomUuid();
 }
@@ -199,6 +215,10 @@ void Throughnet::OnPeerMessage(const std::string id, const char* buffer, const s
   message_handler_(this, id, buf);
 }
 
+void Throughnet::OnPeerWritable(const std::string id) {
+  if (event_handler_.find("writable") == event_handler_.end()) return;
+  CallEventHandler("writable", this, id);
+}
 
 
 template<typename ...A>

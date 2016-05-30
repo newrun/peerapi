@@ -39,16 +39,19 @@ public:
   void DeleteControl();
   
   //
-  // Negotiation and send/emit data
+  // Negotiation and send data
   //
 
   void Send(const std::string to, const char* buffer, const size_t size);
+  bool SyncSend(const std::string to, const char* buffer, const size_t size);
 
   void SignIn(const std::string& user_id, const std::string& user_password, const std::string& open_id);
   void SignOut();
   void Connect(const std::string id);
   void Disconnect(const std::string id);
   void DisconnectAll();
+  bool IsWritable(const std::string id);
+
   void OnCommandReceived(const Json::Value& message);
   void OnSignalCommandReceived(const Json::Value& message);
   void OnSignalConnectionClosed(websocketpp::close::status::value code);
@@ -63,6 +66,7 @@ public:
   virtual void OnPeerConnected(const std::string id);
   virtual void OnPeerDisconnected(const std::string id);
   virtual void OnPeerMessage(const std::string& id, const char* buffer, const size_t size);
+  virtual void OnPeerWritable(const std::string& id);
 
   // Register/Unregister observer
   void RegisterObserver(ControlObserver* observer, std::shared_ptr<Control> ref);

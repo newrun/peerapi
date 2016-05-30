@@ -56,6 +56,10 @@ public:
   void Send(const std::string& id, const char* buffer, const size_t size);
   void Send(const std::string& id, const char* buffer);
   void Send(const std::string& id, const std::string& message);
+  bool SyncSend(const std::string& id, const char* buffer, const size_t size);
+  bool SyncSend(const std::string& id, const char* buffer);
+  bool SyncSend(const std::string& id, const std::string& message);
+
   static std::string CreateRandomUuid();
 
   Throughnet& On(std::string event_id, std::function<void(Throughnet*, std::string)>);
@@ -103,6 +107,7 @@ protected:
   void OnPeerConnected(const std::string id);
   void OnPeerDisconnected(const std::string id);
   void OnPeerMessage(const std::string id, const char* buffer, const size_t size);
+  void OnPeerWritable(const std::string id);
 
 
   bool ParseSetting(const std::string& setting);
