@@ -2,7 +2,7 @@
 
 Peer to peer netcat connection
 
-- Netcat with p2p connection
+- Netcat over p2p connection
 - Connection through different internal network
 - No port forwarding required
 
@@ -41,11 +41,11 @@ Hello~
 
 Quickly send and receive file between your devices without cloud server.
 
-Peer A (receive)
+Peer A (listen and receive)
 ```
 > p2pnc -l peer_a > dst_file.txt
 ```
-Peer B (send)
+Peer B (connect and send)
 ```
 > p2pnc peer_a < src_file.txt
 ```
