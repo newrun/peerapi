@@ -20,7 +20,7 @@ Example:
 
 ### Example
 
-##### 1. Anonymous chat
+#### 1. Anonymous chat
 
 Peer A (listen)
 ```
@@ -37,7 +37,7 @@ Connected
 Hello~
 ```
 
-##### 2. Send and receive file
+#### 2. Send and receive file
 
 Quickly send and receive file between your devices without cloud server.
 
