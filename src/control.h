@@ -62,9 +62,12 @@ public:
   //
 
   virtual void SendCommand(const std::string& id, const std::string& command, const Json::Value& data);
-  virtual void QueuePeerDisconnect(const std::string id);
   virtual void OnPeerConnected(const std::string id);
+  virtual void QueuePeerDisconnect(const std::string id);
+  virtual void QueueOnPeerDisconnected(const std::string id);
   virtual void OnPeerDisconnected(const std::string id);
+  virtual void QueueOnPeerChannelClosed(const std::string id);
+  virtual void OnPeerChannelClosed(const std::string id);
   virtual void OnPeerMessage(const std::string& id, const char* buffer, const size_t size);
   virtual void OnPeerWritable(const std::string& id);
 
@@ -112,7 +115,10 @@ private:
   enum {
     MSG_COMMAND_RECEIVED,           // Command has been received from signal server
     MSG_DISCONNECT,                 // Queue disconnection request (+subsequent peer disconnection)
-    MSG_PEER_DISCONNECT,            // Queue peer disconnection request
+    MSG_DISCONNECT_PEER,            // Queue peer disconnection request
+    MSG_ON_PEER_DISCONNECTED,       // Queue onpeerdisconnected event
+    MSG_ON_PEER_CHANNEL_CLOSED,     // Queue onchanneldisconnected event
+    MSG_SIGNOUT,                    // Queue signout request
     MSG_SIGNAL_SERVER_CLOSED        // Connection to signal server has been closed
   };
 

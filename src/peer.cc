@@ -84,11 +84,18 @@ void PeerControl::ReceiveAnswerSdp(const std::string& sdp) {
   SetRemoteDescription(webrtc::SessionDescriptionInterface::kAnswer, sdp);
 }
 
+void PeerControl::ClosePeerConnection() {
+  peer_connection_->Close();
+}
 
 void PeerControl::OnDataChannel(webrtc::DataChannelInterface* data_channel) {
   PeerDataChannelObserver* Observer = new PeerDataChannelObserver(data_channel);
   remote_data_channel_ = rtc::scoped_ptr<PeerDataChannelObserver>(Observer);
   Attach(remote_data_channel_.get());
+}
+
+void PeerControl::OnSignalingChange(webrtc::PeerConnectionInterface::SignalingState new_state) {
+  // NOTHING
 }
 
 void PeerControl::OnIceConnectionChange(webrtc::PeerConnectionInterface::IceConnectionState new_state) {
@@ -98,7 +105,7 @@ void PeerControl::OnIceConnectionChange(webrtc::PeerConnectionInterface::IceConn
     // Ice connection has been closed.
     // Notify it to Control so the Control will remove peer in peers_
     //
-    observer_->OnPeerDisconnected(remote_id_);
+    observer_->QueueOnPeerDisconnected(remote_id_);
     break;
   case webrtc::PeerConnectionInterface::IceConnectionState::kIceConnectionDisconnected:
     //
@@ -168,12 +175,14 @@ void PeerControl::OnPeerOpened() {
 
 void PeerControl::OnPeerClosed() {
 
+  if (local_data_channel_.get() == nullptr && remote_data_channel_.get() == nullptr) {
+    return;
+  }
+
   // Both local_data_channel_ and remote_data_channel_ has been closed
-  if (local_data_channel_.get() != nullptr && remote_data_channel_.get() != nullptr &&
-      local_data_channel_->state() == webrtc::DataChannelInterface::DataState::kClosed &&
-      remote_data_channel_->state() == webrtc::DataChannelInterface::DataState::kClosed
-    ) {
-    peer_connection_->Close();
+  if (local_data_channel_->state() == webrtc::DataChannelInterface::DataState::kClosed &&
+      remote_data_channel_->state() == webrtc::DataChannelInterface::DataState::kClosed) {
+    observer_->QueueOnPeerChannelClosed(remote_id_);
   }
 }
 
@@ -351,7 +360,9 @@ bool PeerDataChannelObserver::SyncSend(const char* buffer, const size_t size) {
 
 void PeerDataChannelObserver::Close() {
   LOG(LS_WARNING) << "Close data channel";
-  channel_->Close();
+  if (channel_->state() != webrtc::DataChannelInterface::kClosing) {
+    channel_->Close();
+  }
 }
 
 

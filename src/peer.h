@@ -24,9 +24,12 @@ namespace tn {
 class PeerObserver {
 public:
   virtual void SendCommand(const std::string& id, const std::string& command, const Json::Value& data) = 0;
-  virtual void QueuePeerDisconnect(const std::string id) = 0;
   virtual void OnPeerConnected(const std::string id) = 0;
+  virtual void QueuePeerDisconnect(const std::string id) = 0;
+  virtual void QueueOnPeerDisconnected(const std::string id) = 0;
   virtual void OnPeerDisconnected(const std::string id) = 0;
+  virtual void QueueOnPeerChannelClosed(const std::string id) = 0;
+  virtual void OnPeerChannelClosed(const std::string id) = 0;
   virtual void OnPeerMessage(const std::string& id, const char* buffer, const size_t size) = 0;
   virtual void OnPeerWritable(const std::string& id) = 0;
 };
@@ -72,11 +75,13 @@ public:
   void ReceiveOfferSdp(const std::string& sdp);
   void ReceiveAnswerSdp(const std::string& sdp);
 
+  void ClosePeerConnection();
+
   //
   // PeerConnectionObserver implementation.
   //
 
-  void OnSignalingChange(webrtc::PeerConnectionInterface::SignalingState new_state) override {}
+  void OnSignalingChange(webrtc::PeerConnectionInterface::SignalingState new_state) override;
   void OnAddStream(webrtc::MediaStreamInterface* stream) override {};
   void OnRemoveStream(webrtc::MediaStreamInterface* stream) override {}
   void OnDataChannel(webrtc::DataChannelInterface* channel) override;
