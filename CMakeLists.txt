@@ -223,3 +223,12 @@ add_dependencies(echo_client throughnet)
 target_include_directories(echo_client PRIVATE ${THROUGHNET_INCLUDE_DIRECTORY})
 target_link_libraries(echo_client throughnet ${THROUGHNET_LIBRARIES_STATIC})
 set_target_properties (echo_client PROPERTIES FOLDER examples)
+
+# p2p netcat
+add_executable(p2p_netcat examples/p2p_netcat/main.cc)
+add_dependencies(p2p_netcat throughnet)
+
+target_include_directories(p2p_netcat PRIVATE ${THROUGHNET_INCLUDE_DIRECTORY})
+target_link_libraries(p2p_netcat throughnet ${THROUGHNET_LIBRARIES_STATIC})
+set_target_properties (p2p_netcat PROPERTIES FOLDER examples)
+set_target_properties (p2p_netcat PROPERTIES OUTPUT_NAME p2pnc)
