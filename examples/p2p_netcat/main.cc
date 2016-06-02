@@ -79,6 +79,11 @@ int main(int argc, char *argv[]) {
     Throughnet::Stop();
   });
 
+  tn.On("error", function_tn(Throughnet* tn, string id){
+    std::cerr << tn->GetErrorMessage() << std::endl;
+    Throughnet::Stop();
+  });
+
   tn.OnMessage(function_tn(Throughnet* tn, string id, Throughnet::Buffer& data) {
     if (!write_stdout(data.buf_, data.size_)) {
       tn->Disconnect(id);
@@ -176,7 +181,6 @@ bool parse_args(int argc, char* argv[], std::string& alias, std::string& connect
 }
 
 void usage(const char* prg) {
-  std::cerr << std::endl;
   std::cerr << "P2P netcat version 0.1 (http://github.com/throughnet/throughnet)" << std::endl << std::endl;
   std::cerr << "Usage: " << prg << " [-l] name" << std::endl << std::endl;
   std::cerr << "  Options:" << std::endl;

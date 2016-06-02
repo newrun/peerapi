@@ -17,6 +17,7 @@ public:
   virtual void OnPeerDisconnected(const std::string id) = 0;
   virtual void OnPeerMessage(const std::string id, const char* buffer, const size_t size) = 0;
   virtual void OnPeerWritable(const std::string id) = 0;
+  virtual void OnError(const std::string id, const std::string& reason) = 0;
 };
 
 } // namespace tn

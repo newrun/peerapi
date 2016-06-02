@@ -59,6 +59,7 @@ public:
   bool SyncSend(const std::string& id, const char* buffer, const size_t size);
   bool SyncSend(const std::string& id, const char* buffer);
   bool SyncSend(const std::string& id, const std::string& message);
+  std::string GetErrorMessage() { return error_reason_; }
 
   static std::string CreateRandomUuid();
 
@@ -108,6 +109,7 @@ protected:
   void OnPeerDisconnected(const std::string id);
   void OnPeerMessage(const std::string id, const char* buffer, const size_t size);
   void OnPeerWritable(const std::string id);
+  void OnError(const std::string id, const std::string& reason);
 
 
   bool ParseSetting(const std::string& setting);
@@ -120,6 +122,8 @@ protected:
 
   std::shared_ptr<tn::Control> control_;
   std::shared_ptr<tn::Signal> signal_;
+
+  std::string error_reason_;
 };
 
 

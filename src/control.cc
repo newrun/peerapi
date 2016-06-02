@@ -498,14 +498,19 @@ void Control::OnChannelCreated(const Json::Value& data) {
     return;
   }
 
-  if (!result) {
-    LOG(LS_WARNING) << "Create channel failed";
-    return;
-  }
-
   std::string channel;
   if (!rtc::GetStringFromJsonObject(data, "name", &channel)) {
     LOG(LS_WARNING) << "Create channel failed - no channel name";
+    return;
+  }
+
+  if (!result) {
+    LOG(LS_WARNING) << "Create channel failed";
+    std::string reason;
+    if (!rtc::GetStringFromJsonObject(data, "reason", &reason)) {
+      reason = "Unknown reason";
+    }
+    observer_->OnError(channel, reason);
     return;
   }
 
@@ -513,7 +518,27 @@ void Control::OnChannelCreated(const Json::Value& data) {
 }
 
 void Control::OnChannelJoined(const Json::Value& data) {
-  // Nothing
+  bool result;
+  if (!rtc::GetBoolFromJsonObject(data, "result", &result)) {
+    LOG(LS_WARNING) << "Unknown channel join response";
+    return;
+  }
+
+  std::string channel;
+  if (!rtc::GetStringFromJsonObject(data, "name", &channel)) {
+    LOG(LS_WARNING) << "Join channel failed - no channel name";
+    return;
+  }
+
+  if (!result) {
+    LOG(LS_WARNING) << "Join channel failed";
+    std::string reason;
+    if (!rtc::GetStringFromJsonObject(data, "reason", &reason)) {
+      reason = "Unknown reason";
+    }
+    observer_->OnError(channel, reason);
+    return;
+  }
 }
 
 

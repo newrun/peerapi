@@ -220,6 +220,12 @@ void Throughnet::OnPeerWritable(const std::string id) {
   CallEventHandler("writable", this, id);
 }
 
+void Throughnet::OnError(const std::string id, const std::string& reason) {
+  if (event_handler_.find("error") == event_handler_.end()) return;
+
+  error_reason_ = reason;
+  CallEventHandler("error", this, id);
+}
 
 template<typename ...A>
 void Throughnet::CallEventHandler(std::string msg_id, A&& ... args)
