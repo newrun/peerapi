@@ -28,7 +28,7 @@ public:
   virtual void QueuePeerDisconnect(const std::string id) = 0;
   virtual void QueueOnPeerDisconnected(const std::string id) = 0;
   virtual void OnPeerDisconnected(const std::string id) = 0;
-  virtual void QueueOnPeerChannelClosed(const std::string id) = 0;
+  virtual void QueueOnPeerChannelClosed(const std::string id, int delay) = 0;
   virtual void OnPeerChannelClosed(const std::string id) = 0;
   virtual void OnPeerMessage(const std::string& id, const char* buffer, const size_t size) = 0;
   virtual void OnPeerWritable(const std::string& id) = 0;

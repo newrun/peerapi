@@ -66,7 +66,7 @@ public:
   virtual void QueuePeerDisconnect(const std::string id);
   virtual void QueueOnPeerDisconnected(const std::string id);
   virtual void OnPeerDisconnected(const std::string id);
-  virtual void QueueOnPeerChannelClosed(const std::string id);
+  virtual void QueueOnPeerChannelClosed(const std::string id, int delay);
   virtual void OnPeerChannelClosed(const std::string id);
   virtual void OnPeerMessage(const std::string& id, const char* buffer, const size_t size);
   virtual void OnPeerWritable(const std::string& id);
@@ -87,6 +87,7 @@ protected:
   void AddIceCandidate(const std::string& peer_id, const Json::Value& data);
   void ReceiveOfferSdp(const std::string& peer_id, const Json::Value& data);
   void ReceiveAnswerSdp(const std::string& peer_id, const Json::Value& data);
+  void ClosePeerConnection(const std::string& peer_id, const Json::Value& data);
   void DisconnectPeer(const std::string id);
 
   void OnSignedIn(const Json::Value& data);

@@ -182,7 +182,10 @@ void PeerControl::OnPeerClosed() {
   // Both local_data_channel_ and remote_data_channel_ has been closed
   if (local_data_channel_->state() == webrtc::DataChannelInterface::DataState::kClosed &&
       remote_data_channel_->state() == webrtc::DataChannelInterface::DataState::kClosed) {
-    observer_->QueueOnPeerChannelClosed(remote_id_);
+
+    // Close local peerconnection
+    observer_->QueueOnPeerChannelClosed(remote_id_, 1000);
+
   }
 }
 

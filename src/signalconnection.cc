@@ -54,6 +54,7 @@ Signal::Signal() :
   client_.set_access_channels(websocketpp::log::alevel::fail);
 #else
   client_.clear_access_channels(websocketpp::log::alevel::all);
+  client_.clear_access_channels(websocketpp::log::elevel::all);
 #endif
 
   // Initialize ASIO

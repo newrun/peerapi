@@ -240,11 +240,16 @@ void Control::OnPeerChannelClosed(const std::string id) {
   peer->second->ClosePeerConnection();
 }
 
-void Control::QueueOnPeerChannelClosed(const std::string id) {
+void Control::QueueOnPeerChannelClosed(const std::string id, int delay) {
+
+//  close_peerconnection
   ControlMessageData *data = new ControlMessageData(id, ref_);
 
   // Call Control::OnPeerDisconnected()
-  webrtc_thread_->PostDelayed(1000, this, MSG_ON_PEER_CHANNEL_CLOSED, data);
+  if (delay==0)
+    webrtc_thread_->Post(this, MSG_ON_PEER_CHANNEL_CLOSED, data);
+  else 
+    webrtc_thread_->PostDelayed(delay, this, MSG_ON_PEER_CHANNEL_CLOSED, data);
 }
 
 
@@ -360,6 +365,9 @@ void Control::OnCommandReceived(const Json::Value& message) {
   }
   else if (command == "ice_candidate") {
     AddIceCandidate(peer_id, data);
+  }
+  else if (command == "close_peerconnection") {
+    ClosePeerConnection(peer_id, data);
   }
 }
 
@@ -568,10 +576,20 @@ void Control::ReceiveAnswerSdp(const std::string& peer_id, const Json::Value& da
   std::string sdp;
 
   if (!rtc::GetStringFromJsonObject(data, "sdp", &sdp)) return;
-  if (peers_.find(peer_id) == peers_.end()) return;
 
-  peers_[peer_id]->ReceiveAnswerSdp(sdp);
+  auto peer = peers_.find(peer_id);
+  if (peer == peers_.end()) return;
+
+  peer->second->ReceiveAnswerSdp(sdp);
 }
+
+void Control::ClosePeerConnection(const std::string& peer_id, const Json::Value& data) {
+  auto peer = peers_.find(peer_id);
+  if (peer == peers_.end()) return;
+
+  peers_[peer_id]->ClosePeerConnection();
+}
+
 
 
 void Control::DisconnectPeer(const std::string id) {
