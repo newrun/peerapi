@@ -53,8 +53,8 @@ Signal::Signal() :
   client_.clear_access_channels(websocketpp::log::alevel::all);
   client_.set_access_channels(websocketpp::log::alevel::fail);
 #else
-  client_.clear_access_channels(websocketpp::log::alevel::all);
   client_.clear_access_channels(websocketpp::log::elevel::all);
+  client_.clear_access_channels(websocketpp::log::alevel::all);
 #endif
 
   // Initialize ASIO
@@ -73,6 +73,14 @@ Signal::Signal() :
 }
 
 Signal::~Signal() {
+#if _DEBUG || DEBUG
+  client_.clear_access_channels(websocketpp::log::alevel::all);
+  client_.set_access_channels(websocketpp::log::alevel::fail);
+#else
+  client_.clear_access_channels(websocketpp::log::elevel::all);
+  client_.clear_access_channels(websocketpp::log::alevel::all);
+#endif
+
   Teardown();
 }
 
