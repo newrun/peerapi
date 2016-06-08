@@ -90,7 +90,7 @@ void PeerControl::ClosePeerConnection() {
 
 void PeerControl::OnDataChannel(webrtc::DataChannelInterface* data_channel) {
   PeerDataChannelObserver* Observer = new PeerDataChannelObserver(data_channel);
-  remote_data_channel_ = rtc::scoped_ptr<PeerDataChannelObserver>(Observer);
+  remote_data_channel_ = std::unique_ptr<PeerDataChannelObserver>(Observer);
   Attach(remote_data_channel_.get());
 }
 
@@ -139,7 +139,7 @@ void PeerControl::OnIceCandidate(const webrtc::IceCandidateInterface* candidate)
 void PeerControl::OnSuccess(webrtc::SessionDescriptionInterface* desc) {
 
   // This callback should take the ownership of |desc|.
-  rtc::scoped_ptr<webrtc::SessionDescriptionInterface> owned_desc(desc);
+  std::unique_ptr<webrtc::SessionDescriptionInterface> owned_desc(desc);
   std::string sdp;
 
   if (!desc->ToString(&sdp)) return;
@@ -224,7 +224,7 @@ bool PeerControl::CreateDataChannel(
 void PeerControl::AddIceCandidate(const std::string& sdp_mid, int sdp_mline_index,
                                   const std::string& candidate) {
 
-  rtc::scoped_ptr<webrtc::IceCandidateInterface> owned_candidate(
+  std::unique_ptr<webrtc::IceCandidateInterface> owned_candidate(
     webrtc::CreateIceCandidate(sdp_mid, sdp_mline_index, candidate, NULL));
 
   peer_connection_->AddIceCandidate(owned_candidate.get());
@@ -339,7 +339,7 @@ void PeerDataChannelObserver::OnMessage(const webrtc::DataBuffer& buffer) {
 }
 
 bool PeerDataChannelObserver::Send(const char* buffer, const size_t size) {
-  rtc::Buffer rtcbuffer(buffer, size);
+  rtc::CopyOnWriteBuffer rtcbuffer(buffer, size);
   webrtc::DataBuffer databuffer(rtcbuffer, true);
 
   if (channel_->buffered_amount() >= max_buffer_size_) return false;
@@ -347,7 +347,7 @@ bool PeerDataChannelObserver::Send(const char* buffer, const size_t size) {
 }
 
 bool PeerDataChannelObserver::SyncSend(const char* buffer, const size_t size) {
-  rtc::Buffer rtcbuffer(buffer, size);
+  rtc::CopyOnWriteBuffer rtcbuffer(buffer, size);
   webrtc::DataBuffer databuffer(rtcbuffer, true);
 
   std::unique_lock<std::mutex> lock(send_lock_);

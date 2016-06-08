@@ -9,6 +9,7 @@
 
 #include <condition_variable>
 #include <mutex>
+#include <memory>
 #include "webrtc/api/datachannelinterface.h"
 #include "webrtc/api/peerconnectioninterface.h"
 #include "webrtc/base/scoped_ref_ptr.h"
@@ -123,8 +124,8 @@ protected:
 
   std::string local_id_;
   std::string remote_id_;
-  rtc::scoped_ptr<PeerDataChannelObserver> local_data_channel_;
-  rtc::scoped_ptr<PeerDataChannelObserver> remote_data_channel_;
+  std::unique_ptr<PeerDataChannelObserver> local_data_channel_;
+  std::unique_ptr<PeerDataChannelObserver> remote_data_channel_;
 
   PeerObserver* observer_;
 

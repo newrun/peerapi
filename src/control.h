@@ -24,7 +24,7 @@ class Control
       public sigslot::has_slots<>,
       public rtc::MessageHandler {
 public:
-  typedef std::vector<rtc::scoped_ptr<PeerDataChannelObserver> >
+  typedef std::vector<std::unique_ptr<PeerDataChannelObserver> >
             DataChannelList;
 
   explicit Control();

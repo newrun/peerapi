@@ -71,91 +71,93 @@ list(APPEND WEBRTC_INCLUDE_DIR
 
 set (WEBRTC_LIBRARIES)
 
-list(APPEND _WEBRTC_LIB_NAMES
-    "libyuv yuv"  # Find one of them
-
-    "libjingle_peerconnection"
-    "field_trial_default"
-    "jsoncpp"
-    "rtc_media"
-    "rtc_base_approved"
-    "webrtc_common"
-    "video_render_module"
-    "webrtc_utility"
-    "audio_coding_module"
-    "cng"
-    "common_audio"
-    "system_wrappers"
-    "openmax_dl"
-    "common_audio_sse2"
-    "audio_encoder_interface"
-    "g711"
-    "pcm16b"
-    "ilbc"
-    "webrtc_opus"
-    "opus"
-    "g722"
-    "isac"
-    "audio_decoder_interface"
-    "isac_common"
-    "red"
-    "rtc_event_log"
-    "rtc_event_log_proto"
-    "protobuf_lite"
-    "neteq"
-    "rent_a_codec"
-    "media_file"
-    "common_video"
-    "libjpeg"
-    "webrtc"
-    "voice_engine"
-    "audio_conference_mixer"
-    "audio_processing"
-    "audioproc_debug_proto"
-    "audio_processing_sse2"
-    "audio_device"
-    "bitrate_controller"
-    "paced_sender"
-    "rtp_rtcp"
-    "remote_bitrate_estimator"
-    "congestion_controller"
-    "video_capture_module"
-    "video_processing"
-    "video_processing_sse2"
-    "webrtc_video_coding"
-    "webrtc_h264"
-    "webrtc_i420"
-    "video_coding_utility"
-    "webrtc_vp8"
-    "libvpx"
-    "libvpx_intrinsics_mmx"
-    "libvpx_intrinsics_sse2"
-    "libvpx_intrinsics_ssse3"
-    "libvpx_intrinsics_sse4_1"
-    "libvpx_intrinsics_avx"
-    "libvpx_intrinsics_avx2"
-    "webrtc_vp9"
-    "rtc_sound"
-    "rtc_base"
-    "boringssl"
-    "metrics_default"
-    "rtc_xmllite"
-    "expat"
-    "rtc_xmpp"
-    "rtc_p2p"
-    "usrsctplib"
-    "video_capture_module_internal_impl"
-    "directshow_baseclasses"
-    "video_render_module_internal_impl"
-    "rtc_pc"
-    "libsrtp"
-  )
-
 if (MSVC)
   list(APPEND _WEBRTC_LIB_NAMES
-    "boringssl_asm"
+      "obj/webrtc/api/libjingle_peerconnection.lib"
+      "obj/webrtc/system_wrappers/field_trial_default.lib"
+      "obj/third_party/jsoncpp/jsoncpp.lib"
+      "obj/webrtc/media/rtc_media.lib"
+      "obj/webrtc/base/rtc_base_approved.lib"
+      "obj/webrtc/webrtc_common.lib"
+      "obj/webrtc/webrtc.lib"
+      "obj/webrtc/system_wrappers/system_wrappers.lib"
+      "obj/webrtc/voice_engine/voice_engine.lib"
+      "obj/webrtc/common_audio/common_audio.lib"
+      "obj/third_party/openmax_dl/dl/openmax_dl.lib"
+      "obj/webrtc/common_audio/common_audio_sse2.lib"
+      "obj/webrtc/modules/audio_coding_module.lib"
+      "obj/webrtc/modules/cng.lib"
+      "obj/webrtc/modules/audio_encoder_interface.lib"
+      "obj/webrtc/modules/g711.lib"
+      "obj/webrtc/modules/pcm16b.lib"
+      "obj/webrtc/modules/ilbc.lib"
+      "obj/webrtc/modules/webrtc_opus.lib"
+      "obj/third_party/opus/opus.lib"
+      "obj/webrtc/modules/g722.lib"
+      "obj/webrtc/modules/isac.lib"
+      "obj/webrtc/modules/audio_decoder_interface.lib"
+      "obj/webrtc/modules/isac_common.lib"
+      "obj/webrtc/modules/red.lib"
+      "obj/webrtc/rtc_event_log.lib"
+      "obj/webrtc/rtc_event_log_proto.lib"
+      "obj/third_party/protobuf/protobuf_lite.lib"
+      "obj/webrtc/modules/neteq.lib"
+      "obj/webrtc/modules/builtin_audio_decoder_factory.lib"
+      "obj/webrtc/modules/audio_decoder_factory_interface.lib"
+      "obj/webrtc/modules/rent_a_codec.lib"
+      "obj/webrtc/modules/audio_conference_mixer.lib"
+      "obj/webrtc/modules/audio_processing.lib"
+      "obj/webrtc/modules/audioproc_debug_proto.lib"
+      "obj/webrtc/modules/audio_processing_sse2.lib"
+      "obj/webrtc/modules/webrtc_utility.lib"
+      "obj/webrtc/modules/media_file.lib"
+      "obj/webrtc/modules/audio_device.lib"
+      "obj/webrtc/modules/bitrate_controller.lib"
+      "obj/webrtc/modules/paced_sender.lib"
+      "obj/webrtc/modules/rtp_rtcp.lib"
+      "obj/webrtc/modules/remote_bitrate_estimator.lib"
+      "obj/webrtc/modules/congestion_controller.lib"
+      "obj/webrtc/common_video/common_video.lib"
+      "libyuv.lib"
+      "obj/third_party/libjpeg_turbo/libjpeg.lib"
+      "obj/webrtc/modules/video_capture_module.lib"
+      "obj/webrtc/modules/video_processing.lib"
+      "obj/webrtc/modules/video_processing_sse2.lib"
+      "obj/webrtc/modules/webrtc_video_coding.lib"
+      "obj/webrtc/modules/webrtc_h264.lib"
+      "obj/webrtc/modules/webrtc_i420.lib"
+      "obj/webrtc/modules/video_coding/utility/video_coding_utility.lib"
+      "obj/webrtc/modules/video_coding/codecs/vp8/webrtc_vp8.lib"
+      "obj/third_party/libvpx/libvpx.lib"
+      "obj/third_party/libvpx/libvpx_intrinsics_mmx.lib"
+      "obj/third_party/libvpx/libvpx_intrinsics_sse2.lib"
+      "obj/third_party/libvpx/libvpx_intrinsics_ssse3.lib"
+      "obj/third_party/libvpx/libvpx_intrinsics_sse4_1.lib"
+      "obj/third_party/libvpx/libvpx_intrinsics_avx.lib"
+      "obj/third_party/libvpx/libvpx_intrinsics_avx2.lib"
+      "obj/webrtc/modules/video_coding/codecs/vp9/webrtc_vp9.lib"
+      "obj/webrtc/system_wrappers/metrics_default.lib"
+      "obj/webrtc/libjingle/xmllite/rtc_xmllite.lib"
+      "obj/webrtc/base/rtc_base.lib"
+      "obj/third_party/boringssl/boringssl.lib"
+      "obj/third_party/boringssl/boringssl_asm.lib"
+      "obj/third_party/expat/expat.lib"
+      "obj/webrtc/libjingle/xmpp/rtc_xmpp.lib"
+      "obj/webrtc/p2p/rtc_p2p.lib"
+      "obj/third_party/usrsctp/usrsctplib.lib"
+      "obj/webrtc/modules/video_capture_module_internal_impl.lib"
+      "obj/third_party/winsdk_samples/directshow_baseclasses.lib"
+      "obj/webrtc/pc/rtc_pc.lib"
+      "obj/third_party/libsrtp/libsrtp.lib"
     )
-endif(MSVC)
+elseif (APPLE)
+
+elseif (UNIX)
+
+else (MSVC)
+    message(FATAL_ERROR "Unknown environment. \n")
+endif (MSVC)
+
 
 foreach (lib ${_WEBRTC_LIB_NAMES})
   unset(_WEBRTC_LIB_PATH CACHE)
@@ -164,34 +166,6 @@ foreach (lib ${_WEBRTC_LIB_NAMES})
     NAMES ${lib}
     PATHS 
       ${WEBRTC_LIBRARY_DIR}
-      ${WEBRTC_LIBRARY_DIR}/obj/webrtc
-      ${WEBRTC_LIBRARY_DIR}/obj/webrtc/api
-      ${WEBRTC_LIBRARY_DIR}/obj/webrtc/base
-      ${WEBRTC_LIBRARY_DIR}/obj/webrtc/common_audio
-      ${WEBRTC_LIBRARY_DIR}/obj/webrtc/common_video
-      ${WEBRTC_LIBRARY_DIR}/obj/webrtc/libjingle/xmllite
-      ${WEBRTC_LIBRARY_DIR}/obj/webrtc/libjingle/xmpp
-      ${WEBRTC_LIBRARY_DIR}/obj/webrtc/media
-      ${WEBRTC_LIBRARY_DIR}/obj/webrtc/modules
-      ${WEBRTC_LIBRARY_DIR}/obj/webrtc/modules/video_coding/utility
-      ${WEBRTC_LIBRARY_DIR}/obj/webrtc/modules/video_coding/codecs/vp8
-      ${WEBRTC_LIBRARY_DIR}/obj/webrtc/modules/video_coding/codecs/vp9
-      ${WEBRTC_LIBRARY_DIR}/obj/webrtc/p2p
-      ${WEBRTC_LIBRARY_DIR}/obj/webrtc/pc
-      ${WEBRTC_LIBRARY_DIR}/obj/webrtc/sound
-      ${WEBRTC_LIBRARY_DIR}/obj/webrtc/system_wrappers
-      ${WEBRTC_LIBRARY_DIR}/obj/webrtc/voice_engine
-      ${WEBRTC_LIBRARY_DIR}/obj/third_party/boringssl
-      ${WEBRTC_LIBRARY_DIR}/obj/third_party/expat
-      ${WEBRTC_LIBRARY_DIR}/obj/third_party/libjpeg_turbo
-      ${WEBRTC_LIBRARY_DIR}/obj/third_party/libsrtp
-      ${WEBRTC_LIBRARY_DIR}/obj/third_party/libvpx
-      ${WEBRTC_LIBRARY_DIR}/obj/third_party/jsoncpp
-      ${WEBRTC_LIBRARY_DIR}/obj/third_party/openmax_dl/dl
-      ${WEBRTC_LIBRARY_DIR}/obj/third_party/opus
-      ${WEBRTC_LIBRARY_DIR}/obj/third_party/protobuf
-      ${WEBRTC_LIBRARY_DIR}/obj/third_party/usrsctp
-      ${WEBRTC_LIBRARY_DIR}/obj/third_party/winsdk_samples
     )
   if (_WEBRTC_LIB_PATH)
     list(APPEND
@@ -214,34 +188,6 @@ foreach (lib ${_WEBRTC_LIB_NAMES})
     NAMES ${lib}
     PATHS 
       ${WEBRTC_LIBRARY_DIR_DEBUG}
-      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/webrtc
-      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/webrtc/api
-      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/webrtc/base
-      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/webrtc/common_audio
-      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/webrtc/common_video
-      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/webrtc/libjingle/xmllite
-      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/webrtc/libjingle/xmpp
-      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/webrtc/media
-      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/webrtc/modules
-      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/webrtc/modules/video_coding/utility
-      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/webrtc/modules/video_coding/codecs/vp8
-      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/webrtc/modules/video_coding/codecs/vp9
-      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/webrtc/p2p
-      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/webrtc/pc
-      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/webrtc/sound
-      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/webrtc/system_wrappers
-      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/webrtc/voice_engine
-      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/third_party/boringssl
-      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/third_party/expat
-      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/third_party/libjpeg_turbo
-      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/third_party/libsrtp
-      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/third_party/libvpx
-      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/third_party/jsoncpp
-      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/third_party/openmax_dl/dl
-      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/third_party/opus
-      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/third_party/protobuf
-      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/third_party/usrsctp
-      ${WEBRTC_LIBRARY_DIR_DEBUG}/obj/third_party/winsdk_samples
     )
   if (_WEBRTC_LIB_PATH)
     list(APPEND
@@ -288,20 +234,19 @@ else()
   message(FATAL_ERROR "BoringSSL library not found in WebRTC")
 endif()
 
-if (MSVC)
-  find_library(_WEBRTC_BORING_SSL_ASM_LIBRARY
-    NAMES boringssl_asm
-    PATHS 
-      ${WEBRTC_LIBRARY_DIR}
-      ${WEBRTC_LIBRARY_DIR}/obj/third_party/boringssl
-    )
+find_library(_WEBRTC_BORING_SSL_ASM_LIBRARY
+  NAMES boringssl_asm
+  PATHS 
+    ${WEBRTC_LIBRARY_DIR}
+    ${WEBRTC_LIBRARY_DIR}/obj/third_party/boringssl
+  )
   
-  if (_WEBRTC_BORING_SSL_ASM_LIBRARY)
-    list(APPEND WEBRTC_BORING_SSL_LIBRARIES ${_WEBRTC_BORING_SSL_ASM_LIBRARY})
-  else()
-    message(FATAL_ERROR "BoringSSL asm library not found in WebRTC")
-  endif()
-endif(MSVC)
+if (_WEBRTC_BORING_SSL_ASM_LIBRARY)
+  list(APPEND WEBRTC_BORING_SSL_LIBRARIES ${_WEBRTC_BORING_SSL_ASM_LIBRARY})
+else()
+  message(FATAL_ERROR "BoringSSL asm library not found in WebRTC")
+endif()
+
 
 find_path(WEBRTC_BORING_SSL_INCLUDE
   NAMES
@@ -315,44 +260,40 @@ find_path(WEBRTC_BORING_SSL_INCLUDE
 # Definitions
 # ============================================================================
 
-set(WEBRTC_DEFINES
-    -DV8_DEPRECATION_WARNINGS -DCLD_VERSION=2
-    -DCHROMIUM_BUILD
-    -DUSE_LIBJPEG_TURBO=1 -DENABLE_WEBRTC=1
-    -DENABLE_MEDIA_ROUTER=1 -DENABLE_PEPPER_CDMS
-    -DENABLE_CONFIGURATION_POLICY -DENABLE_NOTIFICATIONS
-    -DENABLE_TOPCHROME_MD=1 -DFIELDTRIAL_TESTING_ENABLED
-    -DENABLE_TASK_MANAGER=1 -DENABLE_EXTENSIONS=1 -DENABLE_PDF=1
-    -DENABLE_PLUGIN_INSTALLATION=1 -DENABLE_PLUGINS=1
-    -DENABLE_SESSION_SERVICE=1 -DENABLE_THEMES=1 -DENABLE_AUTOFILL_DIALOG=1
-    -DENABLE_PRINTING=1 -DENABLE_BASIC_PRINTING=1 -DENABLE_PRINT_PREVIEW=1
-    -DENABLE_SPELLCHECK=1 -DENABLE_CAPTIVE_PORTAL_DETECTION=1
-    -DENABLE_APP_LIST=1
-    -DENABLE_SETTINGS_APP=1 -DENABLE_SUPERVISED_USERS=1 -DENABLE_MDNS=1
-    -DENABLE_SERVICE_DISCOVERY=1 -DV8_USE_EXTERNAL_STARTUP_DATA
-    -DFULL_SAFE_BROWSING -DSAFE_BROWSING_CSD -DSAFE_BROWSING_DB_LOCAL
-    -DUSE_LIBPCI=1
-    -DUSE_OPENSSL=1 -DNVALGRIND -DDYNAMIC_ANNOTATIONS_ENABLED=0
-
-    -DUSE_DEFAULT_RENDER_THEME=1
-  )
 
 
 if (MSVC)
-  list(APPEND WEBRTC_DEFINES
-    -DNOMINMAX -DPSAPI_VERSION=1 -D_CRT_RAND_S
-    -DCERT_CHAIN_PARA_HAS_EXTRA_FIELDS
-    -D_ATL_NO_OPENGL -D_SECURE_ATL
-    # -D_HAS_EXCEPTIONS=0
-    -D_WINSOCK_DEPRECATED_NO_WARNINGS
-    -DNO_TCMALLOC -D__STD_C
-    -D_CRT_SECURE_NO_DEPRECATE -D_SCL_SECURE_NO_DEPRECATE
-    -D_CRT_NONSTDC_NO_WARNINGS
-    -DENABLE_CAPTIVE_PORTAL_DETECTION=1
-    -D_CRT_NONSTDC_NO_DEPRECATE
-    -D_UNICODE -DUNICODE
-    -DWEBRTC_WIN
-  )
+  set(WEBRTC_DEFINES
+      -DV8_DEPRECATION_WARNINGS
+      -DNOMINMAX -DPSAPI_VERSION=1 -D_CRT_RAND_S
+      -DCERT_CHAIN_PARA_HAS_EXTRA_FIELDS -DWIN32_LEAN_AND_MEAN
+      -D_ATL_NO_OPENGL -D_SECURE_ATL -D_HAS_EXCEPTIONS=0
+      -D_WINSOCK_DEPRECATED_NO_WARNINGS -DCHROMIUM_BUILD
+      -DUSE_AURA=1 -DUSE_DEFAULT_RENDER_THEME=1
+      -DUSE_LIBJPEG_TURBO=1 -DENABLE_WEBRTC=1 -DENABLE_MEDIA_ROUTER=1
+      -DENABLE_PEPPER_CDMS -DENABLE_NOTIFICATIONS -DENABLE_TOPCHROME_MD=1
+      -DFIELDTRIAL_TESTING_ENABLED -DNO_TCMALLOC -D__STD_C
+      -D_CRT_SECURE_NO_DEPRECATE -D_SCL_SECURE_NO_DEPRECATE
+      -DENABLE_TASK_MANAGER=1
+      -DENABLE_EXTENSIONS=1 -DENABLE_PDF=1 -DENABLE_PLUGIN_INSTALLATION=1
+      -DENABLE_PLUGINS=1 -DENABLE_SESSION_SERVICE=1 -DENABLE_THEMES=1
+      -DENABLE_PRINTING=1 -DENABLE_BASIC_PRINTING=1 -DENABLE_PRINT_PREVIEW=1
+      -DENABLE_SPELLCHECK=1 -DENABLE_CAPTIVE_PORTAL_DETECTION=1
+      -DENABLE_APP_LIST=1 -DENABLE_SETTINGS_APP=1 -DENABLE_SUPERVISED_USERS=1
+      -DENABLE_MDNS=1 -DENABLE_SERVICE_DISCOVERY=1
+      -DV8_USE_EXTERNAL_STARTUP_DATA -DFULL_SAFE_BROWSING -DSAFE_BROWSING_CSD
+      -DSAFE_BROWSING_DB_LOCAL -DWEBRTC_WIN -DUSE_LIBPCI=1
+      -D_CRT_NONSTDC_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE
+      -DNVALGRIND -DDYNAMIC_ANNOTATIONS_ENABLED=0 -DALLOCATOR_SHIM -D_UNICODE
+      -DUNICODE
+      # Removed from origianl peerconnection_client.ninja 
+      # -D_WIN32_WINNT=0x0A00 -DWINVER=0x0A00
+      # -DWIN32 -D_WINDOWS 
+      # -DCR_CLANG_REVISION=268813-1 
+      # -DNTDDI_VERSION=0x0A000000 
+      # -D_USING_V110_SDK71_ 
+      # -DNDEBUG
+    )
 elseif(UNIX)
   list(APPEND WEBRTC_DEFINES
     -DWEBRTC_POSIX 
