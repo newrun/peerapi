@@ -202,9 +202,15 @@ const asio::error_code& engine::map_error_code(
   // If there's data yet to be read, it's an error.
   if (BIO_wpending(ext_bio_))
   {
+#if defined(OPENSSL_IS_BORINGSSL)
+    ec = asio::error_code(
+        ERR_PACK(ERR_LIB_SSL, SSL_R_UNEXPECTED_RECORD),
+        asio::error::get_ssl_category());
+#else // defined(OPENSSL_IS_BORINGSSL)
     ec = asio::error_code(
         ERR_PACK(ERR_LIB_SSL, 0, SSL_R_SHORT_READ),
         asio::error::get_ssl_category());
+#endif // defined(OPENSSL_IS_BORINGSSL)
     return ec;
   }
 
@@ -216,9 +222,15 @@ const asio::error_code& engine::map_error_code(
   // Otherwise, the peer should have negotiated a proper shutdown.
   if ((::SSL_get_shutdown(ssl_) & SSL_RECEIVED_SHUTDOWN) == 0)
   {
+#if defined(OPENSSL_IS_BORINGSSL)
+    ec = asio::error_code(
+        ERR_PACK(ERR_LIB_SSL, SSL_R_UNEXPECTED_RECORD),
+        asio::error::get_ssl_category());
+#else // defined(OPENSSL_IS_BORINGSSL)
     ec = asio::error_code(
         ERR_PACK(ERR_LIB_SSL, 0, SSL_R_SHORT_READ),
         asio::error::get_ssl_category());
+#endif // defined(OPENSSL_IS_BORINGSSL)
   }
 
   return ec;

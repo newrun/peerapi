@@ -29,7 +29,7 @@ public:
 
   explicit Control();
   explicit Control(std::shared_ptr<Signal> signal);
-  ~Control();
+  virtual ~Control();
 
   //
   // Initialize and release

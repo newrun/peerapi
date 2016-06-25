@@ -379,7 +379,7 @@ uint64_t PeerDataChannelObserver::BufferedAmount() {
 
 bool PeerDataChannelObserver::IsWritable() {
   if (channel_ == nullptr) return false;
-  if (!IsOpen() || channel_->buffered_amount() >= 0) return false;
+  if (!IsOpen() || channel_->buffered_amount() > 0) return false;
   return true;
 }
 

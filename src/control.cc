@@ -10,7 +10,18 @@
 #include "webrtc/base/json.h"
 #include "webrtc/base/signalthread.h"
 
+#ifdef WEBRTC_POSIX
+#include "webrtc/base/messagehandler.h"
+#include "webrtc/base/messagequeue.h"
 
+namespace rtc {
+
+  MessageHandler::~MessageHandler() {
+    MessageQueueManager::Clear(this);
+  }
+
+} // namespace rtc
+#endif // WEBRTC_POSIX
 
 namespace tn {
 

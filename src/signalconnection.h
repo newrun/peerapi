@@ -91,8 +91,8 @@ public:
 #endif //DEBUG
   typedef websocketpp::client<client_config> client_type;
 
-  Signal::Signal();
-  Signal::~Signal();
+  Signal();
+  ~Signal();
 
   void SignIn(const std::string& id, const std::string& password);
   void SignOut();

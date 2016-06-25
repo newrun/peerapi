@@ -7,6 +7,7 @@
 #ifndef __THROUGHNET_THROUGHENT_H__
 #define __THROUGHNET_THROUGHENT_H__
 
+#include <string>
 #include <map>
 #include <memory>
 #include <functional>
@@ -46,8 +47,8 @@ public:
   // APIs
   //
 
-  static void Throughnet::Run();
-  static void Throughnet::Stop();
+  static void Run();
+  static void Stop();
 
   void SignIn(const std::string alias = "", const std::string id = "", const std::string password = "");
   void SignOut();

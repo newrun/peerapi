@@ -33,6 +33,7 @@ if (MSVC)
 else()
   set(WEBSOCKETPP_DEFINES
     -D_WEBSOCKETPP_CPP11_STL_
+    -DASIO_STANDALONE
     )
 endif()
 

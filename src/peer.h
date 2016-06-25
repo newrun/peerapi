@@ -96,8 +96,8 @@ public:
   // Implements CreateSessionDescriptionObserver.
   //
 
-  void OnSuccess(webrtc::SessionDescriptionInterface* desc);
-  void OnFailure(const std::string& error) {}
+  void OnSuccess(webrtc::SessionDescriptionInterface* desc) override;
+  void OnFailure(const std::string& error) override  {}
 
   //
   // PeerDataChannelObserver

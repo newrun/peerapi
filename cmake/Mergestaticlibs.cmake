@@ -1,4 +1,4 @@
-macro (MERGE_STATIC_LIBRARIES TARGET LIBRARIES LIBRARIES_DEBUG)
+macro (MERGE_STATIC_LIBRARIES TARGET_LIB LIBRARIES LIBRARIES_DEBUG)
 
   if("${CMAKE_CFG_INTDIR}" STREQUAL ".")
     set(multiconfig FALSE)
@@ -24,12 +24,29 @@ macro (MERGE_STATIC_LIBRARIES TARGET LIBRARIES LIBRARIES_DEBUG)
       string(TOUPPER "${CONFIG_TYPE}" _CONFIG_TYPE)
       string(TOUPPER "STATIC_LIBRARY_FLAGS_${CONFIG_TYPE}" PROPNAME)
       if ("${_CONFIG_TYPE}" STREQUAL "DEBUG")
-  			set_property (TARGET ${TARGET} APPEND PROPERTY ${PROPNAME} "${LIBS_DEBUG}")
+  			set_property (TARGET ${TARGET_LIB} APPEND PROPERTY ${PROPNAME} "${LIBS_DEBUG}")
       else()
-	  		set_property (TARGET ${TARGET} APPEND PROPERTY ${PROPNAME} "${LIBS}")
+	  		set_property (TARGET ${TARGET_LIB} APPEND PROPERTY ${PROPNAME} "${LIBS}")
       endif()
     endforeach()
 
+  else (APPLE)
+    # Use OSX's libtool to merge archives
+    if(multiconfig)
+      message(FATAL_ERROR "Multiple configurations are not supported")
+    endif()
+
+    set(outfile $<TARGET_FILE:${TARGET_LIB}>)  
+    set(target_temp_file "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/lib${TARGET_LIB}_temp.a")
+  
+    add_custom_command(TARGET ${TARGET_LIB} POST_BUILD
+                       COMMAND ${CMAKE_COMMAND} -E copy "${outfile}"
+                               "${target_temp_file}"
+                       COMMAND rm "${outfile}"
+                       COMMAND /usr/bin/libtool -no_warning_for_no_symbols -static -o "${outfile}"
+                               ${LIBRARIES} "${target_temp_file}"
+                       COMMAND rm "${target_temp_file}"
+                       )
 	endif (WIN32)
 endmacro (MERGE_STATIC_LIBRARIES)
 

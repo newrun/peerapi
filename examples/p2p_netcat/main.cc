@@ -10,7 +10,12 @@
 #include <iostream>
 #include <string>
 #include <stdlib.h>
+#ifndef WIN32
+#include <unistd.h>
+#include <sys/uio.h>
+#else
 #include <io.h>
+#endif
 #include <fcntl.h>
 #include <signal.h>
 #include "throughnet.h"

@@ -29,6 +29,7 @@
 #define WINCRYPT_X509_CERT_PAIR ((LPCSTR) 53)
 #define WINCRYPT_X509_EXTENSIONS ((LPCSTR) 5)
 #define WINCRYPT_X509_NAME ((LPCSTR) 7)
+#endif // WIN32 || _WIN32
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,7 +41,6 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-#endif // WIN32 || _WIN32
 
 //
 // End of throughnet patch
