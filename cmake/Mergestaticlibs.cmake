@@ -39,14 +39,21 @@ macro (MERGE_STATIC_LIBRARIES TARGET_LIB LIBRARIES LIBRARIES_DEBUG)
     set(outfile $<TARGET_FILE:${TARGET_LIB}>)  
     set(target_temp_file "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/lib${TARGET_LIB}_temp.a")
   
+    string(TOUPPER "${CMAKE_BUILD_TYPE}" _CMAKE_BUILD_TYPE)
+    if (_CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+      set(_LIBRARIES ${LIBRARIES_DEBUG})
+    else()
+      set(_LIBRARIES ${LIBRARIES})
+    endif()
+
     add_custom_command(TARGET ${TARGET_LIB} POST_BUILD
-                       COMMAND ${CMAKE_COMMAND} -E copy "${outfile}"
-                               "${target_temp_file}"
-                       COMMAND rm "${outfile}"
-                       COMMAND /usr/bin/libtool -no_warning_for_no_symbols -static -o "${outfile}"
-                               ${LIBRARIES} "${target_temp_file}"
-                       COMMAND rm "${target_temp_file}"
-                       )
+                        COMMAND ${CMAKE_COMMAND} -E copy "${outfile}"
+                                "${target_temp_file}"
+                        COMMAND rm "${outfile}"
+                        COMMAND /usr/bin/libtool -no_warning_for_no_symbols -static -o "${outfile}"
+                                ${_LIBRARIES} "${target_temp_file}"
+                        COMMAND rm "${target_temp_file}"
+                        )
 	endif (WIN32)
 endmacro (MERGE_STATIC_LIBRARIES)
 
