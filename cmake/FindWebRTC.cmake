@@ -360,7 +360,6 @@ if(WIN32 AND MSVC)
         Secur32.lib Winmm.lib msdmo.lib dmoguids.lib wmcodecdspuuid.lib
         wininet.lib dnsapi.lib version.lib ws2_32.lib Strmiids.lib)
   list(APPEND WEBRTC_LIBRARIES_EXTERNAL ${_WEBRTC_EXTERNAL_LIBRARIES}) 
-#  list(APPEND WEBRTC_LIBRARIES ${_WEBRTC_EXTERNAL_LIBRARIES})    
 elseif (APPLE)
   find_library(FOUNDATION_LIBRARY Foundation)
   find_library(CORE_FOUNDATION_LIBRARY CoreFoundation)
@@ -377,12 +376,10 @@ elseif (APPLE)
 elseif (UNIX)
   find_package(Threads REQUIRED)
   find_library(X11_LIBRARY NAMES X11)
-#  find_package(X11_LIBRARY X11 REQUIRED)
 
   list(APPEND WEBRTC_LIBRARIES_EXTERNAL
               ${CMAKE_THREAD_LIBS_INIT}
               ${X11_LIBRARY}
-#              ${X11_LIBRARIES}
               ${CMAKE_DL_LIBS})
 endif()
   
