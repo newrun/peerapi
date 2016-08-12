@@ -80,13 +80,13 @@ macro (MERGE_STATIC_LIBRARIES TARGET_LIB LIBRARIES LIBRARIES_DEBUG)
     set(MRI_SCRIPT "${MRI_SCRIPT}save\n")
     set(MRI_SCRIPT "${MRI_SCRIPT}end\n")
 
-    file(WRITE "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/throughnet.mri" "${MRI_SCRIPT}")
+    file(WRITE "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/peerconnect.mri" "${MRI_SCRIPT}")
 
     add_custom_command(TARGET ${TARGET_LIB} POST_BUILD
                         COMMAND ${CMAKE_COMMAND} -E copy "${outfile}"
                                 "${target_temp_file}"
                         COMMAND rm "${outfile}"
-                        COMMAND ${CMAKE_AR} -M < "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/throughnet.mri"
+                        COMMAND ${CMAKE_AR} -M < "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/peerconnect.mri"
                         COMMAND rm "${target_temp_file}"
                         )
 	endif (WIN32)

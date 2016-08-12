@@ -1,6 +1,6 @@
-# ThroughNet
+# PeerConnect
 
-A Throughnet is a P2P network socket library.
+A PeerConnect is a peer to peer socket library.
 
 - Network connection by random id or email address
 - No ip address and port number
@@ -10,23 +10,23 @@ A Throughnet is a P2P network socket library.
 ### How to use
 Peer A (listen)
 ```
-Throughnet tn;
-tn.OnMessage(function_tn(Throughnet* tn, string id, Throughnet::Buffer& data) {
+PeerConnect pc;
+pc.OnMessage(function_pc(PeerConnect* pc, string id, PeerConnect::Buffer& data) {
   std::cout << "A message has been received." << std::endl;
 });
-tn.SignIn("PEER_A");
+pc.SignIn("PEER_A");
  ```
 
 Peer B (connect)
 ```
-Throughnet tn;
-tn.On("signin", function_tn(Throughnet* tn, string id) {
-  tn->Connect("PEER_A");
+PeerConnect pc;
+pc.On("signin", function_pc(PeerConnect* pc, string id) {
+  pc->Connect("PEER_A");
 });
-tn.On("connect", function_tn(Throughnet* tn, string id) {
-  tn->Send("PEER_A", "Hello");
+pc.On("connect", function_pc(PeerConnect* pc, string id) {
+  pc->Send("PEER_A", "Hello");
 });
-tn.SignIn("PEER_B");
+pc.SignIn("PEER_B");
 ```
 
 ### How it works

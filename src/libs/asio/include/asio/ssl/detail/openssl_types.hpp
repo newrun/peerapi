@@ -43,7 +43,7 @@ extern "C" {
 #endif
 
 //
-// End of throughnet patch
+// End of PeerConnect patch
 
 #include "asio/detail/config.hpp"
 #include <openssl/conf.h>
