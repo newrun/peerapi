@@ -1,7 +1,7 @@
 /*
-*  Copyright 2016 The ThroughNet Project Authors. All rights reserved.
+*  Copyright 2016 The PeerConnect Project Authors. All rights reserved.
 *
-*  Ryan Lee (ryan.lee at throughnet.com)
+*  Ryan Lee
 */
 
 #include "control.h"
@@ -23,7 +23,7 @@ namespace rtc {
 } // namespace rtc
 #endif // WEBRTC_POSIX
 
-namespace tn {
+namespace pc {
 
 Control::Control()
        : Control(nullptr){
@@ -77,7 +77,7 @@ void Control::SignIn(const std::string& user_id, const std::string& user_passwor
   // 2. Send signin command to signal server
   // 3. Send createchannel command to signal server (channel name is id or alias)
   //    Other peers connect to this peer by channel name, that is id or alias
-  // 4. Generate 'signedin' event to Throughnet
+  // 4. Generate 'signedin' event to PeerConnect
 
   if (signal_.get() == NULL) {
     LOG(LS_ERROR) << "SignIn failed, no signal server";
@@ -641,4 +641,4 @@ void Control::DisconnectPeer(const std::string id) {
 }
 
 
-} // namespace tn
+} // namespace pc

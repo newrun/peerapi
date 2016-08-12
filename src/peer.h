@@ -1,11 +1,11 @@
 /*
-*  Copyright 2016 The ThroughNet Project Authors. All rights reserved.
+*  Copyright 2016 The PeerConnect Project Authors. All rights reserved.
 *
-*  Ryan Lee (ryan.lee at throughnet.com)
+*  Ryan Lee
 */
 
-#ifndef __THROUGHNET_PEER_H__
-#define __THROUGHNET_PEER_H__
+#ifndef __PEERCONNECT_PEER_H__
+#define __PEERCONNECT_PEER_H__
 
 #include <condition_variable>
 #include <mutex>
@@ -16,7 +16,7 @@
 #include "webrtc/api/jsep.h"
 #include "webrtc/base/json.h"
 
-namespace tn {
+namespace pc {
 
 //
 // class PeerObserver
@@ -171,6 +171,6 @@ private:
   std::mutex send_lock_;
 };
 
-} // namespace tn
+} // namespace pc
 
-#endif // __THROUGHNET_PEER_H__
+#endif // __PEERCONNECT_PEER_H__

@@ -1,11 +1,11 @@
 /*
-*  Copyright 2016 The ThroughNet Project Authors. All rights reserved.
+*  Copyright 2016 The PeerConnect Project Authors. All rights reserved.
 *
-*  Ryan Lee (ryan.lee at throughnet.com)
+*  Ryan Lee
 */
 
-#ifndef __THROUGHNET_CONTROL_H__
-#define __THROUGHNET_CONTROL_H__
+#ifndef __PEERCONNECT_CONTROL_H__
+#define __PEERCONNECT_CONTROL_H__
 
 #include <memory>
 
@@ -17,7 +17,7 @@
 #include "fakeaudiocapturemodule.h"
 
 
-namespace tn {
+namespace pc {
 
 class Control
     : public PeerObserver,
@@ -140,6 +140,6 @@ private:
   std::shared_ptr<Control> ref_;
 };
 
-} // namespace tn
+} // namespace pc
 
-#endif // __THROUGHNET_CONTROL_H__
+#endif // __PEERCONNECT_CONTROL_H__

@@ -1,20 +1,20 @@
 /*
- *  Copyright 2016 The ThroughNet Project Authors. All rights reserved.
+ *  Copyright 2016 The PeerConnect Project Authors. All rights reserved.
  *
- *  Ryan Lee (ryan.lee at throughnet.com)
+ *  Ryan Lee
  */
  
-#include "throughnet.h"
+#include "peerconnect.h"
 #include "control.h"
 
 #include <string>
 #include <locale>
 
-Throughnet::Throughnet()
-   : Throughnet(""){
+PeerConnect::PeerConnect()
+   : PeerConnect(""){
 }
 
-Throughnet::Throughnet(const std::string setting) {
+PeerConnect::PeerConnect(const std::string setting) {
   // Log level
 #if DEBUG || _DEBUG
   rtc::LogMessage::LogToDebug(rtc::LS_ERROR);
@@ -31,7 +31,7 @@ Throughnet::Throughnet(const std::string setting) {
 
   // create signal client
   if (signal_ == nullptr) {
-    signal_ = std::make_shared<tn::Signal>();
+    signal_ = std::make_shared<pc::Signal>();
 
     if (signal_) {
       signal_->SetConfig(setting_.signal_uri_);
@@ -39,19 +39,19 @@ Throughnet::Throughnet(const std::string setting) {
   }
 }
 
-Throughnet::~Throughnet() {
+PeerConnect::~PeerConnect() {
 }
 
-void Throughnet::Run() {
+void PeerConnect::Run() {
   rtc::ThreadManager::Instance()->CurrentThread()->Run();
 }
 
-void Throughnet::Stop() {
+void PeerConnect::Stop() {
   rtc::ThreadManager::Instance()->CurrentThread()->Quit();
 }
 
 
-void Throughnet::SignIn(const std::string alias, const std::string id, const std::string password) {
+void PeerConnect::SignIn(const std::string alias, const std::string id, const std::string password) {
 
   //
   // Check if already signed in
@@ -66,7 +66,7 @@ void Throughnet::SignIn(const std::string alias, const std::string id, const std
   // Initialize control
   //
 
-  control_ = std::make_shared<tn::Control>(signal_);
+  control_ = std::make_shared<pc::Control>(signal_);
   control_->RegisterObserver(this, control_);
 
   if (control_.get() == NULL) {
@@ -105,17 +105,17 @@ void Throughnet::SignIn(const std::string alias, const std::string id, const std
   return;
 }
 
-void Throughnet::SignOut() {
+void PeerConnect::SignOut() {
   signout_ = true;
   control_->SignOut();
 }
 
-void Throughnet::Connect(const std::string id) {
+void PeerConnect::Connect(const std::string id) {
   control_->Connect(id);
   return;
 }
 
-void Throughnet::Disconnect(const std::string id) {
+void PeerConnect::Disconnect(const std::string id) {
   control_->Disconnect(id);
   return;
 }
@@ -125,27 +125,27 @@ void Throughnet::Disconnect(const std::string id) {
 // Send message to destination peer session id
 //
 
-void Throughnet::Send(const std::string& id, const char* buffer, const size_t size) {
+void PeerConnect::Send(const std::string& id, const char* buffer, const size_t size) {
   control_->Send(id, buffer, size);
 }
 
-void Throughnet::Send(const std::string& id, const char* message) {
+void PeerConnect::Send(const std::string& id, const char* message) {
   Send(id, message, strlen(message));
 }
 
-void Throughnet::Send(const std::string& id, const std::string& message) {
+void PeerConnect::Send(const std::string& id, const std::string& message) {
   Send(id, message.c_str(), message.size());
 }
 
-bool Throughnet::SyncSend(const std::string& id, const char* buffer, const size_t size) {
+bool PeerConnect::SyncSend(const std::string& id, const char* buffer, const size_t size) {
   return control_->SyncSend(id, buffer, size);
 }
 
-bool Throughnet::SyncSend(const std::string& id, const char* message) {
+bool PeerConnect::SyncSend(const std::string& id, const char* message) {
   return SyncSend(id, message, strlen(message));
 }
 
-bool Throughnet::SyncSend(const std::string& id, const std::string& message) {
+bool PeerConnect::SyncSend(const std::string& id, const std::string& message) {
   return SyncSend(id, message.c_str(), message.size());
 }
 
@@ -153,14 +153,14 @@ bool Throughnet::SyncSend(const std::string& id, const std::string& message) {
 
 
 
-std::string Throughnet::CreateRandomUuid() {
+std::string PeerConnect::CreateRandomUuid() {
   return rtc::CreateRandomUuid();
 }
 
 //
 // Register Event handler
 //
-Throughnet& Throughnet::On(std::string event_id, std::function<void(Throughnet*, std::string)> handler) {
+PeerConnect& PeerConnect::On(std::string event_id, std::function<void(PeerConnect*, std::string)> handler) {
 
   if (event_id.empty()) return *this;
 
@@ -174,7 +174,7 @@ Throughnet& Throughnet::On(std::string event_id, std::function<void(Throughnet*,
 // Register Message handler
 //
 
-Throughnet& Throughnet::OnMessage(std::function<void(Throughnet*, std::string, Buffer&)> handler) {
+PeerConnect& PeerConnect::OnMessage(std::function<void(PeerConnect*, std::string, Buffer&)> handler) {
   message_handler_ = handler;
   return *this;
 }
@@ -183,14 +183,14 @@ Throughnet& Throughnet::OnMessage(std::function<void(Throughnet*, std::string, B
 // Signal event handler
 //
 
-void Throughnet::OnSignedIn(const std::string id) {
+void PeerConnect::OnSignedIn(const std::string id) {
   signout_ = false;
 
   if (event_handler_.find("signin") == event_handler_.end()) return;
   CallEventHandler("signin", this, id);
 }
 
-void Throughnet::OnSignedOut(const std::string id) {
+void PeerConnect::OnSignedOut(const std::string id) {
   if (!signout_) return;
   if (event_handler_.find("signout") == event_handler_.end()) return;
 
@@ -200,27 +200,27 @@ void Throughnet::OnSignedOut(const std::string id) {
   control_.reset();
 }
 
-void Throughnet::OnPeerConnected(const std::string id) {
+void PeerConnect::OnPeerConnected(const std::string id) {
   if (event_handler_.find("connect") == event_handler_.end()) return;
   CallEventHandler("connect", this, id);
 }
 
-void Throughnet::OnPeerDisconnected(const std::string id) {
+void PeerConnect::OnPeerDisconnected(const std::string id) {
   if (event_handler_.find("disconnect") == event_handler_.end()) return;
   CallEventHandler("disconnect", this, id);
 }
 
-void Throughnet::OnPeerMessage(const std::string id, const char* buffer, const size_t size) {
+void PeerConnect::OnPeerMessage(const std::string id, const char* buffer, const size_t size) {
   Buffer buf(buffer, size);
   message_handler_(this, id, buf);
 }
 
-void Throughnet::OnPeerWritable(const std::string id) {
+void PeerConnect::OnPeerWritable(const std::string id) {
   if (event_handler_.find("writable") == event_handler_.end()) return;
   CallEventHandler("writable", this, id);
 }
 
-void Throughnet::OnError(const std::string id, const std::string& reason) {
+void PeerConnect::OnError(const std::string id, const std::string& reason) {
   if (event_handler_.find("error") == event_handler_.end()) return;
 
   error_reason_ = reason;
@@ -228,7 +228,7 @@ void Throughnet::OnError(const std::string id, const std::string& reason) {
 }
 
 template<typename ...A>
-void Throughnet::CallEventHandler(std::string msg_id, A&& ... args)
+void PeerConnect::CallEventHandler(std::string msg_id, A&& ... args)
 {
   using eventhandler_t = EventHandler_t<A...>;
   using cb_t = std::function<void(A...)>;
@@ -238,7 +238,7 @@ void Throughnet::CallEventHandler(std::string msg_id, A&& ... args)
 }
 
 
-bool Throughnet::ParseSetting(const std::string& setting) {
+bool PeerConnect::ParseSetting(const std::string& setting) {
   Json::Reader reader;
   Json::Value jsetting;
 
@@ -264,7 +264,7 @@ bool Throughnet::ParseSetting(const std::string& setting) {
   return true;
 }
 
-std::string Throughnet::tolower(const std::string& str) {
+std::string PeerConnect::tolower(const std::string& str) {
   std::locale loc;
   std::string lower_str;
   for (auto elem : str) {

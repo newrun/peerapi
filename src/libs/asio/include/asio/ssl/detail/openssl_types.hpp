@@ -16,7 +16,7 @@
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
 //
-// Begining of Throughnet patch to support BoringSSL instead of OpenSSL
+// Begining of PeerConnect patch to support BoringSSL instead of OpenSSL
 //
 
 #if defined(WIN32) || defined(_WIN32)

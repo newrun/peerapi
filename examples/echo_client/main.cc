@@ -1,13 +1,13 @@
 /*
-*  Copyright 2016 The ThroughNet Project Authors. All rights reserved.
+*  Copyright 2016 The PeerConnect Project Authors. All rights reserved.
 *
-*  Ryan Lee (ryan.lee at throughnet.com)
+*  Ryan Lee
 */
 
 #include <iostream>
 #include <string>
 
-#include "throughnet.h"
+#include "peerconnect.h"
 
 using namespace std;
 void usage(const char* prg);
@@ -22,29 +22,29 @@ int main(int argc, char *argv[]) {
 
   string name = argv[1];
 
-  Throughnet tn;
+  PeerConnect pc;
 
-  tn.On("signin", function_tn(Throughnet* tn, string id) {
-    tn->Connect(name);
+  pc.On("signin", function_pc(PeerConnect* pc, string id) {
+    pc->Connect(name);
   });
 
-  tn.On("connect", function_tn(Throughnet* tn, string id) {
-    tn->Send(id, "Hello world");
+  pc.On("connect", function_pc(PeerConnect* pc, string id) {
+    pc->Send(id, "Hello world");
     std::cout << "Sent 'Hello world' message to " << id << "." << std::endl;
   });
 
-  tn.On("disconnect", function_tn(Throughnet* tn, string id) {
+  pc.On("disconnect", function_pc(PeerConnect* pc, string id) {
     std::cout << "Peer " << id << " has been disconnected" << std::endl;
-    Throughnet::Stop();
+    PeerConnect::Stop();
   });
 
-  tn.OnMessage(function_tn(Throughnet* tn, string id, Throughnet::Buffer& data) {
+  pc.OnMessage(function_pc(PeerConnect* pc, string id, PeerConnect::Buffer& data) {
     std::cout << "Message '" << std::string(data.buf_, data.size_) << 
                  "' has been received." << std::endl;
   });
 
-  tn.SignIn();
-  Throughnet::Run();
+  pc.SignIn();
+  PeerConnect::Run();
 
   return 0;
 }

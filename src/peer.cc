@@ -1,7 +1,7 @@
 /*
-*  Copyright 2016 The ThroughNet Project Authors. All rights reserved.
+*  Copyright 2016 The PeerConnect Project Authors. All rights reserved.
 *
-*  Ryan Lee (ryan.lee at throughnet.com)
+*  Ryan Lee
 */
 
 #include "control.h"
@@ -10,7 +10,7 @@
 #include "webrtc/api/test/mockpeerconnectionobservers.h"
 
 
-namespace tn {
+namespace pc {
 
 //
 // class PeerControl
@@ -32,7 +32,7 @@ PeerControl::PeerControl(const std::string local_id,
   }
 
   webrtc::DataChannelInit init;
-  const std::string data_channel_name = std::string("tn_data_") + remote_id_;
+  const std::string data_channel_name = std::string("pc_data_") + remote_id_;
   if (!CreateDataChannel(data_channel_name, init)) {
     LOG(LS_ERROR) << "CreateDataChannel failed";
     DeletePeerConnection();
@@ -390,4 +390,4 @@ PeerDataChannelObserver::state() const {
 }
 
 
-} // namespace tn
+} // namespace pc

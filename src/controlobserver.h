@@ -1,13 +1,13 @@
 /*
-*  Copyright 2016 The ThroughNet Project Authors. All rights reserved.
+*  Copyright 2016 The PeerConnect Project Authors. All rights reserved.
 *
-*  Ryan Lee (ryan.lee at throughnet.com)
+*  Ryan Lee
 */
 
-#ifndef __THROUGHNET_CONTROLOBSERVER_H__
-#define __THROUGHNET_CONTROLOBSERVER_H__
+#ifndef __PEERCONNECT_CONTROLOBSERVER_H__
+#define __PEERCONNECT_CONTROLOBSERVER_H__
 
-namespace tn {
+namespace pc {
 
 class ControlObserver {
 public:
@@ -20,6 +20,6 @@ public:
   virtual void OnError(const std::string id, const std::string& reason) = 0;
 };
 
-} // namespace tn
+} // namespace pc
 
-#endif // __THROUGHNET_CONTROLOBSERVER_H__
+#endif // __PEERCONNECT_CONTROLOBSERVER_H__

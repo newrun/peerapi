@@ -1,11 +1,11 @@
 /*
- *  Copyright 2016 The ThroughNet Project Authors. All rights reserved.
+ *  Copyright 2016 The PeerConnect Project Authors. All rights reserved.
  *
- *  Ryan Lee (ryan.lee at throughnet.com)
+ *  Ryan Lee
  */
 
-#ifndef __THROUGHNET_THROUGHENT_H__
-#define __THROUGHNET_THROUGHENT_H__
+#ifndef __PEERCONNECT_PEERCONNECT_H__
+#define __PEERCONNECT_PEERCONNECT_H__
 
 #include <string>
 #include <map>
@@ -14,15 +14,15 @@
 
 #include "controlobserver.h"
 
-#define function_tn [&]
+#define function_pc [&]
 
-namespace tn {
+namespace pc {
   class Control;
   class Signal;
 }
 
-class Throughnet
-    : public tn::ControlObserver {
+class PeerConnect
+    : public pc::ControlObserver {
 public:
 
   struct Setting {
@@ -39,8 +39,8 @@ public:
     const size_t size_;
   };
 
-  using Control = tn::Control;
-  using Signal  = tn::Signal;
+  using Control = pc::Control;
+  using Signal  = pc::Signal;
   using Data    = std::map<std::string, std::string>;
 
   //
@@ -64,17 +64,17 @@ public:
 
   static std::string CreateRandomUuid();
 
-  Throughnet& On(std::string event_id, std::function<void(Throughnet*, std::string)>);
-  Throughnet& OnMessage(std::function<void(Throughnet*, std::string, Buffer&)>);
+  PeerConnect& On(std::string event_id, std::function<void(PeerConnect*, std::string)>);
+  PeerConnect& OnMessage(std::function<void(PeerConnect*, std::string, Buffer&)>);
 
 
   //
   // Member functions
   //
 
-  explicit Throughnet();
-  explicit Throughnet(std::string setting);
-  ~Throughnet();
+  explicit PeerConnect();
+  explicit PeerConnect(std::string setting);
+  ~PeerConnect();
 
 
 protected:
@@ -94,11 +94,11 @@ protected:
   template<typename ...A>
   void CallEventHandler(std::string msg_id, A&& ... args);
 
-  using EventHandler_1 = EventHandler_t<Throughnet*>;
-  using EventHandler_2 = EventHandler_t<Throughnet*, std::string>;
-  using EventHandler_3 = EventHandler_t<Throughnet*, std::string, Data&>;
+  using EventHandler_1 = EventHandler_t<PeerConnect*>;
+  using EventHandler_2 = EventHandler_t<PeerConnect*, std::string>;
+  using EventHandler_3 = EventHandler_t<PeerConnect*, std::string, Data&>;
   using Events = std::map<std::string, std::unique_ptr<Handler_t>>;
-  using MessageHandler = std::function<void(Throughnet*, std::string, Buffer&)>;
+  using MessageHandler = std::function<void(PeerConnect*, std::string, Buffer&)>;
 
   //
   // ControlObserver implementation
@@ -121,11 +121,11 @@ protected:
   Events event_handler_;
   MessageHandler message_handler_;
 
-  std::shared_ptr<tn::Control> control_;
-  std::shared_ptr<tn::Signal> signal_;
+  std::shared_ptr<pc::Control> control_;
+  std::shared_ptr<pc::Signal> signal_;
 
   std::string error_reason_;
 };
 
 
-#endif // __THROUGHNET_THROUGHENT_H__
+#endif // __PEERCONNECT_PEERCONNECT_H__

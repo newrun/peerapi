@@ -1,7 +1,7 @@
 /*
- *  Copyright 2016 The ThroughNet Project Authors. All rights reserved.
+ *  Copyright 2016 The PeerConnect Project Authors. All rights reserved.
  *
- *  Ryan Lee (ryan.lee at throughnet.com)
+ *  Ryan Lee
  */
 
 /*
@@ -38,7 +38,7 @@
 #include "signalconnection.h"
 #include "webrtc/base/logging.h"
 
-namespace tn {
+namespace pc {
 
 Signal::Signal() :
       con_state_(con_closed),
@@ -53,7 +53,7 @@ Signal::Signal() :
   client_.set_access_channels(websocketpp::log::alevel::fail);
 #else
   client_.clear_access_channels(websocketpp::log::elevel::all);
-  client_.clear_access_channels(websocketpp::log::alevel::all);
+  client_.clear_error_channels(websocketpp::log::alevel::fail);
 #endif
 
   // Initialize ASIO
@@ -203,7 +203,7 @@ void Signal::SyncClose()
 
 void Signal::Teardown()
 {
-  // TODO: Asyncronous close with Throughnet::Stop()
+  // TODO: Asyncronous close with PeerConnect::Stop()
   SyncClose();
 }
 
@@ -399,4 +399,4 @@ Signal::context_ptr Signal::OnTlsInit(websocketpp::connection_hdl conn)
 }
 
 
-} // namespace tn
+} // namespace pc

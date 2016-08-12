@@ -1,7 +1,7 @@
 /*
- *  Copyright 2016 The ThroughNet Project Authors. All rights reserved.
+ *  Copyright 2016 The PeerConnect Project Authors. All rights reserved.
  *
- *  Ryan Lee (ryan.lee at throughnet.com)
+ *  Ryan Lee
  */
 
  /*
@@ -30,8 +30,8 @@
  */
 
 
-#ifndef __THROUGHNET_SIGNAL_H__
-#define __THROUGHNET_SIGNAL_H__
+#ifndef __PEERCONNECT_SIGNAL_H__
+#define __PEERCONNECT_SIGNAL_H__
 
 #include <string>
 
@@ -48,7 +48,7 @@
 #include "webrtc/base/json.h"
 
 
-namespace tn {
+namespace pc {
 
 class SignalInterface {
 public:
@@ -160,6 +160,6 @@ private:
 }; // class Signal
 
 
-} // namespace tn
+} // namespace pc
 
-#endif // __THROUGHNET_SIGNAL_H__
+#endif // __PEERCONNECT_SIGNAL_H__
