@@ -10,6 +10,8 @@
 #include "webrtc/base/json.h"
 #include "webrtc/base/signalthread.h"
 
+#include "logging.h"
+
 #ifdef WEBRTC_POSIX
 #include "webrtc/base/messagehandler.h"
 #include "webrtc/base/messagequeue.h"
@@ -55,7 +57,7 @@ bool Control::InitializeControl() {
   webrtc::MediaConstraintsInterface* constraints = NULL;
 
   if (!CreatePeerFactory(constraints)) {
-    LOG(LS_ERROR) << "CreatePeerFactory failed";
+    LOGP(LS_ERROR) << "CreatePeerFactory failed";
     DeleteControl();
     return false;
   }
@@ -80,7 +82,7 @@ void Control::SignIn(const std::string& user_id, const std::string& user_passwor
   // 4. Generate 'signedin' event to PeerConnect
 
   if (signal_.get() == NULL) {
-    LOG(LS_ERROR) << "SignIn failed, no signal server";
+    LOGP(LS_ERROR) << "SignIn failed, no signal server";
     return;
   }
 
@@ -111,7 +113,7 @@ void Control::Connect(const std::string id) {
   // 4. Conect datachannel
 
   if (signal_.get() == NULL) {
-    LOG(LS_ERROR) << "Join failed, no signal server";
+    LOGP(LS_ERROR) << "Join failed, no signal server";
     return;
   }
 
@@ -130,9 +132,12 @@ void Control::Disconnect(const std::string id) {
 
 void Control::DisconnectAll() {
   std::vector<std::string> peer_ids;
+
   for (auto peer : peers_) {
     peer_ids.push_back(peer.second->remote_id());
   }
+
+  LOGP(LS_INFO) << "DisconnectAll(): peer count is " << peer_ids.size();
 
   for (auto id : peer_ids) {
     Disconnect(id);
@@ -345,7 +350,7 @@ void Control::OnCommandReceived(const Json::Value& message) {
   if (!rtc::GetStringFromJsonObject(message, "command", &command) ||
       !rtc::GetValueFromJsonObject(message, "data", &data)) {
 
-    LOG(LS_ERROR) << "Invalid message:" << message;
+    LOGP(LS_ERROR) << "Invalid message:" << message;
     return;
   }
 
@@ -388,7 +393,7 @@ void Control::OnSignalCommandReceived(const Json::Value& message) {
 }
 
 void Control::OnSignalConnectionClosed(websocketpp::close::status::value code) {
-
+  LOGP(LS_INFO) << "Calling OnSignalConnectionClosed() with " << code;
   if (code == websocketpp::close::status::normal) {
     ControlMessageData *data = new ControlMessageData(open_id_, ref_);
     webrtc_thread_->Post(this, MSG_SIGNAL_SERVER_CLOSED, data);
@@ -396,6 +401,8 @@ void Control::OnSignalConnectionClosed(websocketpp::close::status::value code) {
 }
 
 void Control::OnSignedOut(const std::string& id) {
+  LOGP(LS_INFO) << "Calling OnSignedOut() with " << id;
+
   if (signal_==nullptr || signal_->opened()) return;
   if (peers_.size() != 0) return;
 
@@ -477,18 +484,18 @@ void Control::AddIceCandidate(const std::string& peer_id, const Json::Value& dat
 void Control::OnSignedIn(const Json::Value& data) {
   bool result;
   if (!rtc::GetBoolFromJsonObject(data, "result", &result)) {
-    LOG(LS_WARNING) << "Unknown signin response";
+    LOGP(LS_WARNING) << "Unknown signin response";
     return;
   }
 
   if (!result) {
-    LOG(LS_WARNING) << "Signin failed";
+    LOGP(LS_ERROR) << "Signin failed";
     return;
   }
 
   std::string session_id;
   if (!rtc::GetStringFromJsonObject(data, "session_id", &session_id)) {
-    LOG(LS_WARNING) << "Signin failed - no session_id";
+    LOGP(LS_ERROR) << "Signin failed - no session_id";
     return;
   }
 
@@ -505,18 +512,18 @@ void Control::OnSignedIn(const Json::Value& data) {
 void Control::OnChannelCreated(const Json::Value& data) {
   bool result;
   if (!rtc::GetBoolFromJsonObject(data, "result", &result)) {
-    LOG(LS_WARNING) << "Unknown signin response";
+    LOGP(LS_WARNING) << "Unknown signin response";
     return;
   }
 
   std::string channel;
   if (!rtc::GetStringFromJsonObject(data, "name", &channel)) {
-    LOG(LS_WARNING) << "Create channel failed - no channel name";
+    LOGP(LS_ERROR) << "Create channel failed - no channel name";
     return;
   }
 
   if (!result) {
-    LOG(LS_WARNING) << "Create channel failed";
+    LOGP(LS_ERROR) << "Create channel failed";
     std::string reason;
     if (!rtc::GetStringFromJsonObject(data, "reason", &reason)) {
       reason = "Unknown reason";
@@ -530,19 +537,22 @@ void Control::OnChannelCreated(const Json::Value& data) {
 
 void Control::OnChannelJoined(const Json::Value& data) {
   bool result;
+
+  LOGP(LS_INFO) << "OnChannelJoined(" << data.toStyledString() << ")";
+
   if (!rtc::GetBoolFromJsonObject(data, "result", &result)) {
-    LOG(LS_WARNING) << "Unknown channel join response";
+    LOGP(LS_ERROR) << "Unknown channel join response";
     return;
   }
 
   std::string channel;
   if (!rtc::GetStringFromJsonObject(data, "name", &channel)) {
-    LOG(LS_WARNING) << "Join channel failed - no channel name";
+    LOGP(LS_ERROR) << "Join channel failed - no channel name";
     return;
   }
 
   if (!result) {
-    LOG(LS_WARNING) << "Join channel failed";
+    LOGP(LS_ERROR) << "Join channel failed";
     std::string reason;
     if (!rtc::GetStringFromJsonObject(data, "reason", &reason)) {
       reason = "Unknown reason";
@@ -570,14 +580,14 @@ void Control::CreateOffer(const Json::Value& data) {
 
   Json::Value peers;
   if (!rtc::GetValueFromJsonObject(data, "peers", &peers)) {
-    LOG(LS_WARNING) << "createoffer failed - no peers value";
+    LOGP(LS_ERROR) << "createoffer failed - no peers value";
     return;
   }
 
   for (size_t i = 0; i < peers.size(); ++i) {
     std::string remote_id;
     if (!rtc::GetStringFromJsonArray(peers, i, &remote_id)) {
-      LOG(LS_WARNING) << "Peer handshake failed - invalid peer id";
+      LOGP(LS_ERROR) << "Peer handshake failed - invalid peer id";
       return;
     }
 

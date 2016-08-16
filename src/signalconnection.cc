@@ -36,7 +36,7 @@
 #include <map>
 #include <list>
 #include "signalconnection.h"
-#include "webrtc/base/logging.h"
+#include "logging.h"
 
 namespace pc {
 
@@ -108,12 +108,12 @@ void Signal::SendCommand(const std::string channel,
                          const Json::Value& data) {
 
   if (commandname.empty()) {
-    LOG(LS_WARNING) << "SendCommand with empty commandname";
+    LOGP(LS_WARNING) << "SendCommand with empty commandname";
     return;
   }
 
   if (!opened()) {
-    LOG(LS_WARNING) << "Signal server is not opened";
+    LOGP(LS_WARNING) << "Signal server is not opened";
     return;
   }
 
@@ -127,13 +127,13 @@ void Signal::SendCommand(const std::string channel,
     client_.send(con_hdl_, writer.write(message), websocketpp::frame::opcode::text);
   }
   catch (websocketpp::lib::error_code& ec) {
-    LOG(LS_ERROR) << "SendCommand Error: " << ec;
+    LOGP(LS_ERROR) << "SendCommand Error: " << ec;
   }
   catch (std::exception& e) {
-    LOG(LS_ERROR) << "SendCommand Error: " << e.what();
+    LOGP(LS_ERROR) << "SendCommand Error: " << e.what();
   }
   catch (...) {
-    LOG(LS_ERROR) << "SendCommand Error: ";
+    LOGP(LS_ERROR) << "SendCommand Error: ";
   }
 }
 
@@ -255,7 +255,7 @@ void Signal::ConnectInternal()
 
 void Signal::CloseInternal(websocketpp::close::status::value const& code, std::string const& reason)
 {
-  LOG(LS_INFO) << "Close by reason:" << reason;
+  LOGP(LS_WARNING) << "Close by reason:" << reason;
 
   if (reconn_timer_)
   {
@@ -264,7 +264,7 @@ void Signal::CloseInternal(websocketpp::close::status::value const& code, std::s
   }
   if (con_hdl_.expired())
   {
-    LOG(LS_ERROR) << "Error: No active session";
+    LOGP(LS_ERROR) << "Error: No active session";
   }
   else
   {
@@ -285,7 +285,7 @@ void Signal::TimeoutReconnect(websocketpp::lib::asio::error_code const& ec)
     con_state_ = con_opening;
     reconn_made_++;
     this->ResetState();
-    LOG(LS_INFO) << "Reconnecting...";
+    LOGP(LS_WARNING) << "Reconnecting..";
     client_.get_io_service().dispatch(websocketpp::lib::bind(&Signal::ConnectInternal, this));
   }
 }
@@ -302,11 +302,11 @@ void Signal::OnFail(websocketpp::connection_hdl con)
 {
   con_hdl_.reset();
   con_state_ = con_closed;
-  LOG(LS_ERROR) << "Connection failed.";
+  LOGP(LS_ERROR) << "Connection failed.";
 
   if (reconn_made_<reconn_attempts_)
   {
-    LOG(LS_WARNING) << "Reconnect for attempt:" << reconn_made_;
+    LOGP(LS_WARNING) << "Reconnect for attempt:" << reconn_made_;
     unsigned delay = this->NextDelay();
     reconn_timer_.reset(new asio::steady_timer(client_.get_io_service()));
     websocketpp::lib::asio::error_code ec;
@@ -317,7 +317,7 @@ void Signal::OnFail(websocketpp::connection_hdl con)
 
 void Signal::OnOpen(websocketpp::connection_hdl con)
 {
-  LOG(LS_INFO) << "Connected.";
+  LOGP(LS_WARNING) << "Connected.";
   con_state_ = con_opened;
   con_hdl_ = con;
   reconn_made_ = 0;
@@ -333,7 +333,7 @@ void Signal::OnClose(websocketpp::connection_hdl con)
   websocketpp::close::status::value code = websocketpp::close::status::normal;
   client_type::connection_ptr conn_ptr = client_.get_con_from_hdl(con, ec);
   if (ec) {
-    LOG(LS_ERROR) << "OnClose get conn failed" << ec;
+    LOGP(LS_ERROR) << "OnClose get conn failed" << ec;
   }
   else
   {
@@ -352,7 +352,7 @@ void Signal::OnClose(websocketpp::connection_hdl con)
   {
     if (reconn_made_<reconn_attempts_)
     {
-      LOG(LS_WARNING) << "Reconnect for attempt:" << reconn_made_;
+      LOGP(LS_WARNING) << "Reconnect for attempt:" << reconn_made_;
       unsigned delay = this->NextDelay();
       reconn_timer_.reset(new websocketpp::lib::asio::steady_timer(client_.get_io_service()));
       websocketpp::lib::asio::error_code ec;
@@ -370,7 +370,7 @@ void Signal::OnMessage(websocketpp::connection_hdl con, client_type::message_ptr
   Json::Value jmessage;
 
   if (!reader.parse(msg->get_payload(), jmessage)) {
-    LOG(WARNING) << "Received unknown message: " << msg->get_payload();
+    LOGP(WARNING) << "Received unknown message: " << msg->get_payload();
     return;
   }
 
@@ -392,7 +392,7 @@ Signal::context_ptr Signal::OnTlsInit(websocketpp::connection_hdl conn)
                    asio::ssl::context::single_dh_use, ec);
   if (ec)
   {
-    LOG(LS_ERROR) << "Init tls failed,reason:" << ec.message();
+    LOGP(LS_ERROR) << "Init tls failed,reason:" << ec.message();
   }
 
   return ctx;

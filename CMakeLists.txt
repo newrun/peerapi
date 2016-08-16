@@ -87,6 +87,7 @@ set(HEADERS
     "src/peer.h"
     "src/signalconnection.h"
     "src/fakeaudiocapturemodule.h"
+    "src/logging.h"
     )
 
 set(SOURCES
@@ -95,6 +96,7 @@ set(SOURCES
     "src/peer.cc"
     "src/signalconnection.cc"
     "src/fakeaudiocapturemodule.cc"
+    "src/logging.cc"
     )
 
 # ============================================================================

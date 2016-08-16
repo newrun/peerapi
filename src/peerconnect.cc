@@ -3,12 +3,13 @@
  *
  *  Ryan Lee
  */
- 
-#include "peerconnect.h"
-#include "control.h"
 
 #include <string>
 #include <locale>
+ 
+#include "peerconnect.h"
+#include "control.h"
+#include "logging.h"
 
 PeerConnect::PeerConnect()
    : PeerConnect(""){
@@ -17,9 +18,11 @@ PeerConnect::PeerConnect()
 PeerConnect::PeerConnect(const std::string setting) {
   // Log level
 #if DEBUG || _DEBUG
-  rtc::LogMessage::LogToDebug(rtc::LS_ERROR);
+  rtc::LogMessage::LogToDebug(rtc::LS_NONE);
+  pc::LogMessage::LogToDebug(pc::LS_INFO);
 #else
   rtc::LogMessage::LogToDebug(rtc::LS_NONE);
+  pc::LogMessage::LogToDebug(pc::LS_NONE);
 #endif
 
   // parse settings
@@ -58,7 +61,7 @@ void PeerConnect::SignIn(const std::string alias, const std::string id, const st
   //
 
   if (control_.get() != nullptr) {
-    LOG(LS_ERROR) << "Already signined in.";
+    LOGP(LS_WARNING) << "Already signined in.";
     return;
   }
 
@@ -70,7 +73,7 @@ void PeerConnect::SignIn(const std::string alias, const std::string id, const st
   control_->RegisterObserver(this, control_);
 
   if (control_.get() == NULL) {
-    LOG(LS_ERROR) << "Failed to create class Control.";
+    LOGP(LS_ERROR) << "Failed to create class Control.";
     return;
   }
 
@@ -79,7 +82,7 @@ void PeerConnect::SignIn(const std::string alias, const std::string id, const st
   //
 
   if (!control_->InitializeControl()) {
-    LOG(LS_ERROR) << "Failed to initialize Control.";
+    LOGP(LS_ERROR) << "Failed to initialize Control.";
     control_.reset();
     return;
   }
@@ -245,7 +248,7 @@ bool PeerConnect::ParseSetting(const std::string& setting) {
   std::string value;
 
   if (!reader.parse(setting, jsetting)) {
-    LOG(WARNING) << "Invalid setting: " << setting;
+    LOGP(LS_WARNING) << "Invalid setting: " << setting;
     return false;
   }
 
