@@ -53,7 +53,7 @@ Signal::Signal() :
   client_.set_access_channels(websocketpp::log::alevel::fail);
 #else
   client_.clear_access_channels(websocketpp::log::elevel::all);
-  client_.clear_error_channels(websocketpp::log::alevel::fail);
+  client_.clear_error_channels(websocketpp::log::alevel::all);
 #endif
 
   // Initialize ASIO
@@ -69,6 +69,8 @@ Signal::Signal() :
   client_.set_fail_handler(bind(&Signal::OnFail, this, _1));
   client_.set_message_handler(bind(&Signal::OnMessage, this, _1, _2));
   client_.set_tls_init_handler(bind(&Signal::OnTlsInit, this, _1));
+
+  LOGP_F( INFO ) << "Done";
 }
 
 Signal::~Signal() {
@@ -81,6 +83,7 @@ Signal::~Signal() {
 #endif
 
   Teardown();
+  LOGP_F( INFO ) << "Done";
 }
 
 
@@ -97,10 +100,13 @@ void Signal::SignIn(const std::string& id, const std::string& password) {
   user_id_ = id;
   user_password_ = password;
   Connect();
+
+  LOGP_F( INFO ) << "Done";
 }
 
 void Signal::SignOut() {
   if (opened()) Close();
+  LOGP_F( INFO ) << "Done";
 }
 
 void Signal::SendCommand(const std::string channel,
@@ -108,12 +114,12 @@ void Signal::SendCommand(const std::string channel,
                          const Json::Value& data) {
 
   if (commandname.empty()) {
-    LOGP(LS_WARNING) << "SendCommand with empty commandname";
+    LOGP_F(WARNING) << "SendCommand with empty commandname";
     return;
   }
 
   if (!opened()) {
-    LOGP(LS_WARNING) << "Signal server is not opened";
+    LOGP_F(WARNING) << "Signal server is not opened";
     return;
   }
 
@@ -123,18 +129,22 @@ void Signal::SendCommand(const std::string channel,
   message["data"] = data;
   if (!channel.empty()) message["channel"] = channel;
 
+  LOGP_F( LS_VERBOSE ) << "message is " << message.toStyledString();
+
   try {
     client_.send(con_hdl_, writer.write(message), websocketpp::frame::opcode::text);
   }
   catch (websocketpp::lib::error_code& ec) {
-    LOGP(LS_ERROR) << "SendCommand Error: " << ec;
+    LOGP_F(LERROR) << "SendCommand Error: " << ec;
   }
   catch (std::exception& e) {
-    LOGP(LS_ERROR) << "SendCommand Error: " << e.what();
+    LOGP_F(LERROR) << "SendCommand Error: " << e.what();
   }
   catch (...) {
-    LOGP(LS_ERROR) << "SendCommand Error: ";
+    LOGP_F(LERROR) << "SendCommand Error: ";
   }
+
+  LOGP_F( INFO ) << "Done";
 }
 
 void Signal::SendGlobalCommand(const std::string commandname,
@@ -175,6 +185,7 @@ void Signal::Connect()
   this->ResetState();
   client_.get_io_service().dispatch(websocketpp::lib::bind(&Signal::ConnectInternal, this));
   network_thread_.reset(new websocketpp::lib::thread(websocketpp::lib::bind(&Signal::RunLoop, this)));
+  LOGP_F( INFO ) << "Done";
 }
 
 
@@ -185,6 +196,7 @@ void Signal::Close()
                                     this,
                                     websocketpp::close::status::normal,
                                     "End by user"));
+  LOGP_F( INFO ) << "Done";
 }
 
 void Signal::SyncClose()
@@ -199,12 +211,14 @@ void Signal::SyncClose()
     network_thread_->join();
     network_thread_.reset();
   }
+  LOGP_F( INFO ) << "Done";
 }
 
 void Signal::Teardown()
 {
   // TODO: Asyncronous close with PeerConnect::Stop()
   SyncClose();
+  LOGP_F( INFO ) << "Done";
 }
 
 
@@ -255,7 +269,7 @@ void Signal::ConnectInternal()
 
 void Signal::CloseInternal(websocketpp::close::status::value const& code, std::string const& reason)
 {
-  LOGP(LS_WARNING) << "Close by reason:" << reason;
+  LOGP_F(WARNING) << "Close by reason:" << reason;
 
   if (reconn_timer_)
   {
@@ -264,7 +278,7 @@ void Signal::CloseInternal(websocketpp::close::status::value const& code, std::s
   }
   if (con_hdl_.expired())
   {
-    LOGP(LS_ERROR) << "Error: No active session";
+    LOGP_F(LERROR) << "Error: No active session";
   }
   else
   {
@@ -285,7 +299,7 @@ void Signal::TimeoutReconnect(websocketpp::lib::asio::error_code const& ec)
     con_state_ = con_opening;
     reconn_made_++;
     this->ResetState();
-    LOGP(LS_WARNING) << "Reconnecting..";
+    LOGP_F(WARNING) << "Reconnecting..";
     client_.get_io_service().dispatch(websocketpp::lib::bind(&Signal::ConnectInternal, this));
   }
 }
@@ -302,11 +316,11 @@ void Signal::OnFail(websocketpp::connection_hdl con)
 {
   con_hdl_.reset();
   con_state_ = con_closed;
-  LOGP(LS_ERROR) << "Connection failed.";
+  LOGP_F(LERROR) << "Connection failed.";
 
   if (reconn_made_<reconn_attempts_)
   {
-    LOGP(LS_WARNING) << "Reconnect for attempt:" << reconn_made_;
+    LOGP_F(WARNING) << "Reconnect for attempt:" << reconn_made_;
     unsigned delay = this->NextDelay();
     reconn_timer_.reset(new asio::steady_timer(client_.get_io_service()));
     websocketpp::lib::asio::error_code ec;
@@ -317,7 +331,7 @@ void Signal::OnFail(websocketpp::connection_hdl con)
 
 void Signal::OnOpen(websocketpp::connection_hdl con)
 {
-  LOGP(LS_WARNING) << "Connected.";
+  LOGP_F(WARNING) << "Connected.";
   con_state_ = con_opened;
   con_hdl_ = con;
   reconn_made_ = 0;
@@ -333,7 +347,7 @@ void Signal::OnClose(websocketpp::connection_hdl con)
   websocketpp::close::status::value code = websocketpp::close::status::normal;
   client_type::connection_ptr conn_ptr = client_.get_con_from_hdl(con, ec);
   if (ec) {
-    LOGP(LS_ERROR) << "OnClose get conn failed" << ec;
+    LOGP_F(LERROR) << "OnClose get conn failed" << ec;
   }
   else
   {
@@ -352,7 +366,7 @@ void Signal::OnClose(websocketpp::connection_hdl con)
   {
     if (reconn_made_<reconn_attempts_)
     {
-      LOGP(LS_WARNING) << "Reconnect for attempt:" << reconn_made_;
+      LOGP_F(LS_WARNING) << "Reconnect for attempt:" << reconn_made_;
       unsigned delay = this->NextDelay();
       reconn_timer_.reset(new websocketpp::lib::asio::steady_timer(client_.get_io_service()));
       websocketpp::lib::asio::error_code ec;
@@ -361,6 +375,9 @@ void Signal::OnClose(websocketpp::connection_hdl con)
       return;
     }
   }
+
+  LOGP_F( INFO ) << "Done";
+
 }
 
 
@@ -370,10 +387,11 @@ void Signal::OnMessage(websocketpp::connection_hdl con, client_type::message_ptr
   Json::Value jmessage;
 
   if (!reader.parse(msg->get_payload(), jmessage)) {
-    LOGP(WARNING) << "Received unknown message: " << msg->get_payload();
+    LOGP_F(WARNING) << "Received unknown message: " << msg->get_payload();
     return;
   }
 
+  LOGP_F( LS_VERBOSE ) << jmessage.toStyledString();
   OnCommandReceived(jmessage);
 }
 
@@ -392,7 +410,7 @@ Signal::context_ptr Signal::OnTlsInit(websocketpp::connection_hdl conn)
                    asio::ssl::context::single_dh_use, ec);
   if (ec)
   {
-    LOGP(LS_ERROR) << "Init tls failed,reason:" << ec.message();
+    LOGP_F(LERROR) << "Init tls failed,reason:" << ec.message();
   }
 
   return ctx;

@@ -299,6 +299,11 @@ class LogMessageVoidify {
     ? (void) 0 \
     : LOGP(sev)
 
+#define LOGP_F_IF(cond, sev) \
+  !(cond) \
+    ? (void) 0 \
+    : LOGP_F(sev)
+
 // The _V version is for when a variable is passed in.  It doesn't do the
 // namespace concatination.
 #define LOGP_V(sev) \

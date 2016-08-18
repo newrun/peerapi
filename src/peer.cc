@@ -25,32 +25,39 @@ PeerControl::PeerControl(const std::string local_id,
     : local_id_(local_id),
       remote_id_(remote_id),
       observer_(observer),
-      peer_connection_factory_(peer_connection_factory){
+      peer_connection_factory_(peer_connection_factory),
+      state_(pClosed)
+      {
 
   if (!CreatePeerConnection()) {
-    LOGP(LS_ERROR) << "CreatePeerConnection failed";
+    LOGP_F(LS_ERROR) << "CreatePeerConnection failed";
     DeletePeerConnection();
   }
 
   webrtc::DataChannelInit init;
   const std::string data_channel_name = std::string("pc_data_") + remote_id_;
   if (!CreateDataChannel(data_channel_name, init)) {
-    LOGP(LS_ERROR) << "CreateDataChannel failed";
+    LOGP_F(LS_ERROR) << "CreateDataChannel failed";
     DeletePeerConnection();
   }
+
+  LOGP_F( INFO ) << "Done";
 }
 
 PeerControl::~PeerControl() {
+  ASSERT(state_ == pClosed);
   DeletePeerConnection();
-  LOGP(LS_INFO) << "PeerControl has been deleted";
+  LOGP_F( INFO ) << "Done";
 }
 
 
 bool PeerControl::Send(const char* buffer, const size_t size) {
+  ASSERT( state_ == pOpened );
   return local_data_channel_->Send(buffer, size);
 }
 
 bool PeerControl::SyncSend(const char* buffer, const size_t size) {
+  ASSERT( state_ == pOpened );
   return local_data_channel_->SyncSend(buffer, size);
 }
 
@@ -59,8 +66,11 @@ bool PeerControl::IsWritable() {
 }
 
 void PeerControl::Close() {
-  LOGP_IF(local_data_channel_ == nullptr, WARNING) << "Closing null local_data_channel";
-  LOGP_IF(remote_data_channel_ == nullptr, WARNING) << "Closing null remote_data_channel";
+  LOGP_F_IF(state_ != pOpened, WARNING) << "Closing peer when it is not opened";
+
+  state_ = pClosing;
+
+  LOGP_F( INFO ) << "Closing data-channel of remote_id_ " << remote_id_;
 
   if (local_data_channel_) local_data_channel_->Close();
   if (remote_data_channel_) remote_data_channel_->Close();
@@ -68,34 +78,55 @@ void PeerControl::Close() {
 
 
 void PeerControl::CreateOffer(const webrtc::MediaConstraintsInterface* constraints) {
+  ASSERT( state_ == pClosed );
+
+  state_ = pOpening;
   peer_connection_->CreateOffer(this, constraints);
+  LOGP_F( INFO ) << "Done";
 }
 
 
-void PeerControl::CreateAnswer(
-  const webrtc::MediaConstraintsInterface* constraints) {
+void PeerControl::CreateAnswer(const webrtc::MediaConstraintsInterface* constraints) {
+  ASSERT( state_ == pClosed );
+
+  state_ = pOpening;
   peer_connection_->CreateAnswer(this, constraints);
+  LOGP_F( INFO ) << "Done";
 }
 
 
 void PeerControl::ReceiveOfferSdp(const std::string& sdp) {
+  ASSERT( state_ == pClosed);
   SetRemoteDescription(webrtc::SessionDescriptionInterface::kOffer, sdp);
   CreateAnswer(NULL);
+  LOGP_F( INFO ) << "Done";
 }
 
 
 void PeerControl::ReceiveAnswerSdp(const std::string& sdp) {
+  ASSERT( state_ == pOpening );
   SetRemoteDescription(webrtc::SessionDescriptionInterface::kAnswer, sdp);
+  LOGP_F( INFO ) << "Done";
 }
 
 void PeerControl::ClosePeerConnection() {
+  LOGP_F( INFO ) << "Closing peer-connection of remote_id_ " << remote_id_;
+
+  ASSERT( state_ == pClosing );
   peer_connection_->Close();
+
+  state_ = pClosed;
+  LOGP_F( INFO ) << "Done";
 }
 
 void PeerControl::OnDataChannel(webrtc::DataChannelInterface* data_channel) {
+  LOGP_F( INFO ) << "remote_id_ is " << remote_id_;
+
   PeerDataChannelObserver* Observer = new PeerDataChannelObserver(data_channel);
   remote_data_channel_ = std::unique_ptr<PeerDataChannelObserver>(Observer);
   Attach(remote_data_channel_.get());
+
+  LOGP_F( INFO ) << "Done";
 }
 
 void PeerControl::OnSignalingChange(webrtc::PeerConnectionInterface::SignalingState new_state) {
@@ -138,6 +169,7 @@ void PeerControl::OnIceCandidate(const webrtc::IceCandidateInterface* candidate)
   data["candidate"] = sdp;
 
   observer_->SendCommand(remote_id_, "ice_candidate", data);
+  LOGP_F( INFO ) << "Done";
 }
 
 void PeerControl::OnSuccess(webrtc::SessionDescriptionInterface* desc) {
@@ -163,6 +195,7 @@ void PeerControl::OnSuccess(webrtc::SessionDescriptionInterface* desc) {
     data["sdp"] = sdp;
     observer_->SendCommand(remote_id_, "answersdp", data);
   }
+  LOGP_F( INFO ) << "Done";
 }
 
 void PeerControl::OnPeerOpened() {
@@ -172,14 +205,25 @@ void PeerControl::OnPeerOpened() {
       local_data_channel_->state() == webrtc::DataChannelInterface::DataState::kOpen &&
       remote_data_channel_->state() == webrtc::DataChannelInterface::DataState::kOpen
     ) {
+    LOG_F( INFO ) << "Peers are connected, " << remote_id_ << " and " << local_id_;
+    ASSERT( state_ == pOpening );
+    state_ = pOpened;
     observer_->OnPeerConnected(remote_id_);
     observer_->OnPeerWritable(local_id_);
   }
+
+  LOGP_F( INFO ) << "Done";
 }
 
 void PeerControl::OnPeerClosed() {
 
-  if (local_data_channel_.get() == nullptr && remote_data_channel_.get() == nullptr) {
+  if ( local_data_channel_.get() == nullptr ) {
+    LOGP_F( WARNING ) << "local_data_channel_ is null";
+    return;
+  }
+
+  if ( remote_data_channel_.get() == nullptr ) {
+    LOGP_F( WARNING ) << "remote_data_channel_ is null";
     return;
   }
 
@@ -190,8 +234,13 @@ void PeerControl::OnPeerClosed() {
           remote_data_channel_->state() == webrtc::DataChannelInterface::DataState::kClosed)) {
 
     // Close local peerconnection
+    LOGP_F( INFO ) << "Data channels are closed. "
+                      "remote_id_ is " << remote_id_ << " and "
+                      "local_id_ is " << local_id_;
     observer_->QueueOnPeerChannelClosed(remote_id_, 1000);
   }
+
+  LOGP_F( INFO ) << "Done";
 }
 
 
@@ -201,8 +250,11 @@ void PeerControl::OnPeerMessage(const webrtc::DataBuffer& buffer) {
 }
 
 void PeerControl::OnBufferedAmountChange(const uint64_t previous_amount) {
-  if (!local_data_channel_->IsWritable()) return;
-  observer_->OnPeerWritable(remote_id_);
+  if ( !local_data_channel_->IsWritable() ) {
+    LOGP_F( LERROR ) << "local_data_channel_ is not writable";
+    return;
+  }
+  observer_->OnPeerWritable( remote_id_ );
 }
 
 
@@ -213,16 +265,20 @@ bool PeerControl::CreateDataChannel(
   rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel;
 
   data_channel = peer_connection_->CreateDataChannel(label, &init);
-  if (data_channel.get() == NULL) {
+  if (data_channel.get() == nullptr) {
+    LOGP_F( LERROR ) << "data_channel is null";
     return false;
   }
 
   local_data_channel_.reset(new PeerDataChannelObserver(data_channel));
   if (local_data_channel_.get() == NULL) {
+    LOGP_F( LERROR ) << "local_data_channel_ is null";
     return false;
   }
 
   Attach(local_data_channel_.get());
+
+  LOGP_F( INFO ) << "Done";
   return true;
 }
 
@@ -233,6 +289,7 @@ void PeerControl::AddIceCandidate(const std::string& sdp_mid, int sdp_mline_inde
     webrtc::CreateIceCandidate(sdp_mid, sdp_mline_index, candidate, NULL));
 
   peer_connection_->AddIceCandidate(owned_candidate.get());
+  LOGP_F( INFO ) << "Done";
 }
 
 
@@ -253,7 +310,11 @@ bool PeerControl::CreatePeerConnection() {
   peer_connection_ = peer_connection_factory_->CreatePeerConnection(
     config, &constraints, NULL, NULL, this);
 
-  return peer_connection_.get() != NULL;
+  if ( peer_connection_.get() == nullptr ) {
+    LOGP_F( LERROR ) << "peer_connection is null";
+    return false;
+  }
+  return true;
 }
 
 void PeerControl::DeletePeerConnection() {
@@ -264,6 +325,8 @@ void PeerControl::DeletePeerConnection() {
   local_data_channel_ = NULL;
   peer_connection_ = NULL;
   peer_connection_factory_ = NULL;
+
+  LOGP_F( INFO ) << "Done";
 }
 
 void PeerControl::SetLocalDescription(const std::string& type,
@@ -274,6 +337,8 @@ void PeerControl::SetLocalDescription(const std::string& type,
       webrtc::MockSetSessionDescriptionObserver>());
   peer_connection_->SetLocalDescription(
     observer, webrtc::CreateSessionDescription(type, sdp, NULL));
+
+  LOGP_F( INFO ) << "Done";
 }
 
 void PeerControl::SetRemoteDescription(const std::string& type,
@@ -284,11 +349,13 @@ void PeerControl::SetRemoteDescription(const std::string& type,
       webrtc::MockSetSessionDescriptionObserver>());
   peer_connection_->SetRemoteDescription(
     observer, webrtc::CreateSessionDescription(type, sdp, NULL));
+
+  LOGP_F( INFO ) << "Done";
 }
 
 void PeerControl::Attach(PeerDataChannelObserver* datachannel) {
   if (datachannel == nullptr) {
-    LOGP(WARNING) << "Attach to nullptr";
+    LOGP_F(WARNING) << "Attach to nullptr";
     return;
   }
 
@@ -296,11 +363,12 @@ void PeerControl::Attach(PeerDataChannelObserver* datachannel) {
   datachannel->SignalOnClosed_.connect(this, &PeerControl::OnPeerClosed);
   datachannel->SignalOnMessage_.connect(this, &PeerControl::OnPeerMessage);
   datachannel->SignalOnBufferedAmountChange_.connect(this, &PeerControl::OnBufferedAmountChange);
+  LOGP_F( INFO ) << "Done";
 }
 
 void PeerControl::Detach(PeerDataChannelObserver* datachannel) {
   if (datachannel == nullptr) {
-    LOGP(WARNING) << "Detach from nullptr";
+    LOGP_F(WARNING) << "Detach from nullptr";
     return;
   }
 
@@ -308,6 +376,7 @@ void PeerControl::Detach(PeerDataChannelObserver* datachannel) {
   datachannel->SignalOnClosed_.disconnect(this);
   datachannel->SignalOnMessage_.disconnect(this);
   datachannel->SignalOnBufferedAmountChange_.disconnect(this);
+  LOGP_F( INFO ) << "Done";
 }
 
 
@@ -320,12 +389,14 @@ PeerDataChannelObserver::PeerDataChannelObserver(webrtc::DataChannelInterface* c
   : channel_(channel) {
   channel_->RegisterObserver(this);
   state_ = channel_->state();
+  LOGP_F( INFO ) << "Done";
 }
 
 PeerDataChannelObserver::~PeerDataChannelObserver() {
   channel_->Close();
   state_ = channel_->state();
   channel_->UnregisterObserver();
+  LOGP_F( INFO ) << "Done";
 }
 
 void PeerDataChannelObserver::OnBufferedAmountChange(uint64_t previous_amount) {
@@ -342,9 +413,11 @@ void PeerDataChannelObserver::OnBufferedAmountChange(uint64_t previous_amount) {
 void PeerDataChannelObserver::OnStateChange() {
   state_ = channel_->state();
   if (state_ == webrtc::DataChannelInterface::DataState::kOpen) {
+    LOGP_F( INFO ) << "Data channel internal state is kOpen";
     SignalOnOpen_();
   }
   else if (state_ == webrtc::DataChannelInterface::DataState::kClosed) {
+    LOGP_F( INFO ) << "Data channel internal state is kClosed";
     SignalOnClosed_();
   }
 }
@@ -357,7 +430,11 @@ bool PeerDataChannelObserver::Send(const char* buffer, const size_t size) {
   rtc::CopyOnWriteBuffer rtcbuffer(buffer, size);
   webrtc::DataBuffer databuffer(rtcbuffer, true);
 
-  if (channel_->buffered_amount() >= max_buffer_size_) return false;
+  if ( channel_->buffered_amount() >= max_buffer_size_ ) {
+    LOGP_F( LERROR ) << "Buffer is full";
+    return false;
+  }
+
   return channel_->Send(databuffer);
 }
 
@@ -370,6 +447,7 @@ bool PeerDataChannelObserver::SyncSend(const char* buffer, const size_t size) {
 
   if (!send_cv_.wait_for(lock, std::chrono::milliseconds(60*1000),
                          [this] () { return channel_->buffered_amount() == 0; })) {
+    LOGP_F( LERROR ) << "Buffer is full";
     return false;
   }
 
@@ -377,7 +455,7 @@ bool PeerDataChannelObserver::SyncSend(const char* buffer, const size_t size) {
 }
 
 void PeerDataChannelObserver::Close() {
-  LOGP(LS_INFO) << "Close data channel";
+  LOGP_F(LS_INFO) << "Closing data channel";
   if (channel_->state() != webrtc::DataChannelInterface::kClosing) {
     channel_->Close();
   }
@@ -393,8 +471,21 @@ uint64_t PeerDataChannelObserver::BufferedAmount() {
 }
 
 bool PeerDataChannelObserver::IsWritable() {
-  if (channel_ == nullptr) return false;
-  if (!IsOpen() || channel_->buffered_amount() > 0) return false;
+  if ( channel_ == nullptr ) {
+    LOGP_F( LERROR ) << "channel_ is null";
+    return false;
+  }
+
+  if ( !IsOpen() ) {
+    LOGP_F( LERROR ) << "data channel is not opened";
+    return false;
+  }
+
+  if ( channel_->buffered_amount() > 0 ) {
+    LOGP_F( LERROR ) << "buffer is full";
+    return false;
+  }
+
   return true;
 }
 

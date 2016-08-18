@@ -18,8 +18,8 @@ PeerConnect::PeerConnect()
 PeerConnect::PeerConnect(const std::string setting) {
   // Log level
 #if DEBUG || _DEBUG
-  rtc::LogMessage::LogToDebug(rtc::LS_NONE);
-  pc::LogMessage::LogToDebug(pc::LS_INFO);
+  rtc::LogMessage::LogToDebug(rtc::WARNING);
+  pc::LogMessage::LogToDebug(pc::WARNING);
 #else
   rtc::LogMessage::LogToDebug(rtc::LS_NONE);
   pc::LogMessage::LogToDebug(pc::LS_NONE);
@@ -40,17 +40,22 @@ PeerConnect::PeerConnect(const std::string setting) {
       signal_->SetConfig(setting_.signal_uri_);
     }
   }
+
+  LOGP_F( INFO ) << "Done";
 }
 
 PeerConnect::~PeerConnect() {
+  LOGP_F( INFO ) << "Done";
 }
 
 void PeerConnect::Run() {
   rtc::ThreadManager::Instance()->CurrentThread()->Run();
+  LOGP_F( INFO ) << "Done";
 }
 
 void PeerConnect::Stop() {
   rtc::ThreadManager::Instance()->CurrentThread()->Quit();
+  LOGP_F( INFO ) << "Done";
 }
 
 
@@ -61,7 +66,7 @@ void PeerConnect::SignIn(const std::string alias, const std::string id, const st
   //
 
   if (control_.get() != nullptr) {
-    LOGP(LS_WARNING) << "Already signined in.";
+    LOGP_F(WARNING) << "Already signined in.";
     return;
   }
 
@@ -73,7 +78,7 @@ void PeerConnect::SignIn(const std::string alias, const std::string id, const st
   control_->RegisterObserver(this, control_);
 
   if (control_.get() == NULL) {
-    LOGP(LS_ERROR) << "Failed to create class Control.";
+    LOGP_F(LERROR) << "Failed to create class Control.";
     return;
   }
 
@@ -82,7 +87,7 @@ void PeerConnect::SignIn(const std::string alias, const std::string id, const st
   //
 
   if (!control_->InitializeControl()) {
-    LOGP(LS_ERROR) << "Failed to initialize Control.";
+    LOGP_F(LERROR) << "Failed to initialize Control.";
     control_.reset();
     return;
   }
@@ -105,21 +110,25 @@ void PeerConnect::SignIn(const std::string alias, const std::string id, const st
   //
 
   control_->SignIn(user_id, password, open_id);
+  LOGP_F( INFO ) << "Done";
   return;
 }
 
 void PeerConnect::SignOut() {
   signout_ = true;
   control_->SignOut();
+  LOGP_F( INFO ) << "Done";
 }
 
 void PeerConnect::Connect(const std::string id) {
   control_->Connect(id);
+  LOGP_F( INFO ) << "Done, id is " << id;
   return;
 }
 
 void PeerConnect::Disconnect(const std::string id) {
   control_->Disconnect(id);
+  LOGP_F( INFO ) << "Done, id is " << id;
   return;
 }
 
@@ -170,6 +179,7 @@ PeerConnect& PeerConnect::On(std::string event_id, std::function<void(PeerConnec
   std::unique_ptr<EventHandler_2> f(new EventHandler_2(handler));
   event_handler_.insert(Events::value_type(event_id, std::move(f)));
 
+  LOGP_F( INFO ) << "An event handler '" << event_id << "' has been inserted";
   return *this;
 }
 
@@ -179,6 +189,7 @@ PeerConnect& PeerConnect::On(std::string event_id, std::function<void(PeerConnec
 
 PeerConnect& PeerConnect::OnMessage(std::function<void(PeerConnect*, std::string, Buffer&)> handler) {
   message_handler_ = handler;
+  LOGP_F( INFO ) << "A message handler has been inserted";
   return *this;
 }
 
@@ -189,28 +200,47 @@ PeerConnect& PeerConnect::OnMessage(std::function<void(PeerConnect*, std::string
 void PeerConnect::OnSignedIn(const std::string id) {
   signout_ = false;
 
-  if (event_handler_.find("signin") == event_handler_.end()) return;
+  if ( event_handler_.find( "signin" ) == event_handler_.end() ) {
+    return;
+  }
+
   CallEventHandler("signin", this, id);
+  LOGP_F( INFO ) << "Done";
 }
 
 void PeerConnect::OnSignedOut(const std::string id) {
-  if (!signout_) return;
-  if (event_handler_.find("signout") == event_handler_.end()) return;
+  if ( !signout_ ) {
+    LOGP_F( WARNING ) << "signout_ is false, id is " << id;
+    return;
+  }
+
+  if ( event_handler_.find( "signout" ) == event_handler_.end() ) {
+    return;
+  }
 
   CallEventHandler("signout", this, id);
 
   control_->UnregisterObserver();
   control_.reset();
+  LOGP_F( INFO ) << "Done, id is " << id;
 }
 
 void PeerConnect::OnPeerConnected(const std::string id) {
-  if (event_handler_.find("connect") == event_handler_.end()) return;
+  if ( event_handler_.find( "connect" ) == event_handler_.end() ) {
+    return;
+  }
+
   CallEventHandler("connect", this, id);
+  LOGP_F( INFO ) << "Done, id is " << id;
 }
 
 void PeerConnect::OnPeerDisconnected(const std::string id) {
-  if (event_handler_.find("disconnect") == event_handler_.end()) return;
+  if ( event_handler_.find( "disconnect" ) == event_handler_.end() ) {
+    return;
+  }
+
   CallEventHandler("disconnect", this, id);
+  LOGP_F( INFO ) << "Done, id is " << id;
 }
 
 void PeerConnect::OnPeerMessage(const std::string id, const char* buffer, const size_t size) {
@@ -219,15 +249,22 @@ void PeerConnect::OnPeerMessage(const std::string id, const char* buffer, const 
 }
 
 void PeerConnect::OnPeerWritable(const std::string id) {
-  if (event_handler_.find("writable") == event_handler_.end()) return;
+  if ( event_handler_.find( "writable" ) == event_handler_.end() ) {
+    return;
+  }
+
   CallEventHandler("writable", this, id);
+  LOGP_F( INFO ) << "Done, id is " << id;
 }
 
 void PeerConnect::OnError(const std::string id, const std::string& reason) {
-  if (event_handler_.find("error") == event_handler_.end()) return;
+  if ( event_handler_.find( "error" ) == event_handler_.end() ) {
+    return;
+  }
 
   error_reason_ = reason;
   CallEventHandler("error", this, id);
+  LOGP_F( INFO ) << "Done, id is " << id << " and reason is " << reason;
 }
 
 template<typename ...A>
@@ -248,7 +285,7 @@ bool PeerConnect::ParseSetting(const std::string& setting) {
   std::string value;
 
   if (!reader.parse(setting, jsetting)) {
-    LOGP(LS_WARNING) << "Invalid setting: " << setting;
+    LOGP_F(WARNING) << "Invalid setting: " << setting;
     return false;
   }
 

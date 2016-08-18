@@ -48,6 +48,7 @@ class PeerControl
         public sigslot::has_slots<> {
 
 public:
+
   explicit PeerControl(const std::string local_session_id,
                        const std::string remote_session_id,
                        PeerObserver* observer,
@@ -55,6 +56,13 @@ public:
                            peer_connection_factory);
 
   ~PeerControl();
+
+  enum PeerState {
+    pOpening,
+    pOpened,
+    pClosing,
+    pClosed
+  };
 
   const std::string& local_id() const { return local_id_; }
   const std::string& remote_id() const { return remote_id_; }
@@ -126,6 +134,8 @@ protected:
   std::string remote_id_;
   std::unique_ptr<PeerDataChannelObserver> local_data_channel_;
   std::unique_ptr<PeerDataChannelObserver> remote_data_channel_;
+
+  PeerState state_;
 
   PeerObserver* observer_;
 
