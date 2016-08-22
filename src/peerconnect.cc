@@ -18,8 +18,8 @@ PeerConnect::PeerConnect()
 PeerConnect::PeerConnect(const std::string setting) {
   // Log level
 #if DEBUG || _DEBUG
-  rtc::LogMessage::LogToDebug(rtc::WARNING);
-  pc::LogMessage::LogToDebug(pc::WARNING);
+  rtc::LogMessage::LogToDebug(rtc::LS_NONE);
+  pc::LogMessage::LogToDebug(pc::LS_VERBOSE);
 #else
   rtc::LogMessage::LogToDebug(rtc::LS_NONE);
   pc::LogMessage::LogToDebug(pc::LS_NONE);
@@ -127,7 +127,7 @@ void PeerConnect::Connect(const std::string id) {
 }
 
 void PeerConnect::Disconnect(const std::string id) {
-  control_->Disconnect(id);
+  control_->Close(id);
   LOGP_F( INFO ) << "Done, id is " << id;
   return;
 }

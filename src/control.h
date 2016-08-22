@@ -48,8 +48,7 @@ public:
   void SignIn(const std::string& user_id, const std::string& user_password, const std::string& open_id);
   void SignOut();
   void Connect(const std::string id);
-  void Disconnect(const std::string id);
-  void DisconnectAll();
+  void Close();
   bool IsWritable(const std::string id);
 
   void OnCommandReceived(const Json::Value& message);
@@ -62,14 +61,13 @@ public:
   //
 
   virtual void SendCommand(const std::string& id, const std::string& command, const Json::Value& data);
-  virtual void OnPeerConnected(const std::string id);
-  virtual void QueuePeerDisconnect(const std::string id);
-  virtual void QueueOnPeerDisconnected(const std::string id);
-  virtual void OnPeerDisconnected(const std::string id);
-  virtual void QueueOnPeerChannelClosed(const std::string id, int delay);
-  virtual void OnPeerChannelClosed(const std::string id);
-  virtual void OnPeerMessage(const std::string& id, const char* buffer, const size_t size);
-  virtual void OnPeerWritable(const std::string& id);
+  virtual void Close(const std::string id);
+  virtual void OnConnected(const std::string id);
+  virtual void OnClosed(const std::string id);
+  virtual void OnMessage(const std::string& id, const char* buffer, const size_t size);
+  virtual void OnWritable(const std::string& id);
+  virtual void OnError( const std::string id, const std::string& reason );
+
 
   // Register/Unregister observer
   void RegisterObserver(ControlObserver* observer, std::shared_ptr<Control> ref);
@@ -87,13 +85,15 @@ protected:
   void AddIceCandidate(const std::string& peer_id, const Json::Value& data);
   void ReceiveOfferSdp(const std::string& peer_id, const Json::Value& data);
   void ReceiveAnswerSdp(const std::string& peer_id, const Json::Value& data);
-  void ClosePeerConnection(const std::string& peer_id, const Json::Value& data);
-  void DisconnectPeer(const std::string id);
 
   void OnSignedIn(const Json::Value& data);
   void OnChannelCreated(const Json::Value& data);
   void OnChannelJoined(const Json::Value& data);
   void OnChannelLeaved(const Json::Value& data);
+
+  void Close( const std::string id, const bool force_queuing);
+  void OnClosed(const std::string id, const bool force_queuing);
+
 
   // open_id_: other peers can find this peer by open_id_ and it is user_id or alias
   // user_id_: A user id to sign in signal server (could be 'anonymous' for guest user)
@@ -113,12 +113,14 @@ protected:
 
 private:
 
+  const bool QUEUEING_ON  = true;
+  const bool QUEUEING_OFF = false;
+
+
   enum {
     MSG_COMMAND_RECEIVED,           // Command has been received from signal server
-    MSG_DISCONNECT,                 // Queue disconnection request (+subsequent peer disconnection)
-    MSG_DISCONNECT_PEER,            // Queue peer disconnection request
-    MSG_ON_PEER_DISCONNECTED,       // Queue onpeerdisconnected event
-    MSG_ON_PEER_CHANNEL_CLOSED,     // Queue onchanneldisconnected event
+    MSG_CLOSE_PEER,                 // Close peer
+    MSG_ON_PEER_CLOSED,             // Peer has been closed
     MSG_SIGNOUT,                    // Queue signout request
     MSG_SIGNAL_SERVER_CLOSED        // Connection to signal server has been closed
   };

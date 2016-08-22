@@ -83,7 +83,6 @@ void Control::DeleteControl() {
 }
 
 
-
 void Control::SignIn(const std::string& user_id, const std::string& user_password, const std::string& open_id) {
   // 1. Connect to signal server
   // 2. Send signin command to signal server
@@ -115,7 +114,7 @@ void Control::SignOut() {
   }
 
   signal_->SignOut();
-  DisconnectAll();
+  Close();
 
   LOGP_F( INFO ) << "Done";
 }
@@ -124,7 +123,7 @@ void Control::Connect(const std::string id) {
   // 1. Join channel on signal server
   // 2. Server(remote) peer createoffer
   // 3. Client(local) peer answeroffer
-  // 4. Conect datachannel
+  // 4. Connect datachannel
 
   if (signal_.get() == NULL) {
     LOGP_F(LERROR) << "Join failed, no signal server";
@@ -135,32 +134,57 @@ void Control::Connect(const std::string id) {
   JoinChannel(id);
 }
 
-void Control::Disconnect(const std::string id) {
-  // 1. Leave channel on signal server
-  // 2. Close remote data channel
-  // 3. Close local data channel
-  // 4. Close ice connection
-  // 5. Erase peer
+void Control::Close(const std::string id, bool force_queuing) {
 
-  LOGP_F( INFO ) << "Queue peer disconnect " << id;
-  QueuePeerDisconnect(id);
+  //
+  // Called by 
+  //  PeerConnect if user closes the connection.
+  //  PeerControl if remote peer closes a ice connection or data channel
+  //
+
+  if (force_queuing || webrtc_thread_ != rtc::Thread::Current()) {
+    ControlMessageData *data = new ControlMessageData(id, ref_);
+    webrtc_thread_->Post(this, MSG_CLOSE_PEER, data);
+    return;
+  }
+
+  // 1. Leave channel on signal server
+  // 2. Erase peer
+  // 3. Close peer
+
+  LeaveChannel(id);
+
+  auto peer_found = peers_.find(id);
+  if ( peer_found == peers_.end() ) {
+    LOGP_F( WARNING ) << "peer not found, " << id;
+    return;
+  }
+
+  Peer peer = peer_found->second;
+  peers_.erase( peer_found );
+  peer->Close();
+
+  LOGP_F( INFO ) << "Done, id is " << id;
 }
 
-void Control::DisconnectAll() {
+void Control::Close( const std::string id ) {
+  Close( id, QUEUEING_ON );
+}
+
+void Control::Close() {
   std::vector<std::string> peer_ids;
 
   for (auto peer : peers_) {
     peer_ids.push_back(peer.second->remote_id());
   }
 
-  LOGP_F(INFO) << "DisconnectAll(): peer count is " << peer_ids.size();
+  LOGP_F(INFO) << "Close(): peer count is " << peer_ids.size();
 
   for (auto id : peer_ids) {
-    LOGP_F( INFO ) << "Try to disconnect peer having id " << id;
-    Disconnect(id);
+    LOGP_F( INFO ) << "Try to close peer having id " << id;
+    Close(id, QUEUEING_ON);
   }
 }
-
 
 //
 // Send data to peer
@@ -197,32 +221,7 @@ void Control::SendCommand(const std::string& id, const std::string& command, con
 }
 
 
-
-void Control::QueuePeerDisconnect(const std::string id) {
-
-  ControlMessageData *data = new ControlMessageData(id, ref_);
-
-  // 1. Leave channel on signal server
-  LeaveChannel(id);
-
-  // 2. Close remote data channel
-  // 3. Close local data channel
-  // 4. Close ice connection
-  // 5. Erase peer
-  webrtc_thread_->Post(this, MSG_DISCONNECT_PEER, data);
-  LOGP_F( INFO ) << "Done";
-}
-
-
-//
-// Both peer local and remote data channel has been opened.
-// It means that ice connection had been opened already and
-// now we can send and receive data from/to data channel.
-//
-// Implements PeerObserver::OnPeerConnected()
-//
-
-void Control::OnPeerConnected(const std::string id) {
+void Control::OnConnected(const std::string id) {
   if ( observer_ == nullptr ) {
     LOGP_F( WARNING ) << "observer_ is null, id is " << id;
     return;
@@ -239,73 +238,36 @@ void Control::OnPeerConnected(const std::string id) {
 // Implements PeerObserver::OnDisconnected()
 //
 
-void Control::OnPeerDisconnected(const std::string id) {
+void Control::OnClosed(const std::string id, const bool force_queuing) {
 
+  if (force_queuing || webrtc_thread_ != rtc::Thread::Current()) {
+    ControlMessageData *data = new ControlMessageData(id, ref_);
+
+    // Call Control::OnPeerDisconnected()
+    webrtc_thread_->Post(this, MSG_ON_PEER_CLOSED, data);
+    LOGP_F( INFO ) << "Queued, id is " << id;
+    return;
+  }
+
+ 
   if ( observer_ == nullptr ) {
     LOGP_F( WARNING ) << "observer_ is null, id is " << id;
     return;
   }
 
-  bool erased;
-  std::map<std::string, Peer>::iterator it;
+  LOGP_F( INFO ) << "Calling OnPeerDisconnected, id is " << id;
+  observer_->OnPeerDisconnected(id);
 
-  for (it = peers_.begin(); it != peers_.end(); ) {
-    if (it->second->remote_id() == id) {
-      erased = true;
-      peers_.erase(it++);
-    }
-    else {
-      ++it;
-    }
-  }
-
-  if (erased) {
-    LOGP_F( INFO ) << "Calling OnPeerDisconnected, id is " << id;
-    observer_->OnPeerDisconnected(id);
-    if (peers_.size() == 0) {
-      LOGP_F( INFO ) << "peers_ has been empty. id is " << id;
-      OnSignedOut(open_id_);
-    }
+  if (peers_.size() == 0) {
+    LOGP_F( INFO ) << "peers_ has been empty. id is " << id;
+    OnSignedOut(open_id_);
   }
 
   LOGP_F( INFO ) << "Done, id is " << id;
 }
 
-void Control::QueueOnPeerDisconnected(const std::string id) {
-  ControlMessageData *data = new ControlMessageData(id, ref_);
-
-  // Call Control::OnPeerDisconnected()
-  webrtc_thread_->Post(this, MSG_ON_PEER_DISCONNECTED, data);
-  LOGP_F( INFO ) << "Done, id is " << id;
-
-}
-
-
-void Control::OnPeerChannelClosed(const std::string id) {
-  auto peer = peers_.find(id);
-  if ( peer == peers_.end() ) {
-    LOGP_F( WARNING ) << "Peer not found, id is " << id;
-    return;
-  }
-
-  peer->second->ClosePeerConnection();
-  LOGP_F( INFO ) << "Done, id is " << id;
-}
-
-void Control::QueueOnPeerChannelClosed(const std::string id, int delay) {
-
-  LOGP_F( INFO ) << "id is " << id << " and delay is " << delay;
-
-//  close_peerconnection
-  ControlMessageData *data = new ControlMessageData(id, ref_);
-
-  // Call Control::OnPeerDisconnected()
-  if (delay==0)
-    webrtc_thread_->Post(this, MSG_ON_PEER_CHANNEL_CLOSED, data);
-  else 
-    webrtc_thread_->PostDelayed(delay, this, MSG_ON_PEER_CHANNEL_CLOSED, data);
-
-  LOGP_F( INFO ) << "Done";
+void Control::OnClosed(const std::string id) {
+  OnClosed( id, QUEUEING_ON );
 }
 
 
@@ -313,7 +275,7 @@ void Control::QueueOnPeerChannelClosed(const std::string id, int delay) {
 // Signal receiving data
 //
 
-void Control::OnPeerMessage(const std::string& id, const char* buffer, const size_t size) {
+void Control::OnMessage(const std::string& id, const char* buffer, const size_t size) {
   if ( observer_ == nullptr ) {
     LOGP_F( WARNING ) << "observer_ is null, id is " << id;
     return;
@@ -321,12 +283,20 @@ void Control::OnPeerMessage(const std::string& id, const char* buffer, const siz
   observer_->OnPeerMessage(id, buffer, size);
 }
 
-void Control::OnPeerWritable(const std::string& id) {
+void Control::OnWritable(const std::string& id) {
   if ( observer_ == nullptr ) {
     LOGP_F( WARNING ) << "observer_ is null, id is " << id;
     return;
   }
   observer_->OnPeerWritable(id);
+}
+
+void Control::OnError( const std::string id, const std::string& reason ) {
+  if ( observer_ == nullptr ) {
+    LOGP_F( WARNING ) << "observer_ is null, id is " << id;
+    return;
+  }
+  observer_->OnError( id, reason );
 }
 
 
@@ -355,21 +325,13 @@ void Control::OnMessage(rtc::Message* msg) {
     param = static_cast<ControlMessageData*>(msg->pdata);
     OnCommandReceived(param->data_json_);
     break;
-  case MSG_DISCONNECT:
+  case MSG_CLOSE_PEER:
     param = static_cast<ControlMessageData*>(msg->pdata);
-    Disconnect(param->data_string_);
+    Close(param->data_string_, QUEUEING_OFF);
     break;
-  case MSG_DISCONNECT_PEER:
+  case MSG_ON_PEER_CLOSED:
     param = static_cast<ControlMessageData*>(msg->pdata);
-    DisconnectPeer(param->data_string_);
-    break;
-  case MSG_ON_PEER_DISCONNECTED:
-    param = static_cast<ControlMessageData*>(msg->pdata);
-    OnPeerDisconnected(param->data_string_);
-    break;
-  case MSG_ON_PEER_CHANNEL_CLOSED:
-    param = static_cast<ControlMessageData*>(msg->pdata);
-    OnPeerChannelClosed(param->data_string_);
+    OnClosed(param->data_string_, QUEUEING_OFF);
     break;
   case MSG_SIGNOUT:
     param = static_cast<ControlMessageData*>(msg->pdata);
@@ -431,9 +393,6 @@ void Control::OnCommandReceived(const Json::Value& message) {
   }
   else if (command == "ice_candidate") {
     AddIceCandidate(peer_id, data);
-  }
-  else if (command == "close_peerconnection") {
-    ClosePeerConnection(peer_id, data);
   }
 }
 
@@ -685,8 +644,13 @@ void Control::CreateOffer(const Json::Value& data) {
     }
 
     Peer peer = new rtc::RefCountedObject<PeerControl>(open_id_, remote_id, this, peer_connection_factory_);
-    peers_.insert(std::pair<std::string, Peer>(remote_id, peer));
+    if ( !peer->Initialize() ) {
+      LOGP_F( LERROR ) << "Peer initialization failed";
+      OnClosed( remote_id );
+      return;
+    }
 
+    peers_.insert(std::pair<std::string, Peer>(remote_id, peer));
     peer->CreateOffer(NULL);
   }
 
@@ -707,9 +671,15 @@ void Control::ReceiveOfferSdp(const std::string& peer_id, const Json::Value& dat
   }
 
   Peer peer = new rtc::RefCountedObject<PeerControl>(open_id_, peer_id, this, peer_connection_factory_);
-  peers_.insert(std::pair<std::string, Peer>(peer_id, peer));
+  if ( !peer->Initialize() ) {
+    LOGP_F( LERROR ) << "Peer initialization failed";
+    OnClosed( peer_id );
+    return;
+  }
 
+  peers_.insert(std::pair<std::string, Peer>(peer_id, peer));
   peer->ReceiveOfferSdp(sdp);
+
   LOGP_F( INFO ) << "Done";
 }
 
@@ -737,37 +707,5 @@ void Control::ReceiveAnswerSdp(const std::string& peer_id, const Json::Value& da
   peer->second->ReceiveAnswerSdp(sdp);
   LOGP_F( INFO ) << "Done";
 }
-
-void Control::ClosePeerConnection(const std::string& peer_id, const Json::Value& data) {
-  auto peer = peers_.find(peer_id);
-  if ( peer == peers_.end() ) {
-    LOGP_F( LERROR ) << "peer_id not found, peer_id is " << peer_id << " and " <<
-                        "data is " << data.toStyledString();
-    return;
-  }
-
-  peers_[peer_id]->ClosePeerConnection();
-  LOGP_F( INFO ) << "Done";
-}
-
-
-
-void Control::DisconnectPeer(const std::string id) {
-  // 1. Close remote data channel (remote_data_channel_)
-  // 2. Close local data channel (local_data_channel_)
-  // 3. Close ice connection (peer_connection_)
-  // 4. Erase peer
-
-  auto peer = peers_.find(id);
-  if ( peer == peers_.end() ) {
-    LOGP_F( WARNING ) << "peer not found, " << id;
-    return;
-  }
-
-  peer->second->Close();
-
-  LOGP_F( INFO ) << "Done, id is " << id;
-}
-
 
 } // namespace pc

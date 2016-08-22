@@ -25,14 +25,13 @@ namespace pc {
 class PeerObserver {
 public:
   virtual void SendCommand(const std::string& id, const std::string& command, const Json::Value& data) = 0;
-  virtual void OnPeerConnected(const std::string id) = 0;
-  virtual void QueuePeerDisconnect(const std::string id) = 0;
-  virtual void QueueOnPeerDisconnected(const std::string id) = 0;
-  virtual void OnPeerDisconnected(const std::string id) = 0;
-  virtual void QueueOnPeerChannelClosed(const std::string id, int delay) = 0;
-  virtual void OnPeerChannelClosed(const std::string id) = 0;
-  virtual void OnPeerMessage(const std::string& id, const char* buffer, const size_t size) = 0;
-  virtual void OnPeerWritable(const std::string& id) = 0;
+  virtual void Close(const std::string id) = 0;
+  virtual void OnConnected(const std::string id) = 0;
+  virtual void OnClosed(const std::string id) = 0;
+  virtual void OnMessage(const std::string& id, const char* buffer, const size_t size) = 0;
+  virtual void OnWritable(const std::string& id) = 0;
+  virtual void OnError( const std::string id, const std::string& reason ) = 0;
+
 };
 
 class PeerDataChannelObserver;
@@ -58,15 +57,21 @@ public:
   ~PeerControl();
 
   enum PeerState {
-    pOpening,
-    pOpened,
+    pConnecting,
+    pOpen,
     pClosing,
     pClosed
   };
 
   const std::string& local_id() const { return local_id_; }
   const std::string& remote_id() const { return remote_id_; }
+  const PeerState state() const { return state_ ; }
 
+  //
+  // APIs
+  //
+
+  bool Initialize();
   bool Send(const char* buffer, const size_t size);
   bool SyncSend(const char* buffer, const size_t size);
   bool IsWritable();
@@ -78,13 +83,10 @@ public:
 
   void CreateOffer(const webrtc::MediaConstraintsInterface* constraints);
   void CreateAnswer(const webrtc::MediaConstraintsInterface* constraints);
-
   void AddIceCandidate(const std::string& sdp_mid, int sdp_mline_index,
                        const std::string& candidate);
   void ReceiveOfferSdp(const std::string& sdp);
   void ReceiveAnswerSdp(const std::string& sdp);
-
-  void ClosePeerConnection();
 
   //
   // PeerConnectionObserver implementation.
@@ -113,6 +115,7 @@ public:
 
   void OnPeerOpened();
   void OnPeerClosed();
+  void OnPeerDisconnected();
   void OnPeerMessage(const webrtc::DataBuffer& buffer);
   void OnBufferedAmountChange(const uint64_t previous_amount);
 
@@ -137,7 +140,7 @@ protected:
 
   PeerState state_;
 
-  PeerObserver* observer_;
+  PeerObserver* control_;
 
 };
 
@@ -165,7 +168,7 @@ public:
 
   // sigslots
   sigslot::signal0<> SignalOnOpen_;
-  sigslot::signal0<> SignalOnClosed_;
+  sigslot::signal0<> SignalOnDisconnected_;
   sigslot::signal1<const webrtc::DataBuffer&> SignalOnMessage_;
   sigslot::signal1<const uint64_t> SignalOnBufferedAmountChange_;
 
