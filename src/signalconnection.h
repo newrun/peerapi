@@ -83,6 +83,8 @@ public:
     con_closed
   };
 
+  using string = std::string;
+
 #if _DEBUG || DEBUG
   typedef websocketpp::config::debug_asio_tls client_config;
 #else
@@ -90,17 +92,17 @@ public:
 #endif //DEBUG
   typedef websocketpp::client<client_config> client_type;
 
-  Signal(const std::string url);
+  Signal(const string url);
   ~Signal();
 
-  void SignIn(const std::string& id, const std::string& password);
+  void SignIn(const string& id, const string& password);
   void SignOut();
 
 
-  void SendCommand(const std::string channel,
-                   const std::string commandname,
+  void SendCommand(const string channel,
+                   const string commandname,
                    const Json::Value& data);
-  void SendGlobalCommand(const std::string commandname,
+  void SendGlobalCommand(const string commandname,
                          const Json::Value& data);
 
   void Teardown();
@@ -123,7 +125,7 @@ private:
 
   void RunLoop();
   void ConnectInternal();
-  void CloseInternal(websocketpp::close::status::value const& code, std::string const& reason);
+  void CloseInternal(websocketpp::close::status::value const& code, string const& reason);
   void TimeoutReconnect(websocketpp::lib::asio::error_code const& ec);
   unsigned NextDelay() const;
 
@@ -152,9 +154,9 @@ private:
   unsigned reconn_made_;
 
   // Signin
-  std::string url_;
-  std::string user_id_;
-  std::string user_password_;
+  string url_;
+  string user_id_;
+  string user_password_;
 }; // class Signal
 
 

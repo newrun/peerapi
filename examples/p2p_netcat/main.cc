@@ -25,6 +25,7 @@
 #endif
 
 using namespace std;
+using namespace pc;
 
 bool parse_args(int argc, char* argv[], std::string& alias, std::string& connect_to, bool& server_mode);
 void usage(const char* prg);
@@ -64,7 +65,7 @@ int main(int argc, char *argv[]) {
     }
     else {
       std::cerr << "Connecting to " << connec_to << std::endl;
-      if (!server_mode) pc->Connect(connec_to);
+      pc->Connect(connec_to);
     }
   });
 

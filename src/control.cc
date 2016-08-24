@@ -83,7 +83,7 @@ void Control::DeleteControl() {
 }
 
 
-void Control::SignIn(const std::string& user_id, const std::string& user_password, const std::string& open_id) {
+void Control::SignIn(const string& user_id, const string& user_password, const string& open_id) {
   // 1. Connect to signal server
   // 2. Send signin command to signal server
   // 3. Send createchannel command to signal server (channel name is id or alias)
@@ -119,7 +119,7 @@ void Control::SignOut() {
   LOGP_F( INFO ) << "Done";
 }
 
-void Control::Connect(const std::string id) {
+void Control::Connect(const string id) {
   // 1. Join channel on signal server
   // 2. Server(remote) peer createoffer
   // 3. Client(local) peer answeroffer
@@ -134,7 +134,7 @@ void Control::Connect(const std::string id) {
   JoinChannel(id);
 }
 
-void Control::Close(const std::string id, bool force_queuing) {
+void Control::Close(const string id, bool force_queuing) {
 
   //
   // Called by 
@@ -167,12 +167,12 @@ void Control::Close(const std::string id, bool force_queuing) {
   LOGP_F( INFO ) << "Done, id is " << id;
 }
 
-void Control::Close( const std::string id ) {
+void Control::Close( const string id ) {
   Close( id, QUEUEING_ON );
 }
 
 void Control::Close() {
-  std::vector<std::string> peer_ids;
+  std::vector<string> peer_ids;
 
   for (auto peer : peers_) {
     peer_ids.push_back(peer.second->remote_id());
@@ -190,9 +190,9 @@ void Control::Close() {
 // Send data to peer
 //
 
-void Control::Send(const std::string to, const char* buffer, const size_t size) {
+void Control::Send(const string to, const char* buffer, const size_t size) {
 
-  typedef std::map<std::string, rtc::scoped_refptr<PeerControl>>::iterator it_type;
+  typedef std::map<string, rtc::scoped_refptr<PeerControl>>::iterator it_type;
 
   it_type it = peers_.find(to);
   if (it == peers_.end()) return;
@@ -201,9 +201,9 @@ void Control::Send(const std::string to, const char* buffer, const size_t size) 
   return;
 }
 
-bool Control::SyncSend(const std::string to, const char* buffer, const size_t size) {
+bool Control::SyncSend(const string to, const char* buffer, const size_t size) {
 
-  typedef std::map<std::string, rtc::scoped_refptr<PeerControl>>::iterator it_type;
+  typedef std::map<string, rtc::scoped_refptr<PeerControl>>::iterator it_type;
 
   it_type it = peers_.find(to);
   if (it == peers_.end()) return false;
@@ -216,12 +216,12 @@ bool Control::SyncSend(const std::string to, const char* buffer, const size_t si
 // Send command to other peer by signal server
 //
 
-void Control::SendCommand(const std::string& id, const std::string& command, const Json::Value& data) {
+void Control::SendCommand(const string& id, const string& command, const Json::Value& data) {
   signal_->SendCommand(id, command, data);
 }
 
 
-void Control::OnConnected(const std::string id) {
+void Control::OnConnected(const string id) {
   if ( observer_ == nullptr ) {
     LOGP_F( WARNING ) << "observer_ is null, id is " << id;
     return;
@@ -238,7 +238,7 @@ void Control::OnConnected(const std::string id) {
 // Implements PeerObserver::OnDisconnected()
 //
 
-void Control::OnClosed(const std::string id, const bool force_queuing) {
+void Control::OnClosed(const string id, const bool force_queuing) {
 
   if (force_queuing || webrtc_thread_ != rtc::Thread::Current()) {
     ControlMessageData *data = new ControlMessageData(id, ref_);
@@ -266,7 +266,7 @@ void Control::OnClosed(const std::string id, const bool force_queuing) {
   LOGP_F( INFO ) << "Done, id is " << id;
 }
 
-void Control::OnClosed(const std::string id) {
+void Control::OnClosed(const string id) {
   OnClosed( id, QUEUEING_ON );
 }
 
@@ -275,7 +275,7 @@ void Control::OnClosed(const std::string id) {
 // Signal receiving data
 //
 
-void Control::OnMessage(const std::string& id, const char* buffer, const size_t size) {
+void Control::OnMessage(const string& id, const char* buffer, const size_t size) {
   if ( observer_ == nullptr ) {
     LOGP_F( WARNING ) << "observer_ is null, id is " << id;
     return;
@@ -283,7 +283,7 @@ void Control::OnMessage(const std::string& id, const char* buffer, const size_t 
   observer_->OnPeerMessage(id, buffer, size);
 }
 
-void Control::OnWritable(const std::string& id) {
+void Control::OnWritable(const string& id) {
   if ( observer_ == nullptr ) {
     LOGP_F( WARNING ) << "observer_ is null, id is " << id;
     return;
@@ -291,7 +291,7 @@ void Control::OnWritable(const std::string& id) {
   observer_->OnPeerWritable(id);
 }
 
-void Control::OnError( const std::string id, const std::string& reason ) {
+void Control::OnError( const string id, const string& reason ) {
   if ( observer_ == nullptr ) {
     LOGP_F( WARNING ) << "observer_ is null, id is " << id;
     return;
@@ -356,8 +356,8 @@ void Control::OnMessage(rtc::Message* msg) {
 void Control::OnCommandReceived(const Json::Value& message) {
 
   Json::Value data;
-  std::string command;
-  std::string peer_id;
+  string command;
+  string peer_id;
 
   if (!rtc::GetStringFromJsonObject(message, "command", &command) ||
       !rtc::GetValueFromJsonObject(message, "data", &data)) {
@@ -411,7 +411,7 @@ void Control::OnSignalConnectionClosed(websocketpp::close::status::value code) {
   LOGP_F( INFO ) << "Done";
 }
 
-void Control::OnSignedOut(const std::string& id) {
+void Control::OnSignedOut(const string& id) {
   LOGP_F( INFO ) << "Calling OnSignedOut() with " << id;
 
   if ( signal_ == nullptr || signal_->opened() ) {
@@ -436,7 +436,7 @@ void Control::OnSignedOut(const std::string& id) {
 // Commands to signal server
 //
 
-void Control::CreateChannel(const std::string name) {
+void Control::CreateChannel(const string name) {
   LOGP_F( INFO ) << "channel is " << name;
 
   Json::Value data;
@@ -444,7 +444,7 @@ void Control::CreateChannel(const std::string name) {
   SendCommand(name, "createchannel", data);
 }
 
-void Control::JoinChannel(const std::string name) {
+void Control::JoinChannel(const string name) {
   LOGP_F( INFO ) << "channel is " << name;
 
   Json::Value data;
@@ -452,7 +452,7 @@ void Control::JoinChannel(const std::string name) {
   SendCommand(name, "joinchannel", data);
 }
 
-void Control::LeaveChannel(const std::string name) {
+void Control::LeaveChannel(const string name) {
   LOGP_F( INFO ) << "channel is " << name;
 
   Json::Value data;
@@ -492,11 +492,11 @@ bool Control::CreatePeerFactory(
 // Add ice candidate to local peer from remote peer
 //
 
-void Control::AddIceCandidate(const std::string& peer_id, const Json::Value& data) {
+void Control::AddIceCandidate(const string& peer_id, const Json::Value& data) {
 
-  std::string sdp_mid;
+  string sdp_mid;
   int sdp_mline_index;
-  std::string candidate;
+  string candidate;
 
   if ( !rtc::GetStringFromJsonObject( data, "sdp_mid", &sdp_mid ) ) {
     LOGP_F( LERROR ) << "sdp_mid not found, " << data.toStyledString();
@@ -541,7 +541,7 @@ void Control::OnSignedIn(const Json::Value& data) {
     return;
   }
 
-  std::string session_id;
+  string session_id;
   if (!rtc::GetStringFromJsonObject(data, "session_id", &session_id)) {
     LOGP_F(LERROR) << "Signin failed - no session_id";
     return;
@@ -565,7 +565,7 @@ void Control::OnChannelCreated(const Json::Value& data) {
     return;
   }
 
-  std::string channel;
+  string channel;
   if (!rtc::GetStringFromJsonObject(data, "name", &channel)) {
     LOGP_F(LERROR) << "Create channel failed - no channel name";
     return;
@@ -573,7 +573,7 @@ void Control::OnChannelCreated(const Json::Value& data) {
 
   if (!result) {
     LOGP_F(LERROR) << "Create channel failed";
-    std::string reason;
+    string reason;
     if (!rtc::GetStringFromJsonObject(data, "reason", &reason)) {
       reason = "Unknown reason";
     }
@@ -595,7 +595,7 @@ void Control::OnChannelJoined(const Json::Value& data) {
     return;
   }
 
-  std::string channel;
+  string channel;
   if (!rtc::GetStringFromJsonObject(data, "name", &channel)) {
     LOGP_F(LERROR) << "Join channel failed - no channel name";
     return;
@@ -603,7 +603,7 @@ void Control::OnChannelJoined(const Json::Value& data) {
 
   if (!result) {
     LOGP_F(LERROR) << "Join channel failed";
-    std::string reason;
+    string reason;
     if (!rtc::GetStringFromJsonObject(data, "reason", &reason)) {
       reason = "Unknown reason";
     }
@@ -637,7 +637,7 @@ void Control::CreateOffer(const Json::Value& data) {
   }
 
   for (size_t i = 0; i < peers.size(); ++i) {
-    std::string remote_id;
+    string remote_id;
     if (!rtc::GetStringFromJsonArray(peers, i, &remote_id)) {
       LOGP_F(LERROR) << "Peer handshake failed - invalid peer id";
       return;
@@ -650,7 +650,7 @@ void Control::CreateOffer(const Json::Value& data) {
       return;
     }
 
-    peers_.insert(std::pair<std::string, Peer>(remote_id, peer));
+    peers_.insert(std::pair<string, Peer>(remote_id, peer));
     peer->CreateOffer(NULL);
   }
 
@@ -661,8 +661,8 @@ void Control::CreateOffer(const Json::Value& data) {
 // 'offersdp' command
 //
 
-void Control::ReceiveOfferSdp(const std::string& peer_id, const Json::Value& data) {
-  std::string sdp;
+void Control::ReceiveOfferSdp(const string& peer_id, const Json::Value& data) {
+  string sdp;
 
   if ( !rtc::GetStringFromJsonObject( data, "sdp", &sdp ) ) {
     LOGP_F( LERROR ) << "sdp not found, peer_id is " << peer_id << " and " <<
@@ -677,7 +677,7 @@ void Control::ReceiveOfferSdp(const std::string& peer_id, const Json::Value& dat
     return;
   }
 
-  peers_.insert(std::pair<std::string, Peer>(peer_id, peer));
+  peers_.insert(std::pair<string, Peer>(peer_id, peer));
   peer->ReceiveOfferSdp(sdp);
 
   LOGP_F( INFO ) << "Done";
@@ -688,8 +688,8 @@ void Control::ReceiveOfferSdp(const std::string& peer_id, const Json::Value& dat
 // 'answersdp' command
 //
 
-void Control::ReceiveAnswerSdp(const std::string& peer_id, const Json::Value& data) {
-  std::string sdp;
+void Control::ReceiveAnswerSdp(const string& peer_id, const Json::Value& data) {
+  string sdp;
 
   if ( !rtc::GetStringFromJsonObject( data, "sdp", &sdp ) ) {
     LOGP_F( LERROR ) << "sdp not found, peer_id is " << peer_id << " and " <<

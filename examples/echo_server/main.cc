@@ -10,6 +10,8 @@
 #include "peerconnect.h"
 
 using namespace std;
+using namespace pc;
+
 void usage(const char* prg);
 
 int main(int argc, char *argv[]) {

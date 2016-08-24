@@ -40,7 +40,7 @@
 
 namespace pc {
 
-Signal::Signal(const std::string url) :
+Signal::Signal(const string url) :
       con_state_(con_closed),
       network_thread_(),
       reconn_attempts_(0xFFFFFFFF),
@@ -92,7 +92,7 @@ Signal::~Signal() {
   LOGP_F( INFO ) << "Done";
 }
 
-void Signal::SignIn(const std::string& id, const std::string& password) {
+void Signal::SignIn(const string& id, const string& password) {
   user_id_ = id;
   user_password_ = password;
   Connect();
@@ -105,8 +105,8 @@ void Signal::SignOut() {
   LOGP_F( INFO ) << "Done";
 }
 
-void Signal::SendCommand(const std::string channel,
-                         const std::string commandname,
+void Signal::SendCommand(const string channel,
+                         const string commandname,
                          const Json::Value& data) {
 
   if (commandname.empty()) {
@@ -143,7 +143,7 @@ void Signal::SendCommand(const std::string channel,
   LOGP_F( INFO ) << "Done";
 }
 
-void Signal::SendGlobalCommand(const std::string commandname,
+void Signal::SendGlobalCommand(const string commandname,
                                const Json::Value& data) {
   SendCommand("", commandname, data);
 }
@@ -263,7 +263,7 @@ void Signal::ConnectInternal()
 
 
 
-void Signal::CloseInternal(websocketpp::close::status::value const& code, std::string const& reason)
+void Signal::CloseInternal(websocketpp::close::status::value const& code, string const& reason)
 {
   LOGP_F(WARNING) << "Close by reason:" << reason;
 

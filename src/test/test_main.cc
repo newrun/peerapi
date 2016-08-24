@@ -12,6 +12,7 @@
 #include "peerconnect.h"
 
 using namespace std;
+using namespace pc;
 
 void test_normal();
 void test_writable();

@@ -17,8 +17,8 @@ namespace pc {
 // class PeerControl
 //
 
-PeerControl::PeerControl(const std::string local_id,
-                         const std::string remote_id,
+PeerControl::PeerControl(const string local_id,
+                         const string remote_id,
                          PeerObserver* observer,
                          rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
                              peer_connection_factory)
@@ -46,7 +46,7 @@ bool PeerControl::Initialize() {
   }
 
   webrtc::DataChannelInit init;
-  const std::string data_channel_name = std::string("pc_data_") + remote_id_;
+  const string data_channel_name = string("pc_data_") + remote_id_;
   if (!CreateDataChannel(data_channel_name, init)) {
     LOGP_F(LS_ERROR) << "CreateDataChannel failed";
     DeletePeerConnection();
@@ -129,7 +129,7 @@ void PeerControl::CreateAnswer(const webrtc::MediaConstraintsInterface* constrai
 }
 
 
-void PeerControl::ReceiveOfferSdp(const std::string& sdp) {
+void PeerControl::ReceiveOfferSdp(const string& sdp) {
   ASSERT( state_ == pClosed);
   SetRemoteDescription(webrtc::SessionDescriptionInterface::kOffer, sdp);
   CreateAnswer(NULL);
@@ -137,7 +137,7 @@ void PeerControl::ReceiveOfferSdp(const std::string& sdp) {
 }
 
 
-void PeerControl::ReceiveAnswerSdp(const std::string& sdp) {
+void PeerControl::ReceiveAnswerSdp(const string& sdp) {
   ASSERT( state_ == pConnecting );
   SetRemoteDescription(webrtc::SessionDescriptionInterface::kAnswer, sdp);
   LOGP_F( INFO ) << "Done";
@@ -197,7 +197,7 @@ void PeerControl::OnIceConnectionChange(webrtc::PeerConnectionInterface::IceConn
 
 
 void PeerControl::OnIceCandidate(const webrtc::IceCandidateInterface* candidate) {
-  std::string sdp;
+  string sdp;
   if (!candidate->ToString(&sdp)) return;
 
   Json::Value data;
@@ -214,7 +214,7 @@ void PeerControl::OnSuccess(webrtc::SessionDescriptionInterface* desc) {
 
   // This callback should take the ownership of |desc|.
   std::unique_ptr<webrtc::SessionDescriptionInterface> owned_desc(desc);
-  std::string sdp;
+  string sdp;
 
   if (!desc->ToString(&sdp)) return;
 
@@ -280,7 +280,7 @@ void PeerControl::OnPeerDisconnected() {
 
 
 void PeerControl::OnPeerMessage(const webrtc::DataBuffer& buffer) {
-  std::string data;
+  string data;
   control_->OnMessage(remote_id_, buffer.data.data<char>(), buffer.data.size());
 }
 
@@ -294,7 +294,7 @@ void PeerControl::OnBufferedAmountChange(const uint64_t previous_amount) {
 
 
 bool PeerControl::CreateDataChannel(
-                    const std::string& label,
+                    const string& label,
                     const webrtc::DataChannelInit& init) {
 
   rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel;
@@ -317,8 +317,8 @@ bool PeerControl::CreateDataChannel(
   return true;
 }
 
-void PeerControl::AddIceCandidate(const std::string& sdp_mid, int sdp_mline_index,
-                                  const std::string& candidate) {
+void PeerControl::AddIceCandidate(const string& sdp_mid, int sdp_mline_index,
+                                  const string& candidate) {
 
   std::unique_ptr<webrtc::IceCandidateInterface> owned_candidate(
     webrtc::CreateIceCandidate(sdp_mid, sdp_mline_index, candidate, NULL));
@@ -365,8 +365,8 @@ void PeerControl::DeletePeerConnection() {
   LOGP_F( INFO ) << "Done";
 }
 
-void PeerControl::SetLocalDescription(const std::string& type,
-                                              const std::string& sdp) {
+void PeerControl::SetLocalDescription(const string& type,
+                                              const string& sdp) {
 
   if ( peer_connection_ == nullptr ) {
     LOGP_F( LERROR ) << "peer_connection_ is nullptr";
@@ -382,8 +382,8 @@ void PeerControl::SetLocalDescription(const std::string& type,
   LOGP_F( INFO ) << "Done";
 }
 
-void PeerControl::SetRemoteDescription(const std::string& type,
-                                               const std::string& sdp) {
+void PeerControl::SetRemoteDescription(const string& type,
+                                       const string& sdp) {
 
   rtc::scoped_refptr<webrtc::MockSetSessionDescriptionObserver>
     observer(new rtc::RefCountedObject<

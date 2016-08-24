@@ -48,8 +48,10 @@ class PeerControl
 
 public:
 
-  explicit PeerControl(const std::string local_session_id,
-                       const std::string remote_session_id,
+  using string = std::string;
+
+  explicit PeerControl(const string local_session_id,
+                       const string remote_session_id,
                        PeerObserver* observer,
                        rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
                            peer_connection_factory);
@@ -63,8 +65,8 @@ public:
     pClosed
   };
 
-  const std::string& local_id() const { return local_id_; }
-  const std::string& remote_id() const { return remote_id_; }
+  const string& local_id() const { return local_id_; }
+  const string& remote_id() const { return remote_id_; }
   const PeerState state() const { return state_ ; }
 
   //
@@ -83,10 +85,10 @@ public:
 
   void CreateOffer(const webrtc::MediaConstraintsInterface* constraints);
   void CreateAnswer(const webrtc::MediaConstraintsInterface* constraints);
-  void AddIceCandidate(const std::string& sdp_mid, int sdp_mline_index,
-                       const std::string& candidate);
-  void ReceiveOfferSdp(const std::string& sdp);
-  void ReceiveAnswerSdp(const std::string& sdp);
+  void AddIceCandidate(const string& sdp_mid, int sdp_mline_index,
+                       const string& candidate);
+  void ReceiveOfferSdp(const string& sdp);
+  void ReceiveAnswerSdp(const string& sdp);
 
   //
   // PeerConnectionObserver implementation.
@@ -107,7 +109,7 @@ public:
   //
 
   void OnSuccess(webrtc::SessionDescriptionInterface* desc) override;
-  void OnFailure(const std::string& error) override  {}
+  void OnFailure(const string& error) override  {}
 
   //
   // PeerDataChannelObserver
@@ -123,18 +125,18 @@ protected:
 
   bool CreatePeerConnection();
   void DeletePeerConnection();
-  bool CreateDataChannel(const std::string& label,
+  bool CreateDataChannel(const string& label,
                          const webrtc::DataChannelInit& init);
-  void SetLocalDescription(const std::string& type, const std::string& sdp);
-  void SetRemoteDescription(const std::string& type, const std::string& sdp);
+  void SetLocalDescription(const string& type, const string& sdp);
+  void SetRemoteDescription(const string& type, const string& sdp);
   void Attach(PeerDataChannelObserver* datachannel);
   void Detach(PeerDataChannelObserver* datachannel);
 
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
   rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> peer_connection_factory_;
 
-  std::string local_id_;
-  std::string remote_id_;
+  string local_id_;
+  string remote_id_;
   std::unique_ptr<PeerDataChannelObserver> local_data_channel_;
   std::unique_ptr<PeerDataChannelObserver> remote_data_channel_;
 
