@@ -60,7 +60,6 @@ public:
                            const Json::Value& data) = 0;
   virtual void SendGlobalCommand(const std::string commandname,
                            const Json::Value& data) = 0;
-  virtual void SetConfig(const std::string& url) = 0;
   std::string session_id() { return session_id_; }
  
   // sigslots
@@ -91,7 +90,7 @@ public:
 #endif //DEBUG
   typedef websocketpp::client<client_config> client_type;
 
-  Signal();
+  Signal(const std::string url);
   ~Signal();
 
   void SignIn(const std::string& id, const std::string& password);
@@ -104,7 +103,6 @@ public:
   void SendGlobalCommand(const std::string commandname,
                          const Json::Value& data);
 
-  void SetConfig(const std::string& url);
   void Teardown();
 
   bool opened() const { return con_state_ == con_opened;}

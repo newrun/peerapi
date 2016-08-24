@@ -40,13 +40,14 @@
 
 namespace pc {
 
-Signal::Signal() :
+Signal::Signal(const std::string url) :
       con_state_(con_closed),
       network_thread_(),
       reconn_attempts_(0xFFFFFFFF),
       reconn_made_(0),
       reconn_delay_(5000),
-      reconn_delay_max_(25000) {
+      reconn_delay_max_(25000),
+      url_(url) {
 
 #if _DEBUG || DEBUG
   client_.clear_access_channels(websocketpp::log::alevel::all);
@@ -55,6 +56,11 @@ Signal::Signal() :
   client_.clear_access_channels(websocketpp::log::elevel::all);
   client_.clear_error_channels(websocketpp::log::alevel::all);
 #endif
+
+  // Default settings
+  if (url_.empty()) {
+    url_ = "wss://signal.throughnet.com/hello";
+  }
 
   // Initialize ASIO
   client_.init_asio();
@@ -84,16 +90,6 @@ Signal::~Signal() {
 
   Teardown();
   LOGP_F( INFO ) << "Done";
-}
-
-
-void Signal::SetConfig(const std::string& url) {
-  url_ = url;
-
-  // Default settings
-  if (url_.empty()) {
-    url_ = "wss://signal.throughnet.com/hello";
-  }
 }
 
 void Signal::SignIn(const std::string& id, const std::string& password) {

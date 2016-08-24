@@ -34,11 +34,7 @@ PeerConnect::PeerConnect(const std::string setting) {
 
   // create signal client
   if (signal_ == nullptr) {
-    signal_ = std::make_shared<pc::Signal>();
-
-    if (signal_) {
-      signal_->SetConfig(setting_.signal_uri_);
-    }
+    signal_ = std::make_shared<pc::Signal>(setting_.signal_uri_);
   }
 
   LOGP_F( INFO ) << "Done";
