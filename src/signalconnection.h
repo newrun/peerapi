@@ -52,8 +52,8 @@ namespace pc {
 
 class SignalInterface {
 public:
-  virtual void SignIn(const std::string& id, const std::string& password) = 0;
-  virtual void SignOut() = 0;
+  virtual void Open(const std::string& id, const std::string& password) = 0;
+  virtual void Close() = 0;
 
   virtual void SendCommand(const std::string id,
                            const std::string commandname,
@@ -95,9 +95,9 @@ public:
   Signal(const string url);
   ~Signal();
 
-  void SignIn(const string& id, const string& password);
-  void SignOut();
-
+  void Open(const string& id, const string& password);
+  void Close();
+  void SyncClose();
 
   void SendCommand(const string channel,
                    const string commandname,
@@ -115,17 +115,15 @@ public:
 
 protected:
   void Connect();
-  void Close();
-  void SyncClose();
   asio::io_service& GetIoService();
 
 private:
-  void SendSignInCommand();
+  void SendOpenCommand();
   void OnCommandReceived(Json::Value& message);
 
   void RunLoop();
   void ConnectInternal();
-  void CloseInternal(websocketpp::close::status::value const& code, string const& reason);
+  void CloseInternal(websocketpp::close::status::value const& code, string const& desc);
   void TimeoutReconnect(websocketpp::lib::asio::error_code const& ec);
   unsigned NextDelay() const;
 
@@ -153,7 +151,7 @@ private:
   unsigned reconn_attempts_;
   unsigned reconn_made_;
 
-  // Signin
+  // Signal server
   string url_;
   string user_id_;
   string user_password_;

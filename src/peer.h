@@ -15,6 +15,7 @@
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/api/jsep.h"
 #include "webrtc/base/json.h"
+#include "common.h"
 
 namespace pc {
 
@@ -24,14 +25,12 @@ namespace pc {
 
 class PeerObserver {
 public:
-  virtual void SendCommand(const std::string& id, const std::string& command, const Json::Value& data) = 0;
-  virtual void Close(const std::string id) = 0;
-  virtual void OnConnected(const std::string id) = 0;
-  virtual void OnClosed(const std::string id) = 0;
-  virtual void OnMessage(const std::string& id, const char* buffer, const size_t size) = 0;
-  virtual void OnWritable(const std::string& id) = 0;
-  virtual void OnError( const std::string id, const std::string& reason ) = 0;
-
+  virtual void SendCommand(const std::string& channel, const std::string& command, const Json::Value& data) = 0;
+  virtual void ClosePeer(const std::string channel, const pc::CloseCode code, bool force_queuing = FORCE_QUEUING_OFF ) = 0;
+  virtual void OnPeerConnect(const std::string channel) = 0;
+  virtual void OnPeerClose(const std::string channel, const pc::CloseCode code) = 0;
+  virtual void OnPeerMessage(const std::string& channel, const char* buffer, const size_t size) = 0;
+  virtual void OnPeerWritable(const std::string& channel) = 0;
 };
 
 class PeerDataChannelObserver;
@@ -77,7 +76,7 @@ public:
   bool Send(const char* buffer, const size_t size);
   bool SyncSend(const char* buffer, const size_t size);
   bool IsWritable();
-  void Close();
+  void Close(const CloseCode code);
 
   //
   // PeerConnection
@@ -116,7 +115,6 @@ public:
   //
 
   void OnPeerOpened();
-  void OnPeerClosed();
   void OnPeerDisconnected();
   void OnPeerMessage(const webrtc::DataBuffer& buffer);
   void OnBufferedAmountChange(const uint64_t previous_amount);

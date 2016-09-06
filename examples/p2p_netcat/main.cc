@@ -27,9 +27,9 @@
 using namespace std;
 using namespace pc;
 
-bool parse_args(int argc, char* argv[], std::string& alias, std::string& connect_to, bool& server_mode);
+bool parse_args(int argc, char* argv[], string& local_channel, string& remote_channel, bool& server_mode);
 void usage(const char* prg);
-void read_stdin(PeerConnect* pc, std::string id);
+void read_stdin(PeerConnect* pc, std::string channel);
 bool write_stdout(const char* buf, int len);
 void set_mode(PeerConnect* pc);
 void ctrlc_handler(int s);
@@ -39,15 +39,15 @@ static PeerConnect *pc_;
 
 int main(int argc, char *argv[]) {
 
-  string connec_to;
-  string alias;
+  string local_channel;
+  string remote_channel;
   bool server_mode;
   
   //
   // Parse arguments
   //
 
-  if (!parse_args(argc, argv, alias, connec_to, server_mode)) {
+  if (!parse_args(argc, argv, local_channel, remote_channel, server_mode)) {
     usage(argv[0]);
     return 1;
   }
@@ -56,43 +56,42 @@ int main(int argc, char *argv[]) {
   // Set event handlers
   //
 
-  PeerConnect pc;
+  PeerConnect pc(local_channel);
+
   set_mode(&pc);
 
-  pc.On("signin", function_pc(PeerConnect* pc, string id) {
+  pc.On("open", function_pc( string peer ) {
     if (server_mode) {
-      std::cerr << "Listening " << id << std::endl;
+      std::cerr << "Listening " << peer << std::endl;
     }
     else {
-      std::cerr << "Connecting to " << connec_to << std::endl;
-      pc->Connect(connec_to);
+      std::cerr << "Connecting to " << remote_channel << std::endl;
+      pc.Connect(remote_channel);
     }
   });
 
-  pc.On("connect", function_pc(PeerConnect* pc, string id) {
+  pc.On("connect", function_pc( string peer ) {
     std::cerr << "Connected" << std::endl;
-    std::thread(read_stdin, pc, id).detach();
+    std::thread(read_stdin, &pc, peer).detach();
   });
 
-  pc.On("disconnect", function_pc(PeerConnect* pc, string id) {
-    if (server_mode)
-      std::cerr << "Disconnected" << std::endl;
-    else
-      pc->SignOut();
+  pc.On("close", function_pc( string peer, CloseCode code, string desc ) {
+
+    if ( peer == local_channel ) {
+      PeerConnect::Stop();
+    }
+    else {
+      pc.Close();
+    }
+
+    if ( !desc.empty() ) {
+      std::cerr << desc << std::endl;
+    }
   });
 
-  pc.On("signout", function_pc(PeerConnect* pc, string id) {
-    PeerConnect::Stop();
-  });
-
-  pc.On("error", function_pc(PeerConnect* pc, string id){
-    std::cerr << pc->GetErrorMessage() << std::endl;
-    PeerConnect::Stop();
-  });
-
-  pc.OnMessage(function_pc(PeerConnect* pc, string id, PeerConnect::Buffer& data) {
+  pc.On("message", function_pc(string peer, PeerConnect::Buffer& data) {
     if (!write_stdout(data.buf_, data.size_)) {
-      pc->Disconnect(id);
+      pc.Close(peer);
     }
   });
 
@@ -100,7 +99,7 @@ int main(int argc, char *argv[]) {
   // Sign in as anonymous user
   //
 
-  pc.SignIn(alias, "anonymous", "nopassword");
+  pc.Open();
 
   PeerConnect::Run();
   return 0;
@@ -120,7 +119,7 @@ int main(int argc, char *argv[]) {
 #define STDERR_FILENO 2
 #endif
 
-void read_stdin(PeerConnect* pc, std::string id)
+void read_stdin(PeerConnect* pc, std::string channel)
 {
   int nbytes;
   char buf[32*1024];
@@ -128,11 +127,11 @@ void read_stdin(PeerConnect* pc, std::string id)
   for (;;) {
     nbytes = read(STDIN_FILENO, buf, sizeof(buf));
     if (nbytes <= 0) {
-      pc->Disconnect(id);
+      pc->Close( channel );
       return;
     }
 
-    if (!pc->SyncSend(id, buf, nbytes)) {
+    if (!pc->Send(channel, buf, nbytes, WAITING_ON)) {
       return;
     }
   }
@@ -157,7 +156,7 @@ bool write_stdout(const char* buf, int len)
 
 void ctrlc_handler(int s) {
   std::cerr << "Terminating..." << std::endl;
-  pc_->SignOut();
+  pc_->Close();
 }
 
 void set_mode(PeerConnect* pc)
@@ -172,14 +171,15 @@ void set_mode(PeerConnect* pc)
 #endif
 }
 
-bool parse_args(int argc, char* argv[], std::string& alias, std::string& connect_to, bool& server_mode) {
+bool parse_args(int argc, char* argv[], string& local_channel, string& remote_channel, bool& server_mode) {
   if (argc == 2) {
-    connect_to = argv[1];
+    remote_channel = argv[1];
+    local_channel = PeerConnect::CreateRandomUuid();
     server_mode = false;
     return true;
   }
   else if (argc == 3 && std::string(argv[1]) == "-l") {
-    alias = argv[2];
+    local_channel = argv[2];
     server_mode = true;
     return true;
   }
@@ -187,13 +187,13 @@ bool parse_args(int argc, char* argv[], std::string& alias, std::string& connect
 }
 
 void usage(const char* prg) {
-  std::cerr << "P2P netcat version 0.1 (http://github.com/peerconnect/peerconnect)" << std::endl << std::endl;
+  std::cerr << "P2P netcat demo (http://github.com/peersio/peerconnect)" << std::endl << std::endl;
   std::cerr << "Usage: " << prg << " [-l] name" << std::endl << std::endl;
   std::cerr << "  Options:" << std::endl;
   std::cerr << "    -l      Listen mode, for inbound connections" << std::endl << std::endl;
 
   std::cerr << "Example: " << std::endl;
-  std::cerr << "  > " << prg << " -l random_id      : Listen randoom_id" << std::endl;
-  std::cerr << "  > " << prg << " random_id         : Connect to random_id" << std::endl;
+  std::cerr << "  > " << prg << " -l my_channel     : Listen my_channel" << std::endl;
+  std::cerr << "  > " << prg << " my_channel        : Connect to my_channel" << std::endl;
 }
 

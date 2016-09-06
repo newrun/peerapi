@@ -4,31 +4,6 @@
  *  Ryan Lee
  */
 
-/*
-  Reference: socket.io-client-cpp
-
-  Copyright (c) 2015, Melo Yao
-  All rights reserved.
-
-  Permission is hereby granted, free of charge, to any person obtaining a copy
-  of this software and associated documentation files (the "Software"), to deal
-  in the Software without restriction, including without limitation the rights
-  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-  copies of the Software, and to permit persons to whom the Software is
-  furnished to do so, subject to all conditions.
-
-  The above copyright notice and this permission notice shall be included in all
-  copies or substantial portions of the Software.
-
-  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-  SOFTWARE.
-*/
-
 #if defined(WEBRTC_WIN)
 #pragma warning(disable:4503)
 #endif
@@ -43,7 +18,7 @@ namespace pc {
 Signal::Signal(const string url) :
       con_state_(con_closed),
       network_thread_(),
-      reconn_attempts_(0xFFFFFFFF),
+      reconn_attempts_(3),
       reconn_made_(0),
       reconn_delay_(5000),
       reconn_delay_max_(25000),
@@ -59,7 +34,7 @@ Signal::Signal(const string url) :
 
   // Default settings
   if (url_.empty()) {
-    url_ = "wss://signal.throughnet.com/hello";
+    url_ = "wss://signal.peers.io/hello";
   }
 
   // Initialize ASIO
@@ -80,19 +55,11 @@ Signal::Signal(const string url) :
 }
 
 Signal::~Signal() {
-#if _DEBUG || DEBUG
-  client_.clear_access_channels(websocketpp::log::alevel::all);
-  client_.set_access_channels(websocketpp::log::alevel::fail);
-#else
-  client_.clear_access_channels(websocketpp::log::elevel::all);
-  client_.clear_access_channels(websocketpp::log::alevel::all);
-#endif
-
   Teardown();
   LOGP_F( INFO ) << "Done";
 }
 
-void Signal::SignIn(const string& id, const string& password) {
+void Signal::Open(const string& id, const string& password) {
   user_id_ = id;
   user_password_ = password;
   Connect();
@@ -100,10 +67,44 @@ void Signal::SignIn(const string& id, const string& password) {
   LOGP_F( INFO ) << "Done";
 }
 
-void Signal::SignOut() {
-  if (opened()) Close();
+void Signal::Close() {
+
+  if ( !opened() ) {
+    LOGP_F( WARNING ) << "It is not opened";
+    return;
+  }
+
+  con_state_ = con_closing;
+  client_.get_io_service().dispatch(websocketpp::lib::bind(&Signal::CloseInternal,
+                                    this,
+                                    websocketpp::close::status::normal,
+                                    "End by user"));
   LOGP_F( INFO ) << "Done";
 }
+
+
+void Signal::SyncClose()
+{
+  if ( !opened() ) {
+    LOGP_F( WARNING ) << "It is not opened";
+    return;
+  }
+
+  con_state_ = con_closing;
+  client_.get_io_service().dispatch(websocketpp::lib::bind(&Signal::CloseInternal,
+                                    this,
+                                    websocketpp::close::status::normal,
+                                    "End by user"));
+
+  if (network_thread_ && network_thread_->joinable() )
+  {
+    network_thread_->join();
+    network_thread_.reset();
+  }
+
+  LOGP_F( INFO ) << "Done";
+}
+
 
 void Signal::SendCommand(const string channel,
                          const string commandname,
@@ -148,8 +149,6 @@ void Signal::SendGlobalCommand(const string commandname,
   SendCommand("", commandname, data);
 }
 
-
-
 void Signal::Connect()
 {
   if (reconn_timer_)
@@ -185,35 +184,12 @@ void Signal::Connect()
 }
 
 
-void Signal::Close()
-{
-  con_state_ = con_closing;
-  client_.get_io_service().dispatch(websocketpp::lib::bind(&Signal::CloseInternal,
-                                    this,
-                                    websocketpp::close::status::normal,
-                                    "End by user"));
-  LOGP_F( INFO ) << "Done";
-}
-
-void Signal::SyncClose()
-{
-  con_state_ = con_closing;
-  client_.get_io_service().dispatch(websocketpp::lib::bind(&Signal::CloseInternal,
-                                    this,
-                                    websocketpp::close::status::normal,
-                                    "End by user"));
-  if (network_thread_)
-  {
-    network_thread_->join();
-    network_thread_.reset();
-  }
-  LOGP_F( INFO ) << "Done";
-}
-
 void Signal::Teardown()
 {
-  // TODO: Asyncronous close with PeerConnect::Stop()
-  SyncClose();
+  if ( network_thread_ && network_thread_->joinable() ) {
+    network_thread_->detach();
+    network_thread_.reset();
+  }
   LOGP_F( INFO ) << "Done";
 }
 
@@ -225,13 +201,13 @@ asio::io_service& Signal::GetIoService()
 
 
 
-void Signal::SendSignInCommand() {
+void Signal::SendOpenCommand() {
   Json::Value data;
 
   data["user_id"] = user_id_;
   data["user_password"] = user_password_;
 
-  SendGlobalCommand("signin", data);
+  SendGlobalCommand("open", data);
 }
 
 void Signal::OnCommandReceived(Json::Value& message) {
@@ -263,9 +239,9 @@ void Signal::ConnectInternal()
 
 
 
-void Signal::CloseInternal(websocketpp::close::status::value const& code, string const& reason)
+void Signal::CloseInternal(websocketpp::close::status::value const& code, string const& desc)
 {
-  LOGP_F(WARNING) << "Close by reason:" << reason;
+  LOGP_F(WARNING) << "Close by reason:" << desc;
 
   if (reconn_timer_)
   {
@@ -279,7 +255,7 @@ void Signal::CloseInternal(websocketpp::close::status::value const& code, string
   else
   {
     websocketpp::lib::error_code ec;
-    client_.close(con_hdl_, code, reason, ec);
+    client_.close(con_hdl_, code, desc, ec);
   }
 }
 
@@ -308,10 +284,86 @@ unsigned Signal::NextDelay() const
 }
 
 
+void Signal::OnOpen(websocketpp::connection_hdl con)
+{
+  LOGP_F(WARNING) << "Connected.";
+  con_state_ = con_opened;
+  con_hdl_ = con;
+  reconn_made_ = 0;
+
+  SendOpenCommand();
+}
+
+
+void Signal::OnClose(websocketpp::connection_hdl con)
+{
+  //
+  // This routine will be called if a connection disconnected.
+  // This routine will not be called when attempt to connection failed.
+  //
+
+  con_state_ = con_closed;
+  websocketpp::lib::error_code ec;
+  websocketpp::close::status::value code = websocketpp::close::status::normal;
+  client_type::connection_ptr conn_ptr = client_.get_con_from_hdl(con, ec);
+  if (ec) {
+    LOGP_F(LERROR) << "get conn failed" << ec;
+  }
+  else {
+    code = conn_ptr->get_local_close_code();
+  }
+
+  con_hdl_.reset();
+
+  if (code == websocketpp::close::status::normal)
+  {
+    // NOTHING
+  }
+  else
+  {
+    //
+    // TODO: Implement seamless signal reconnection. Don't close existing ice connection.
+    //  Reconstruction of (creating and joining) channel has to be implemented.
+    //
+
+    //if (reconn_made_<reconn_attempts_)
+    //{
+    //  LOGP_F(LS_WARNING) << "Reconnect for attempt:" << reconn_made_;
+    //  unsigned delay = this->NextDelay();
+    //  reconn_timer_.reset(new websocketpp::lib::asio::steady_timer(client_.get_io_service()));
+    //  websocketpp::lib::asio::error_code ec;
+    //  reconn_timer_->expires_from_now(websocketpp::lib::asio::milliseconds(delay), ec);
+    //  reconn_timer_->async_wait(websocketpp::lib::bind(&Signal::TimeoutReconnect, this, websocketpp::lib::placeholders::_1));
+    //  return;
+    //}
+
+    SignalOnClosed_(code);
+  }
+
+  LOGP_F( INFO ) << "Done";
+
+}
+
 void Signal::OnFail(websocketpp::connection_hdl con)
 {
+  //
+  // This routine will be called when attempt to connection failed.
+  // This routine will not be called if a connection abnormally disconnected.
+  //
+
+  websocketpp::lib::error_code ec;
+  websocketpp::close::status::value code = websocketpp::close::status::abnormal_close;
+  client_type::connection_ptr conn_ptr = client_.get_con_from_hdl(con, ec);
+  if (ec) {
+    LOGP_F(LERROR) << "get conn failed" << ec;
+  }
+  else {
+    code = conn_ptr->get_local_close_code();
+  }
+
   con_hdl_.reset();
   con_state_ = con_closed;
+
   LOGP_F(LERROR) << "Connection failed.";
 
   if (reconn_made_<reconn_attempts_)
@@ -323,57 +375,9 @@ void Signal::OnFail(websocketpp::connection_hdl con)
     reconn_timer_->expires_from_now(websocketpp::lib::asio::milliseconds(delay), ec);
     reconn_timer_->async_wait(websocketpp::lib::bind(&Signal::TimeoutReconnect, this, websocketpp::lib::placeholders::_1));
   }
-}
-
-void Signal::OnOpen(websocketpp::connection_hdl con)
-{
-  LOGP_F(WARNING) << "Connected.";
-  con_state_ = con_opened;
-  con_hdl_ = con;
-  reconn_made_ = 0;
-
-  SendSignInCommand();
-}
-
-
-void Signal::OnClose(websocketpp::connection_hdl con)
-{
-  con_state_ = con_closed;
-  websocketpp::lib::error_code ec;
-  websocketpp::close::status::value code = websocketpp::close::status::normal;
-  client_type::connection_ptr conn_ptr = client_.get_con_from_hdl(con, ec);
-  if (ec) {
-    LOGP_F(LERROR) << "OnClose get conn failed" << ec;
+  else {
+    SignalOnClosed_(code);
   }
-  else
-  {
-    code = conn_ptr->get_local_close_code();
-  }
-
-  con_hdl_.reset();
-
-  SignalOnClosed_(code);
-
-  if (code == websocketpp::close::status::normal)
-  {
-    // NOTHING
-  }
-  else
-  {
-    if (reconn_made_<reconn_attempts_)
-    {
-      LOGP_F(LS_WARNING) << "Reconnect for attempt:" << reconn_made_;
-      unsigned delay = this->NextDelay();
-      reconn_timer_.reset(new websocketpp::lib::asio::steady_timer(client_.get_io_service()));
-      websocketpp::lib::asio::error_code ec;
-      reconn_timer_->expires_from_now(websocketpp::lib::asio::milliseconds(delay), ec);
-      reconn_timer_->async_wait(websocketpp::lib::bind(&Signal::TimeoutReconnect, this, websocketpp::lib::placeholders::_1));
-      return;
-    }
-  }
-
-  LOGP_F( INFO ) << "Done";
-
 }
 
 

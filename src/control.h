@@ -46,28 +46,25 @@ public:
   void Send(const string to, const char* buffer, const size_t size);
   bool SyncSend(const string to, const char* buffer, const size_t size);
 
-  void SignIn(const string& user_id, const string& user_password, const string& open_id);
-  void SignOut();
-  void Connect(const string id);
-  void Close();
-  bool IsWritable(const string id);
+  void Open(const string& user_id, const string& user_password, const string& channel);
+  void Close(const CloseCode code, bool force_queueing = FORCE_QUEUING_OFF);
+  void Connect(const string channel);
+  bool IsWritable(const string channel);
 
   void OnCommandReceived(const Json::Value& message);
   void OnSignalCommandReceived(const Json::Value& message);
   void OnSignalConnectionClosed(websocketpp::close::status::value code);
-  void OnSignedOut(const string& id);
 
   //
   // PeerObserver implementation
   //
 
-  virtual void SendCommand(const string& id, const string& command, const Json::Value& data);
-  virtual void Close(const string id);
-  virtual void OnConnected(const string id);
-  virtual void OnClosed(const string id);
-  virtual void OnMessage(const string& id, const char* buffer, const size_t size);
-  virtual void OnWritable(const string& id);
-  virtual void OnError( const string id, const string& reason );
+  virtual void SendCommand(const string& channel, const string& command, const Json::Value& data);
+  virtual void ClosePeer( const string channel, const CloseCode code,  bool force_queueing = FORCE_QUEUING_OFF );
+  virtual void OnPeerConnect(const string channel);
+  virtual void OnPeerClose(const string channel, const CloseCode code);
+  virtual void OnPeerMessage(const string& channel, const char* buffer, const size_t size);
+  virtual void OnPeerWritable(const string& channel);
 
 
   // Register/Unregister observer
@@ -87,19 +84,17 @@ protected:
   void ReceiveOfferSdp(const string& peer_id, const Json::Value& data);
   void ReceiveAnswerSdp(const string& peer_id, const Json::Value& data);
 
-  void OnSignedIn(const Json::Value& data);
-  void OnChannelCreated(const Json::Value& data);
-  void OnChannelJoined(const Json::Value& data);
-  void OnChannelLeaved(const Json::Value& data);
-
-  void Close( const string id, const bool force_queuing);
-  void OnClosed(const string id, const bool force_queuing);
+  void OnOpen(const Json::Value& data);
+  void OnChannelCreate(const Json::Value& data);
+  void OnChannelJoin(const Json::Value& data);
+  void OnChannelLeave(const Json::Value& data);
+  void OnRemotePeerClose(const string& peer_id, const Json::Value& data);
 
 
-  // open_id_: other peers can find this peer by open_id_ and it is user_id or alias
+  // channel_: A name of local channel. Other peers can find this peer by channel_
   // user_id_: A user id to sign in signal server (could be 'anonymous' for guest user)
   // session_id_: A unique id for signal server connection
-  string open_id_;
+  string channel_;
   string user_id_;
   string session_id_;
 
@@ -114,16 +109,12 @@ protected:
 
 private:
 
-  const bool QUEUEING_ON  = true;
-  const bool QUEUEING_OFF = false;
-
-
   enum {
     MSG_COMMAND_RECEIVED,           // Command has been received from signal server
+    MSG_CLOSE,                      // Queue signout request
     MSG_CLOSE_PEER,                 // Close peer
-    MSG_ON_PEER_CLOSED,             // Peer has been closed
-    MSG_SIGNOUT,                    // Queue signout request
-    MSG_SIGNAL_SERVER_CLOSED        // Connection to signal server has been closed
+    MSG_ON_PEER_CLOSE,              // Peer has been closed
+    MSG_ON_SIGLAL_CONNECTION_CLOSE  // Connection to signal server has been closed
   };
 
   struct ControlMessageData : public rtc::MessageData {
@@ -139,7 +130,7 @@ private:
   };
 
   rtc::Thread* webrtc_thread_;
-  ControlObserver* observer_;
+  ControlObserver* pc_;
   std::shared_ptr<Control> ref_;
 };
 

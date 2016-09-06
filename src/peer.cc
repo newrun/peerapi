@@ -89,7 +89,7 @@ bool PeerControl::IsWritable() {
   return local_data_channel_->IsWritable();
 }
 
-void PeerControl::Close() {
+void PeerControl::Close(const CloseCode code) {
   LOGP_F_IF(state_ != pOpen, WARNING) << "Closing peer when it is not opened";
 
   if ( state_ == pClosing || state_ == pClosed ) {
@@ -102,12 +102,20 @@ void PeerControl::Close() {
   LOGP_F( INFO ) << "Close data-channel of remote_id_ " << remote_id_;
 
   if ( peer_connection_ ) {
-    peer_connection_->Close();
+
+    peer_connection_ = nullptr;
+
+    // As entering here, we can make sure that
+    //  - PeerDataChannelObserver::OnStateChange() had been called with kClosed
+    //  - PeerControl::OnIceConnectionChange() will be ignored,
+    //                 ether kIceConnectionClosed and kIceConnectionDisconnected.
+    //    That's because we didn't call peer_connection_->Close().
+  
   }
-  else {
-    LOGP_F( WARNING ) << "peer_connection_ is nullptr ";
-    state_ = pClosed;
-  }
+
+  state_ = pClosed;
+  control_->OnPeerClose(remote_id_, code);
+
 }
 
 
@@ -158,6 +166,12 @@ void PeerControl::OnSignalingChange(webrtc::PeerConnectionInterface::SignalingSt
 }
 
 void PeerControl::OnIceConnectionChange(webrtc::PeerConnectionInterface::IceConnectionState new_state) {
+
+  //
+  // Closing sequence
+  //  kIceConnectionDisconnected -> kIceConnectionClosed
+  //
+
   switch (new_state) {
   case webrtc::PeerConnectionInterface::IceConnectionState::kIceConnectionClosed:
     //
@@ -165,7 +179,7 @@ void PeerControl::OnIceConnectionChange(webrtc::PeerConnectionInterface::IceConn
     // Notify it to Control so the Control will remove peer in peers_
     //
     LOGP_F( INFO ) << "new_state is " << "kIceConnectionClosed";
-    OnPeerClosed();
+    OnPeerDisconnected();
     break;
 
   case webrtc::PeerConnectionInterface::IceConnectionState::kIceConnectionDisconnected:
@@ -218,6 +232,11 @@ void PeerControl::OnSuccess(webrtc::SessionDescriptionInterface* desc) {
 
   if (!desc->ToString(&sdp)) return;
 
+  if ( state_ != pConnecting ) {
+    LOGP_F( WARNING ) << "Invalid state";
+    return;
+  }
+
   // Set local description
   SetLocalDescription(desc->type(), sdp);
 
@@ -248,20 +267,11 @@ void PeerControl::OnPeerOpened() {
  
     // Fianlly, data-channel has been opened.
     state_ = pOpen;
-    control_->OnConnected(remote_id_);
-    control_->OnWritable(local_id_);
+    control_->OnPeerConnect(remote_id_);
+    control_->OnPeerWritable(local_id_);
   }
 
   LOGP_F( INFO ) << "Done";
-}
-
-void PeerControl::OnPeerClosed() {
-
-  ASSERT( state_ == pClosing );
-
-  state_ = pClosed;
-  control_->OnClosed(remote_id_);
-
 }
 
 void PeerControl::OnPeerDisconnected() {
@@ -275,13 +285,19 @@ void PeerControl::OnPeerDisconnected() {
     return;
   }
 
-  control_->Close( remote_id_ );
+  //
+  // As entering here, we can make sure that the remote peer has been
+  // disconnected abnormally, because previous state_ is not pClosing.
+  // It will be in state pClosing if a user calls Close() manually
+  //
+
+  control_->ClosePeer( remote_id_, CLOSE_GOING_AWAY );
 }
 
 
 void PeerControl::OnPeerMessage(const webrtc::DataBuffer& buffer) {
   string data;
-  control_->OnMessage(remote_id_, buffer.data.data<char>(), buffer.data.size());
+  control_->OnPeerMessage(remote_id_, buffer.data.data<char>(), buffer.data.size());
 }
 
 void PeerControl::OnBufferedAmountChange(const uint64_t previous_amount) {
@@ -289,7 +305,7 @@ void PeerControl::OnBufferedAmountChange(const uint64_t previous_amount) {
     LOGP_F( LERROR ) << "local_data_channel_ is not writable";
     return;
   }
-  control_->OnWritable( remote_id_ );
+  control_->OnPeerWritable( remote_id_ );
 }
 
 

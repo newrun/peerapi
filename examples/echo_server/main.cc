@@ -19,25 +19,25 @@ int main(int argc, char *argv[]) {
     usage(argv[0]);
     return 1;
   }
-  string name = argv[1];
+  string server = argv[1];
 
-  PeerConnect pc;
+  PeerConnect pc(server);
 
-  pc.On("connect", function_pc(PeerConnect* pc, string id) {
-    std::cout << "Peer " << id << " has been connected." << std::endl;
+  pc.On("connect", function_pc(string peer) {
+    std::cout << "Peer " << peer << " has been connected." << std::endl;
   });
 
-  pc.On("disconnect", function_pc(PeerConnect* pc, string id) {
-    std::cout << "Peer " << id << " has been disconnected." << std::endl;
+  pc.On("close", function_pc(string peer, CloseCode code, string desc) {
+    std::cout << "Peer " << peer << " has been closed." << std::endl;
   });
 
-  pc.OnMessage(function_pc(PeerConnect* pc, string id, PeerConnect::Buffer& data) {
+  pc.On("message", function_pc(string peer, PeerConnect::Buffer& data) {
     std::cout << "Message " << std::string(data.buf_, data.size_) << 
                  " has been received." << std::endl;
-    pc->Send(id, data.buf_, data.size_);
+    pc.Send(peer, data.buf_, data.size_);
   });
 
-  pc.SignIn(name);
+  pc.Open();
   PeerConnect::Run();
 
   return 0;

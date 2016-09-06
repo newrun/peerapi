@@ -1,8 +1,8 @@
 # PeerConnect
 
-A PeerConnect is a peer to peer socket library.
+A PeerConnect is a peer-to-peer library for network.
 
-- Network connection by random id or email address
+- Network connection by random id
 - No ip address and port number
 - Support NAT traversal and WebRTC
 
@@ -10,23 +10,23 @@ A PeerConnect is a peer to peer socket library.
 ### How to use
 Peer A (listen)
 ```
-PeerConnect pc;
-pc.OnMessage(function_pc(PeerConnect* pc, string id, PeerConnect::Buffer& data) {
+PeerConnect pc1("PEER_A");
+pc1.On("message", function_pc(string peer, PeerConnect::Buffer& data) {
   std::cout << "A message has been received." << std::endl;
 });
-pc.SignIn("PEER_A");
+pc1.Open();
  ```
 
 Peer B (connect)
 ```
-PeerConnect pc;
-pc.On("signin", function_pc(PeerConnect* pc, string id) {
-  pc->Connect("PEER_A");
+PeerConnect pc2("PEER_B");
+pc2.On("open", function_pc(string peer) {
+  pc2.>Connect("PEER_A");
 });
-pc.On("connect", function_pc(PeerConnect* pc, string id) {
-  pc->Send("PEER_A", "Hello");
+pc2.On("connect", function_pc(string peer) {
+  pc2.Send("PEER_A", "Hello");
 });
-pc.SignIn("PEER_B");
+pc2.Open();
 ```
 
 ### How it works

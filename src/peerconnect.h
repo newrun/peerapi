@@ -12,9 +12,8 @@
 #include <memory>
 #include <functional>
 
+#include "common.h"
 #include "controlobserver.h"
-
-#define function_pc [&]
 
 namespace pc {
 
@@ -52,31 +51,27 @@ public:
   static void Run();
   static void Stop();
 
-  void SignIn( const string alias = "", const string id = "", const string password = "" );
-  void SignOut();
-  void Connect( const string id );
-  void Disconnect( const string id );
-  void Send( const string& id, const char* buffer, const size_t size );
-  void Send( const string& id, const char* buffer );
-  void Send( const string& id, const string& message );
-  bool SyncSend( const string& id, const char* buffer, const size_t size );
-  bool SyncSend( const string& id, const char* buffer );
-  bool SyncSend( const string& id, const string& message );
-  string GetErrorMessage() { return error_reason_; }
+  void Open();
+  void Close( const string channel = "" );
+  void Connect( const string channel );
+  bool Send( const string& channel, const char* buffer, const size_t size, const bool wait = WAITING_OFF );
+  bool Send( const string& channel, const char* buffer, const bool wait = WAITING_OFF );
+  bool Send( const string& channel, const string& message, const bool wait = WAITING_OFF );
+  bool SetOptions( const string options );
 
-  static std::string CreateRandomUuid();
-
-  PeerConnect& On( string event_id, std::function<void( PeerConnect*, string )> );
-  PeerConnect& OnMessage( std::function<void( PeerConnect*, string, Buffer& )> );
-
+  PeerConnect& On( string event_id, std::function<void( string )> );
+  PeerConnect& On( string event_id, std::function<void( string, string )> );
+  PeerConnect& On( string event_id, std::function<void( string, pc::CloseCode, string )> );
+  PeerConnect& On( string event_id, std::function<void( string, Buffer& )> );
 
   //
   // Member functions
   //
 
-  explicit PeerConnect();
-  explicit PeerConnect( string options );
+  explicit PeerConnect( const string channel = "" );
   ~PeerConnect();
+
+  static std::string CreateRandomUuid();
 
 
 protected:
@@ -96,9 +91,11 @@ protected:
   template<typename ...A>
   void CallEventHandler( string msg_id, A&& ... args );
 
-  using EventHandler_1 = EventHandler_t<PeerConnect*>;
-  using EventHandler_2 = EventHandler_t<PeerConnect*, string>;
-  using EventHandler_3 = EventHandler_t<PeerConnect*, string, Data&>;
+  using EventHandler_1 = EventHandler_t<>;
+  using EventHandler_2 = EventHandler_t<string>;
+  using EventHandler_3 = EventHandler_t<string, Data&>;
+  using EventHandler_Close = EventHandler_t<string, pc::CloseCode, string>;
+  using EventHandler_Message = EventHandler_t<string, Buffer>;
   using Events = std::map<string, std::unique_ptr<Handler_t>>;
   using MessageHandler = std::function<void( PeerConnect*, string, Buffer& )>;
 
@@ -106,27 +103,22 @@ protected:
   // ControlObserver implementation
   //
 
-  void OnSignedIn( const string id );
-  void OnSignedOut( const string id );
-  void OnPeerConnected( const string id );
-  void OnPeerDisconnected( const string id );
-  void OnPeerMessage( const string id, const char* buffer, const size_t size );
-  void OnPeerWritable( const string id );
-  void OnError( const string id, const string& reason );
-
+  void OnOpen( const string channel );
+  void OnClose( const string channel, const pc::CloseCode code, const string desc = "" );
+  void OnConnect( const string channel );
+  void OnMessage( const string channel, const char* buffer, const size_t size );
+  void OnWritable( const string channel );
 
   bool ParseOptions( const string& options );
-  std::string tolower( const string& str );
 
-  bool signout_;
+  bool close_once_;
   Setting setting_;
   Events event_handler_;
-  MessageHandler message_handler_;
 
   std::shared_ptr<Control> control_;
   std::shared_ptr<Signal> signal_;
 
-  string error_reason_;
+  string channel_;
 };
 
 

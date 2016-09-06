@@ -22,30 +22,31 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  string name = argv[1];
+  string server = argv[1];
 
   PeerConnect pc;
 
-  pc.On("signin", function_pc(PeerConnect* pc, string id) {
-    pc->Connect(name);
+  pc.On("open", function_pc(string channel) {
+    pc.Connect(server);
   });
 
-  pc.On("connect", function_pc(PeerConnect* pc, string id) {
-    pc->Send(id, "Hello world");
-    std::cout << "Sent 'Hello world' message to " << id << "." << std::endl;
+  pc.On("connect", function_pc(string channel) {
+    pc.Send(channel, "Hello world");
+    std::cout << "Sent 'Hello world' message to " << channel << "." << std::endl;
   });
 
-  pc.On("disconnect", function_pc(PeerConnect* pc, string id) {
-    std::cout << "Peer " << id << " has been disconnected" << std::endl;
+  pc.On("close", function_pc(string channel, CloseCode code, string desc) {
+    std::cout << "Peer " << channel << " has been closed" << std::endl;
     PeerConnect::Stop();
   });
 
-  pc.OnMessage(function_pc(PeerConnect* pc, string id, PeerConnect::Buffer& data) {
+  pc.On("message", function_pc(string channel, PeerConnect::Buffer& data) {
     std::cout << "Message '" << std::string(data.buf_, data.size_) << 
                  "' has been received." << std::endl;
+    pc.Close();
   });
 
-  pc.SignIn();
+  pc.Open();
   PeerConnect::Run();
 
   return 0;
