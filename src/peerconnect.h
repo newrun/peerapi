@@ -27,8 +27,6 @@ public:
 
   using string  = std::string;
   using Data    = std::map<string, string>;
-  using Control = Control;
-  using Signal  = Signal;
 
   struct Setting {
     string signal_uri_;
@@ -95,7 +93,7 @@ protected:
   using EventHandler_2 = EventHandler_t<string>;
   using EventHandler_3 = EventHandler_t<string, Data&>;
   using EventHandler_Close = EventHandler_t<string, pc::CloseCode, string>;
-  using EventHandler_Message = EventHandler_t<string, Buffer>;
+  using EventHandler_Message = EventHandler_t<string, Buffer&>;
   using Events = std::map<string, std::unique_ptr<Handler_t>>;
   using MessageHandler = std::function<void( PeerConnect*, string, Buffer& )>;
 

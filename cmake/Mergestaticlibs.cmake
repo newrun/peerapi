@@ -1,13 +1,9 @@
-macro (MERGE_STATIC_LIBRARIES TARGET_LIB LIBRARIES LIBRARIES_DEBUG)
+macro (MERGE_STATIC_LIBRARIES TARGET_LIB LIBRARIES LIBRARIES_DEBUG OBJECTS OBJECTS_DEBUG)
 
   if("${CMAKE_CFG_INTDIR}" STREQUAL ".")
     set(multiconfig FALSE)
   else()
     set(multiconfig TRUE)
-  endif()
-
-  if ("${LIBRARIES_DEBUG}" STREQUAL "")
-    set(LIBRARIES_DEBUG ${LIBRARIES})
   endif()
 
 	if (WIN32)
@@ -20,13 +16,18 @@ macro (MERGE_STATIC_LIBRARIES TARGET_LIB LIBRARIES LIBRARIES_DEBUG)
 		set (LIBS \"${LIBS}\")
 		set (LIBS_DEBUG \"${LIBS_DEBUG}\")
 
+    string (REPLACE ";" "\" \"" OBJS "${OBJECTS}")
+		string (REPLACE ";" "\" \"" OBJS_DEBUG "${OBJECTS_DEBUG}")
+		set (OBJS \"${OBJS}\")
+		set (OBJS_DEBUG \"${OBJS_DEBUG}\")
+
     foreach(CONFIG_TYPE ${CMAKE_CONFIGURATION_TYPES})
       string(TOUPPER "${CONFIG_TYPE}" _CONFIG_TYPE)
       string(TOUPPER "STATIC_LIBRARY_FLAGS_${CONFIG_TYPE}" PROPNAME)
       if ("${_CONFIG_TYPE}" STREQUAL "DEBUG")
-  			set_property (TARGET ${TARGET_LIB} APPEND PROPERTY ${PROPNAME} "${LIBS_DEBUG}")
+  			set_property (TARGET ${TARGET_LIB} APPEND PROPERTY ${PROPNAME} "${LIBS_DEBUG} ${OBJS_DEBUG}")
       else()
-	  		set_property (TARGET ${TARGET_LIB} APPEND PROPERTY ${PROPNAME} "${LIBS}")
+	  		set_property (TARGET ${TARGET_LIB} APPEND PROPERTY ${PROPNAME} "${LIBS} ${OBJS}")
       endif()
     endforeach()
 
@@ -43,8 +44,10 @@ macro (MERGE_STATIC_LIBRARIES TARGET_LIB LIBRARIES LIBRARIES_DEBUG)
     string(TOUPPER "${CMAKE_BUILD_TYPE}" _CMAKE_BUILD_TYPE)
     if (_CMAKE_BUILD_TYPE STREQUAL "DEBUG")
       set(_LIBRARIES ${LIBRARIES_DEBUG})
+      set(_OBJECTS ${OBJECTS_DEBUG})
     else()
       set(_LIBRARIES ${LIBRARIES})
+      set(_OBJECTS ${OBJECTS})
     endif()
 
     add_custom_command(TARGET ${TARGET_LIB} POST_BUILD
@@ -52,7 +55,7 @@ macro (MERGE_STATIC_LIBRARIES TARGET_LIB LIBRARIES LIBRARIES_DEBUG)
                                 "${target_temp_file}"
                         COMMAND rm "${outfile}"
                         COMMAND /usr/bin/libtool -no_warning_for_no_symbols -static -o "${outfile}"
-                                ${_LIBRARIES} "${target_temp_file}"
+                                "${target_temp_file}" ${_LIBRARIES} ${_OBJECTS}
                         COMMAND rm "${target_temp_file}"
                         )
   elseif (UNIX)
@@ -65,18 +68,24 @@ macro (MERGE_STATIC_LIBRARIES TARGET_LIB LIBRARIES LIBRARIES_DEBUG)
     string(TOUPPER "${CMAKE_BUILD_TYPE}" _CMAKE_BUILD_TYPE)
     if (_CMAKE_BUILD_TYPE STREQUAL "DEBUG")
       set(_LIBRARIES ${LIBRARIES_DEBUG})
+      set(_OBJECTS ${OBJECTS_DEBUG})
     else()
       set(_LIBRARIES ${LIBRARIES})
+      set(_OBJECTS ${OBJECTS})
     endif()
 
     get_target_property (outfile ${TARGET_LIB} LOCATION)
     set(target_temp_file "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/lib${TARGET_LIB}_temp.a")
 
     set(MRI_SCRIPT "create ${outfile}\n")
-    set(MRI_SCRIPT "${MRI_SCRIPT}addlib ${target_temp_file}\n")
     foreach(lib ${_LIBRARIES})
       set(MRI_SCRIPT "${MRI_SCRIPT}addlib ${lib}\n")
     endforeach()
+    foreach(obj ${_OBJECTS})
+      set(MRI_SCRIPT "${MRI_SCRIPT}addmod ${obj}\n")
+    endforeach()
+    set(MRI_SCRIPT "${MRI_SCRIPT}addlib ${target_temp_file}\n")
+    set(MRI_SCRIPT "${MRI_SCRIPT}delete messagehandler.o\n")
     set(MRI_SCRIPT "${MRI_SCRIPT}save\n")
     set(MRI_SCRIPT "${MRI_SCRIPT}end\n")
 

@@ -7,6 +7,7 @@
 #include "control.h"
 #include "peer.h"
 
+#include "webrtc/base/location.h"
 #include "webrtc/base/json.h"
 #include "webrtc/base/signalthread.h"
 
@@ -23,6 +24,7 @@ namespace rtc {
   }
 
 } // namespace rtc
+
 #endif // WEBRTC_POSIX
 
 namespace pc {
@@ -133,7 +135,7 @@ void Control::Close(const CloseCode code, bool force_queuing) {
 
   if (force_queuing || webrtc_thread_ != rtc::Thread::Current()) {
     ControlMessageData *data = new ControlMessageData(code, ref_);
-    webrtc_thread_->Post(this, MSG_CLOSE, data);
+    webrtc_thread_->Post(RTC_FROM_HERE, this, MSG_CLOSE, data);
     LOGP_F( INFO ) << "Queued";
     return;
   }
@@ -177,7 +179,7 @@ void Control::ClosePeer( const string channel, const CloseCode code, bool force_
   if (force_queuing || webrtc_thread_ != rtc::Thread::Current()) {
     ControlMessageData *data = new ControlMessageData(channel, ref_);
     data->data_int32_ = code;
-    webrtc_thread_->Post(this, MSG_CLOSE_PEER, data);
+    webrtc_thread_->Post(RTC_FROM_HERE, this, MSG_CLOSE_PEER, data);
     return;
   }
 
@@ -251,7 +253,7 @@ void Control::OnPeerClose(const string channel, CloseCode code) {
     ControlMessageData *data = new ControlMessageData(channel, ref_);
 
     // Call Control::OnPeerDisconnected()
-    webrtc_thread_->Post(this, MSG_ON_PEER_CLOSE, data);
+    webrtc_thread_->Post(RTC_FROM_HERE, this, MSG_ON_PEER_CLOSE, data);
     LOGP_F( INFO ) << "Queued, channel is " << channel;
     return;
   }
@@ -390,7 +392,7 @@ void Control::OnCommandReceived(const Json::Value& message) {
 
 void Control::OnSignalCommandReceived(const Json::Value& message) {
   ControlMessageData *data = new ControlMessageData(message, ref_);
-  webrtc_thread_->Post(this, MSG_COMMAND_RECEIVED, data);
+  webrtc_thread_->Post(RTC_FROM_HERE, this, MSG_COMMAND_RECEIVED, data);
   LOGP_F( INFO ) << "Done";
 }
 
@@ -398,7 +400,7 @@ void Control::OnSignalConnectionClosed(websocketpp::close::status::value code) {
   LOGP_F(INFO) << "Enter, code is " << code;
   if (code != websocketpp::close::status::normal) {
     ControlMessageData *data = new ControlMessageData(CLOSE_SIGNAL_ERROR, ref_);
-    webrtc_thread_->Post(this, MSG_ON_SIGLAL_CONNECTION_CLOSE, data);
+    webrtc_thread_->Post(RTC_FROM_HERE, this, MSG_ON_SIGLAL_CONNECTION_CLOSE, data);
   }
   LOGP_F( INFO ) << "Done";
 }

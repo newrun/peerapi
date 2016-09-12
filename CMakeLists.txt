@@ -4,7 +4,12 @@
 #
 # ============================================================================
 
-cmake_minimum_required(VERSION 2.8)
+if (APPLE)
+  cmake_minimum_required(VERSION 3.2)
+else (APPLE)
+  cmake_minimum_required(VERSION 2.8)
+endif (APPLE)
+
 project(peerconnect)
 
 
@@ -133,6 +138,56 @@ if (PC_WITH_STATIC)
   target_compile_definitions(peerconnect PRIVATE ${_PC_INTERNAL_DEFINES})
   target_include_directories(peerconnect PRIVATE ${_PC_INTERNAL_INCLUDE_DIR} )
 
+  if (MSVC)
+    add_custom_command(TARGET peerconnect PRE_BUILD
+      COMMAND echo Building WebRTC library
+      COMMAND set PATH=${DEPOT_TOOLS_DIR};%PATH%
+      COMMAND cmd.exe /C gn gen ${WEBRTC_OUT_DIR} --args=\"is_debug=false is_component_build=false target_cpu=\\\"x86\\\"\"
+      COMMAND cmd.exe /C gn gen ${WEBRTC_OUT_DIR_DEBUG} --args=\"is_debug=true is_component_build=false target_cpu=\\\"x86\\\"\"
+      COMMAND ninja -C ${WEBRTC_OUT_DIR}
+      COMMAND ninja -C ${WEBRTC_OUT_DIR_DEBUG}
+      WORKING_DIRECTORY "${WEBRTC_ROOT_DIR}"
+      COMMENT "Building WebRTC library (Once)"
+    )
+  elseif (APPLE)
+    string(TOUPPER "${CMAKE_BUILD_TYPE}" _CMAKE_BUILD_TYPE)
+    if (_CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+      add_custom_command(TARGET peerconnect PRE_LINK
+        COMMAND ${CMAKE_COMMAND} -E env \"PATH=${DEPOT_TOOLS_DIR}:$ENV{PATH}\" gn gen ${WEBRTC_OUT_DIR_DEBUG} --args=\"is_debug=true is_component_build=false\"
+        COMMAND ${CMAKE_COMMAND} -E env \"PATH=${DEPOT_TOOLS_DIR}:$ENV{PATH}\" ninja -C ${WEBRTC_OUT_DIR_DEBUG}
+        WORKING_DIRECTORY "${WEBRTC_ROOT_DIR}"
+        COMMENT "Building WebRTC library (Once)"
+        )
+    else()
+      add_custom_command(TARGET peerconnect PRE_LINK
+        COMMAND ${CMAKE_COMMAND} -E env \"PATH=${DEPOT_TOOLS_DIR}:$ENV{PATH}\" gn gen ${WEBRTC_OUT_DIR} --args=\"is_debug=false is_component_build=false\"
+        COMMAND ${CMAKE_COMMAND} -E env \"PATH=${DEPOT_TOOLS_DIR}:$ENV{PATH}\" ninja -C ${WEBRTC_OUT_DIR}
+        WORKING_DIRECTORY "${WEBRTC_ROOT_DIR}"
+        COMMENT "Building WebRTC library (Once)"
+        )
+    endif()
+  elseif(UNIX)
+    string(TOUPPER "${CMAKE_BUILD_TYPE}" _CMAKE_BUILD_TYPE)
+    if (_CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+      add_custom_command(TARGET peerconnect PRE_LINK
+        COMMAND export \"PATH=${DEPOT_TOOLS_DIR}:$ENV{PATH}\"
+        COMMAND gn gen ${WEBRTC_OUT_DIR_DEBUG} --args=\"is_debug=true is_component_build=false\"
+        COMMAND ninja -C ${WEBRTC_OUT_DIR_DEBUG}
+        WORKING_DIRECTORY "${WEBRTC_ROOT_DIR}"
+        COMMENT "Building WebRTC library (Once)"
+        )
+    else()
+      add_custom_command(TARGET peerconnect PRE_LINK
+        COMMAND export \"PATH=${DEPOT_TOOLS_DIR}:$ENV{PATH}\"
+        COMMAND gn gen ${WEBRTC_OUT_DIR} --args=\"is_debug=false is_component_build=false\"
+        COMMAND ninja -C ${WEBRTC_OUT_DIR}
+        WORKING_DIRECTORY "${WEBRTC_ROOT_DIR}"
+        COMMENT "Building WebRTC library (Once)"
+        )
+    endif()
+
+  endif(MSVC)
+
   if (WIN32)
     # Windows uses the same .lib ending for static libraries and shared
     # library linker files, so rename the static library.
@@ -142,16 +197,26 @@ if (PC_WITH_STATIC)
   if (MSVC)
     MERGE_STATIC_LIBRARIES( peerconnect
                             "${WEBRTC_LIBRARIES_INTERNAL_RELEASE}"
-                            "${WEBRTC_LIBRARIES_INTERNAL_DEBUG}")
+                            "${WEBRTC_LIBRARIES_INTERNAL_DEBUG}"
+                            "${WEBRTC_OBJECTS_INTERNAL_RELEASE}"
+                            "${WEBRTC_OBJECTS_INTERNAL_DEBUG}"
+                            )
   elseif (APPLE)
     MERGE_STATIC_LIBRARIES(peerconnect
                            "${WEBRTC_LIBRARIES_INTERNAL_RELEASE}"
-                           "${WEBRTC_LIBRARIES_INTERNAL_DEBUG}")
+                           "${WEBRTC_LIBRARIES_INTERNAL_DEBUG}"
+                           "${WEBRTC_OBJECTS_INTERNAL_RELEASE}"
+                           "${WEBRTC_OBJECTS_INTERNAL_DEBUG}"
+                           )
   elseif (UNIX)
     MERGE_STATIC_LIBRARIES(peerconnect
                            "${WEBRTC_LIBRARIES_INTERNAL_RELEASE}"
-                           "${WEBRTC_LIBRARIES_INTERNAL_DEBUG}")
+                           "${WEBRTC_LIBRARIES_INTERNAL_DEBUG}"
+                           "${WEBRTC_OBJECTS_INTERNAL_RELEASE}"
+                           "${WEBRTC_OBJECTS_INTERNAL_DEBUG}"
+                           )
   endif(MSVC)
+
 endif()
 
 if (PC_WITH_SHARED)
@@ -159,9 +224,8 @@ if (PC_WITH_SHARED)
 
   target_compile_definitions(peerconnect_shared PRIVATE ${_PC_INTERNAL_DEFINES})
   target_include_directories(peerconnect_shared PRIVATE ${_PC_INTERNAL_INCLUDE_DIR} )
-
   set_target_properties(peerconnect_shared PROPERTIES OUTPUT_NAME peerconnect)
-  target_link_libraries(peerconnect_shared ${_PC_INTERNAL_LIBRARIES})
+  target_link_libraries(peerconnect_shared ${_PC_INTERNAL_LIBRARIES} ${WEBRTC_OBJECTS_INTERNAL})
 
   if (WIN32)
 #  # Compile as DLL (export function declarations)
