@@ -1,13 +1,11 @@
-# PeerConnect
-
-Peer-to-peer C++ library for network
+## Peer-to-peer C++ library for network
 
 - Network connection **over** firewall or NAT
 - No ip address and port number required
 - Support NAT traversal and [WebRTC](https://webrtc.org)
 
 
-## Quick start
+# Quick start
 Peer A (listen)
 ```c++
 PeerConnect pc("PEER_A");
@@ -34,18 +32,18 @@ pc.On("connect", function_pc(string peer) {
 pc.Open();
 ```
 
-## Example
+# Example
 
 See the **examples** directory.
 
 * [p2p netcat](https://github.com/peersio/peerconnect/tree/master/examples/p2p_netcat): netcat on peer-to-peer way
 
 
-## Build
+# Build
 
 The currently supported platforms are Windows, Mac OS X and Linux.
 
-### Before You Start
+## Before You Start
 
 First, be sure to get WebRTC source and install prerequisite software.
 
@@ -68,7 +66,7 @@ $ gclient sync
 Note that you don't have to follow 'Generating Ninja project files' or 'Compiling' step. PeerConnect will do that internally.
 
 
-### Build PeerConnect
+## Build PeerConnect
 
 Generate the build files
 ```
