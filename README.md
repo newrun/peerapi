@@ -1,4 +1,6 @@
-## Peer-to-peer C++ library for network
+# PeerConnect
+
+A peer-to-peer C++ library for network.
 
 - Network connection **over** firewall or NAT
 - No ip address and port number required

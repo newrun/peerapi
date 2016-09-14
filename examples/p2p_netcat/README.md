@@ -1,51 +1,46 @@
-# P2P NetCat
+# Netcat over p2p network
+This is PeerConnect library example.
 
-Peer to peer netcat connection
-
-- Netcat over p2p connection
-- Connection through different internal network
-- No port forwarding required
-
-### Usage
+# Usage
 ```
-Usage: p2pnc [-l] name
+Usage: pnc [-l] name
 
   Options:
     -l      Listen mode, for inbound connections
 
 Example:
-  > p2pnc -l random_id      : Listen randoom_id
-  > p2pnc random_id         : Connect to random_id
+  > pnc -l random_id      : Listen randoom_id
+  > pnc random_id         : Connect to random_id
 ```
 
-### Example
+# Example
 
-#### 1. Anonymous chat
+### Anonymous chat
 
 Peer A (listen)
 ```
-> p2pnc -l peer_a
+$ p2pnc -l peer_a
 Listening peer_a
 Connected
 Hello~
 ```
 Peer B (connect)
 ```
-> p2pnc peer_a
+$ p2pnc peer_a
 Connecting to peer_a
 Connected
 Hello~
 ```
 
-#### 2. Send and receive file
+### Send and receive file
 
-Quickly send and receive file between your devices without cloud server.
+Quickly send and receive file between your devices directly.
 
 Peer A (listen and receive)
 ```
-> p2pnc -l peer_a > dst_file.txt
+$ pnc -l peer_a > peer.txt
 ```
 Peer B (connect and send)
 ```
-> p2pnc peer_a < src_file.txt
+$ pnc peer_a < peer.txt
 ```
