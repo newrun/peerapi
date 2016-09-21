@@ -12,7 +12,7 @@ Peer A (listen)
 ```c++
 PeerConnect pc("PEER_A");
 
-pc.On("message", function_pc(string peer, PeerConnect::Buffer& data) {
+pc.On("message", function_pc(string peer, char* data, size_t size) {
   std::cout << "A message has been received." << std::endl;
 });
 
