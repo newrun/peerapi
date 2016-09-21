@@ -47,7 +47,12 @@ See the **examples** directory.
 
 # Build
 
-The currently supported platforms are Windows, Mac OS X and Linux.
+The currently supported `build` platforms are Windows, Mac OS X and Linux.
+* Visual Studio 2015 Update 2 or later on Windows. (Windows 7 x64 or later)
+* Linux 64bit - Most luck on Ubuntu 14.04
+* Xcode 5 or later on OS X - Latest Xcode is recommended
+* CMake 2.8 or later (On OS X, CMake 3.2 or later)
+
 
 ## Before You Start
 
