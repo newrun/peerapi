@@ -143,10 +143,6 @@ bool PeerConnect::Send( const string& peer, const char* data, const size_t size,
   }
 }
 
-bool PeerConnect::Send( const string& peer, const char* message, const bool wait  ) {
-  return Send( peer, message, strlen( message ), wait );
-}
-
 bool PeerConnect::Send( const string& peer, const string& message, const bool wait  ) {
   return Send( peer, message.c_str(), message.size(), wait );
 }
