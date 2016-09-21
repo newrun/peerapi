@@ -13,7 +13,7 @@
 
 namespace pc {
 
-PeerConnect::PeerConnect( const string channel ) {
+PeerConnect::PeerConnect( const string peer ) {
   // Log level
 #if DEBUG || _DEBUG
   rtc::LogMessage::LogToDebug( rtc::LS_NONE );
@@ -23,16 +23,16 @@ PeerConnect::PeerConnect( const string channel ) {
   pc::LogMessage::LogToDebug( pc::LS_NONE );
 #endif
 
-  string local_channel;
+  string local_peer;
 
-  if ( channel.empty() ) {
-    local_channel = rtc::CreateRandomUuid();
+  if ( peer.empty() ) {
+    local_peer = rtc::CreateRandomUuid();
   }
   else {
-    local_channel = channel;
+    local_peer = peer;
   }
 
-  channel_ = local_channel;
+  peer_ = local_peer;
   close_once_ = false;
 
   LOGP_F( INFO ) << "Done";
@@ -94,26 +94,26 @@ void PeerConnect::Open() {
   // Connect to signal server
   //
 
-  control_->Open( setting_.signal_id_, setting_.signal_password_, channel_ );
+  control_->Open( setting_.signal_id_, setting_.signal_password_, peer_ );
   LOGP_F( INFO ) << "Done";
   return;
 }
 
-void PeerConnect::Close( const string channel ) {
+void PeerConnect::Close( const string peer ) {
 
-  if ( channel.empty() || channel == channel_ ) {
+  if ( peer.empty() || peer == peer_ ) {
     control_->Close( CLOSE_NORMAL, FORCE_QUEUING_ON );
     signal_->SyncClose();
   }
   else {
-    control_->ClosePeer( channel, CLOSE_NORMAL, FORCE_QUEUING_ON );
+    control_->ClosePeer( peer, CLOSE_NORMAL, FORCE_QUEUING_ON );
   }
   LOGP_F( INFO ) << "Done";
 }
 
-void PeerConnect::Connect( const string channel ) {
-  control_->Connect( channel );
-  LOGP_F( INFO ) << "Done, channel is " << channel;
+void PeerConnect::Connect( const string peer ) {
+  control_->Connect( peer );
+  LOGP_F( INFO ) << "Done, peer is " << peer;
   return;
 }
 
@@ -121,7 +121,7 @@ void PeerConnect::Connect( const string channel ) {
 // Send message to destination peer session id
 //
 
-bool PeerConnect::Send( const string& channel, const char* buffer, const size_t size, const bool wait ) {
+bool PeerConnect::Send( const string& peer, const char* data, const size_t size, const bool wait ) {
   if ( wait ) {
 
     //
@@ -129,10 +129,10 @@ bool PeerConnect::Send( const string& channel, const char* buffer, const size_t 
     // and a timeout is 60*1000 ms by default.
     //
 
-    return control_->SyncSend( channel, buffer, size );
+    return control_->SyncSend( peer, data, size );
   }
   else {
-    control_->Send( channel, buffer, size );
+    control_->Send( peer, data, size );
 
     //
     // Asyncronous send always returns true and
@@ -143,12 +143,12 @@ bool PeerConnect::Send( const string& channel, const char* buffer, const size_t 
   }
 }
 
-bool PeerConnect::Send( const string& channel, const char* message, const bool wait  ) {
-  return Send( channel, message, strlen( message ), wait );
+bool PeerConnect::Send( const string& peer, const char* message, const bool wait  ) {
+  return Send( peer, message, strlen( message ), wait );
 }
 
-bool PeerConnect::Send( const string& channel, const string& message, const bool wait  ) {
-  return Send( channel, message.c_str(), message.size(), wait );
+bool PeerConnect::Send( const string& peer, const string& message, const bool wait  ) {
+  return Send( peer, message.c_str(), message.size(), wait );
 }
 
 bool PeerConnect::SetOptions( const string options ) {
@@ -207,7 +207,7 @@ PeerConnect& PeerConnect::On( string event_id, std::function<void( string, pc::C
   return *this;
 }
 
-PeerConnect& PeerConnect::On( string event_id, std::function<void( string, Buffer& )> handler ) {
+PeerConnect& PeerConnect::On( string event_id, std::function<void( string, char*, std::size_t )> handler ) {
   if ( event_id.empty() ) return *this;
 
   if ( event_id == "message" ) {
@@ -227,29 +227,29 @@ PeerConnect& PeerConnect::On( string event_id, std::function<void( string, Buffe
 // Signal event handler
 //
 
-void PeerConnect::OnOpen( const string channel ) {
+void PeerConnect::OnOpen( const string peer ) {
   close_once_ = false;
 
   if ( event_handler_.find( "open" ) != event_handler_.end() ) {
-    CallEventHandler( "open", channel );
+    CallEventHandler( "open", peer );
   }
 
   LOGP_F( INFO ) << "Done";
 }
 
-void PeerConnect::OnClose( const string channel, const CloseCode code, const string desc ) {
+void PeerConnect::OnClose( const string peer, const CloseCode code, const string desc ) {
 
-  // This instance of PeerConnect and local channel is going to be closed
-  if ( channel == channel_ ) {
+  // This instance of PeerConnect and local peer is going to be closed
+  if ( peer == peer_ ) {
     if ( close_once_ ) {
-      LOGP_F( WARNING ) << "close_ is false, channel is " << channel;
+      LOGP_F( WARNING ) << "close_ is false, peer is " << peer;
       return;
     }
 
     close_once_ = true;
 
     if ( event_handler_.find( "close" ) != event_handler_.end() ) {
-      CallEventHandler( "close", channel, code, desc );
+      CallEventHandler( "close", peer, code, desc );
     }
 
     control_->UnregisterObserver();
@@ -258,35 +258,33 @@ void PeerConnect::OnClose( const string channel, const CloseCode code, const str
   // Remote peer has been closed
   else {
     if ( event_handler_.find( "close" ) != event_handler_.end() ) {
-      CallEventHandler( "close", channel, code, desc );
+      CallEventHandler( "close", peer, code, desc );
     }
   }
 
-  LOGP_F( INFO ) << "Done, channel is " << channel;
+  LOGP_F( INFO ) << "Done, peer is " << peer;
 }
 
-void PeerConnect::OnConnect( const string channel ) {
+void PeerConnect::OnConnect( const string peer ) {
   if ( event_handler_.find( "connect" ) != event_handler_.end() ) {
-    CallEventHandler( "connect", channel );
+    CallEventHandler( "connect", peer );
   }
 
-  LOGP_F( INFO ) << "Done, channel is " << channel;
+  LOGP_F( INFO ) << "Done, peer is " << peer;
 }
 
-void PeerConnect::OnMessage( const string channel, const char* buffer, const size_t size ) {
-  Buffer buf( buffer, size );
-
+void PeerConnect::OnMessage( const string peer, const char* data, const size_t size ) {
   if ( event_handler_.find( "message" ) != event_handler_.end() ) {
-    CallEventHandler( "message", channel, buf );
+    CallEventHandler( "message", peer, data, size );
   }
 }
 
-void PeerConnect::OnWritable( const string channel ) {
+void PeerConnect::OnWritable( const string peer ) {
   if ( event_handler_.find( "writable" ) != event_handler_.end() ) {
-    CallEventHandler( "writable", channel );
+    CallEventHandler( "writable", peer );
   }
 
-  LOGP_F( INFO ) << "Done, channel is " << channel;
+  LOGP_F( INFO ) << "Done, peer is " << peer;
 }
 
 

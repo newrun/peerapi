@@ -58,8 +58,8 @@ void test_normal() {
     }
   });
 
-  pc1.On("message", function_pc( string peer, PeerConnect::Buffer& data ) {
-    assert(std::string(data.buf_, data.size_) == "Ping");
+  pc1.On("message", function_pc( string peer, char* data, size_t size ) {
+    assert(std::string(data, size) == "Ping");
     assert(peer == client);
     std::cout << "pc1: a message has been received" << std::endl;
     pc1.Send(client, "Pong");
@@ -90,8 +90,8 @@ void test_normal() {
     }
   });
 
-  pc2.On("message", function_pc( string peer, PeerConnect::Buffer& data ) {
-    assert(std::string(data.buf_, data.size_) == "Pong");
+  pc2.On("message", function_pc( string peer, char* data, size_t size ) {
+    assert(std::string(data, size) == "Pong");
     assert(peer == server);
     std::cout << "pc2 has received message" << std::endl;
     pc2.Close(server);
@@ -137,8 +137,8 @@ void test_writable() {
     std::cout << "pc1: writable" << std::endl;
   });
 
-  pc1.On("message", function_pc( string peer, PeerConnect::Buffer& data ) {
-    assert(std::string(data.buf_, data.size_) == "Ping");
+  pc1.On("message", function_pc( string peer, char* data, size_t size ) {
+    assert(std::string(data, size) == "Ping");
     assert(peer == client);
     std::cout << "pc1: a message has been received" << std::endl;
     pc1.Send(client, "Pong");
@@ -174,8 +174,8 @@ void test_writable() {
     pc2.Send(server, "Ping");
   });
 
-  pc2.On("message", function_pc( string peer, PeerConnect::Buffer& data ) {
-    assert(std::string(data.buf_, data.size_) == "Pong");
+  pc2.On("message", function_pc( string peer, char* data, size_t size ) {
+    assert(std::string(data, size) == "Pong");
     assert(peer == server);
     std::cout << "pc2 has received message" << std::endl;
     pc2.Close(server);

@@ -13,11 +13,11 @@ namespace pc {
 
 class ControlObserver {
 public:
-  virtual void OnOpen(const std::string channel) = 0;
-  virtual void OnClose(const std::string channel, const pc::CloseCode code, const std::string desc = "") = 0;
-  virtual void OnConnect(const std::string channel) = 0;
-  virtual void OnMessage(const std::string channel, const char* buffer, const size_t size) = 0;
-  virtual void OnWritable(const std::string channel) = 0;
+  virtual void OnOpen(const std::string peer) = 0;
+  virtual void OnClose(const std::string peer, const pc::CloseCode code, const std::string desc = "") = 0;
+  virtual void OnConnect(const std::string peer) = 0;
+  virtual void OnMessage(const std::string peer, const char* data, const size_t size) = 0;
+  virtual void OnWritable(const std::string peer) = 0;
 };
 
 } // namespace pc

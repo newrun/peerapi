@@ -24,8 +24,8 @@ enum CloseCode {
 };
 
 
-const bool WAITING_OFF = false;
-const bool WAITING_ON = true;
+const bool SYNC_OFF = false;
+const bool SYNC_ON = true;
 
 const bool FORCE_QUEUING_OFF = false;
 const bool FORCE_QUEUING_ON = true;

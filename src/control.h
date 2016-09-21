@@ -43,13 +43,13 @@ public:
   // Negotiation and send data
   //
 
-  void Send(const string to, const char* buffer, const size_t size);
-  bool SyncSend(const string to, const char* buffer, const size_t size);
+  void Send(const string to, const char* data, const size_t size);
+  bool SyncSend(const string to, const char* data, const size_t size);
 
-  void Open(const string& user_id, const string& user_password, const string& channel);
+  void Open(const string& user_id, const string& user_password, const string& peer);
   void Close(const CloseCode code, bool force_queueing = FORCE_QUEUING_OFF);
-  void Connect(const string channel);
-  bool IsWritable(const string channel);
+  void Connect(const string peer);
+  bool IsWritable(const string peer);
 
   void OnCommandReceived(const Json::Value& message);
   void OnSignalCommandReceived(const Json::Value& message);
@@ -59,12 +59,12 @@ public:
   // PeerObserver implementation
   //
 
-  virtual void SendCommand(const string& channel, const string& command, const Json::Value& data);
-  virtual void ClosePeer( const string channel, const CloseCode code,  bool force_queueing = FORCE_QUEUING_OFF );
-  virtual void OnPeerConnect(const string channel);
-  virtual void OnPeerClose(const string channel, const CloseCode code);
-  virtual void OnPeerMessage(const string& channel, const char* buffer, const size_t size);
-  virtual void OnPeerWritable(const string& channel);
+  virtual void SendCommand(const string& peer, const string& command, const Json::Value& data);
+  virtual void ClosePeer( const string peer, const CloseCode code,  bool force_queueing = FORCE_QUEUING_OFF );
+  virtual void OnPeerConnect(const string peer);
+  virtual void OnPeerClose(const string peer, const CloseCode code);
+  virtual void OnPeerMessage(const string& peer, const char* data, const size_t size);
+  virtual void OnPeerWritable(const string& peer);
 
 
   // Register/Unregister observer
@@ -91,10 +91,10 @@ protected:
   void OnRemotePeerClose(const string& peer_id, const Json::Value& data);
 
 
-  // channel_: A name of local channel. Other peers can find this peer by channel_
+  // peer_name_: A name of local peer. Other peers can find this peer by peer_
   // user_id_: A user id to sign in signal server (could be 'anonymous' for guest user)
   // session_id_: A unique id for signal server connection
-  string channel_;
+  string peer_name_;
   string user_id_;
   string session_id_;
 

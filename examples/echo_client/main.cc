@@ -26,22 +26,22 @@ int main(int argc, char *argv[]) {
 
   PeerConnect pc;
 
-  pc.On("open", function_pc(string channel) {
+  pc.On("open", function_pc(string peer) {
     pc.Connect(server);
   });
 
-  pc.On("connect", function_pc(string channel) {
-    pc.Send(channel, "Hello world");
-    std::cout << "Sent 'Hello world' message to " << channel << "." << std::endl;
+  pc.On("connect", function_pc(string peer) {
+    pc.Send(peer, "Hello world");
+    std::cout << "Sent 'Hello world' message to " << peer << "." << std::endl;
   });
 
-  pc.On("close", function_pc(string channel, CloseCode code, string desc) {
-    std::cout << "Peer " << channel << " has been closed" << std::endl;
+  pc.On("close", function_pc(string peer, CloseCode code, string desc) {
+    std::cout << "Peer " << peer << " has been closed" << std::endl;
     PeerConnect::Stop();
   });
 
-  pc.On("message", function_pc(string channel, PeerConnect::Buffer& data) {
-    std::cout << "Message '" << std::string(data.buf_, data.size_) << 
+  pc.On("message", function_pc(string peer, char* data, size_t size) {
+    std::cout << "Message '" << std::string(data, size) << 
                  "' has been received." << std::endl;
     pc.Close();
   });
@@ -56,5 +56,5 @@ void usage(const char* prg) {
   std::cerr << std::endl;
   std::cerr << "Usage: " << prg << " name" << std::endl << std::endl;
   std::cerr << "Example: " << std::endl << std::endl;
-  std::cerr << "   > " << prg << " myrandom" << std::endl;
+  std::cerr << "   > " << prg << " peername" << std::endl;
 }

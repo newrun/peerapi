@@ -25,12 +25,12 @@ namespace pc {
 
 class PeerObserver {
 public:
-  virtual void SendCommand(const std::string& channel, const std::string& command, const Json::Value& data) = 0;
-  virtual void ClosePeer(const std::string channel, const pc::CloseCode code, bool force_queuing = FORCE_QUEUING_OFF ) = 0;
-  virtual void OnPeerConnect(const std::string channel) = 0;
-  virtual void OnPeerClose(const std::string channel, const pc::CloseCode code) = 0;
-  virtual void OnPeerMessage(const std::string& channel, const char* buffer, const size_t size) = 0;
-  virtual void OnPeerWritable(const std::string& channel) = 0;
+  virtual void SendCommand(const std::string& peer, const std::string& command, const Json::Value& data) = 0;
+  virtual void ClosePeer(const std::string peer, const pc::CloseCode code, bool force_queuing = FORCE_QUEUING_OFF ) = 0;
+  virtual void OnPeerConnect(const std::string peer) = 0;
+  virtual void OnPeerClose(const std::string peer, const pc::CloseCode code) = 0;
+  virtual void OnPeerMessage(const std::string& peer, const char* buffer, const size_t size) = 0;
+  virtual void OnPeerWritable(const std::string& peer) = 0;
 };
 
 class PeerDataChannelObserver;

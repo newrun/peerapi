@@ -34,14 +34,6 @@ public:
     string signal_password_;
   };
 
-  class Buffer {
-  public:
-    Buffer() : buf_( nullptr ), size_( 0 ) {};
-    Buffer( const char* buf, const size_t size ) : buf_( buf ), size_( size ) {}
-    const char* buf_;
-    const size_t size_;
-  };
-
   //
   // APIs
   //
@@ -50,23 +42,23 @@ public:
   static void Stop();
 
   void Open();
-  void Close( const string channel = "" );
-  void Connect( const string channel );
-  bool Send( const string& channel, const char* buffer, const size_t size, const bool wait = WAITING_OFF );
-  bool Send( const string& channel, const char* buffer, const bool wait = WAITING_OFF );
-  bool Send( const string& channel, const string& message, const bool wait = WAITING_OFF );
+  void Close( const string peer = "" );
+  void Connect( const string peer );
+  bool Send( const string& peer, const char* data, const std::size_t size, const bool wait = SYNC_OFF );
+  bool Send( const string& peer, const char* data, const bool wait = SYNC_OFF );
+  bool Send( const string& peer, const string& message, const bool wait = SYNC_OFF );
   bool SetOptions( const string options );
 
   PeerConnect& On( string event_id, std::function<void( string )> );
   PeerConnect& On( string event_id, std::function<void( string, string )> );
   PeerConnect& On( string event_id, std::function<void( string, pc::CloseCode, string )> );
-  PeerConnect& On( string event_id, std::function<void( string, Buffer& )> );
+  PeerConnect& On( string event_id, std::function<void( string, char*, std::size_t )> );
 
   //
   // Member functions
   //
 
-  explicit PeerConnect( const string channel = "" );
+  explicit PeerConnect( const string peer = "" );
   ~PeerConnect();
 
   static std::string CreateRandomUuid();
@@ -93,19 +85,18 @@ protected:
   using EventHandler_2 = EventHandler_t<string>;
   using EventHandler_3 = EventHandler_t<string, Data&>;
   using EventHandler_Close = EventHandler_t<string, pc::CloseCode, string>;
-  using EventHandler_Message = EventHandler_t<string, Buffer&>;
+  using EventHandler_Message = EventHandler_t<string, char*, std::size_t>;
   using Events = std::map<string, std::unique_ptr<Handler_t>>;
-  using MessageHandler = std::function<void( PeerConnect*, string, Buffer& )>;
 
   //
   // ControlObserver implementation
   //
 
-  void OnOpen( const string channel );
-  void OnClose( const string channel, const pc::CloseCode code, const string desc = "" );
-  void OnConnect( const string channel );
-  void OnMessage( const string channel, const char* buffer, const size_t size );
-  void OnWritable( const string channel );
+  void OnOpen( const string peer );
+  void OnClose( const string peer, const pc::CloseCode code, const string desc = "" );
+  void OnConnect( const string peer );
+  void OnMessage( const string peer, const char* data, const size_t size );
+  void OnWritable( const string peer );
 
   bool ParseOptions( const string& options );
 
@@ -116,7 +107,7 @@ protected:
   std::shared_ptr<Control> control_;
   std::shared_ptr<Signal> signal_;
 
-  string channel_;
+  string peer_;
 };
 
 

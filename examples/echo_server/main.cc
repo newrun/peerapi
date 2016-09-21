@@ -31,10 +31,10 @@ int main(int argc, char *argv[]) {
     std::cout << "Peer " << peer << " has been closed." << std::endl;
   });
 
-  pc.On("message", function_pc(string peer, PeerConnect::Buffer& data) {
-    std::cout << "Message " << std::string(data.buf_, data.size_) << 
+  pc.On("message", function_pc(string peer, char* data, size_t size) {
+    std::cout << "Message " << std::string(data, size) << 
                  " has been received." << std::endl;
-    pc.Send(peer, data.buf_, data.size_);
+    pc.Send(peer,data, size);
   });
 
   pc.Open();
@@ -47,5 +47,5 @@ void usage(const char* prg) {
   std::cerr << std::endl;
   std::cerr << "Usage: " << prg << " name" << std::endl << std::endl;
   std::cerr << "Example: " << std::endl << std::endl;
-  std::cerr << "   > " << prg << " myrandom" << std::endl;
+  std::cerr << "   > " << prg << " peername" << std::endl;
 }
