@@ -46,7 +46,7 @@ public:
   void Connect( const string peer );
   bool Send( const string& peer, const char* data, const std::size_t size, const bool wait = SYNC_OFF );
   bool Send( const string& peer, const char* data, const bool wait = SYNC_OFF );
-  bool Send( const string& peer, const string& message, const bool wait = SYNC_OFF );
+  bool Send( const string& peer, const string& data, const bool wait = SYNC_OFF );
   bool SetOptions( const string options );
 
   PeerConnect& On( string event_id, std::function<void( string )> );
