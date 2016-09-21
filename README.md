@@ -34,6 +34,10 @@ pc.On("connect", function_pc(string peer) {
 pc.Open();
 ```
 
+# API
+
+See the [API.md](API.md) document.
+
 # Example
 
 See the **examples** directory.
@@ -47,14 +51,14 @@ The currently supported platforms are Windows, Mac OS X and Linux.
 
 ## Before You Start
 
-First, be sure to get WebRTC source and install prerequisite software.
+First, be sure to install prerequisite software and get the WebRTC source.
 
 In the [WebRTC development](https://webrtc.org/native-code/development/) instruction
 
 * Follow 'Before You Start' step
 * Follow 'Getting the code' step
 
-Currently PeerConnect supports branch-heads/54 so run
+Currently PeerConnect supports WebRTC branch-heads/54 so run
 
 ```
 $ git checkout -b peers54 refs/remotes/branch-heads/54
