@@ -25,7 +25,7 @@
 #endif
 
 using namespace std;
-using namespace pc;
+
 
 bool parse_args(int argc, char* argv[], string& local_peer, string& remote_peer, bool& server_mode);
 void usage(const char* prg);

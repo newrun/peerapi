@@ -15,6 +15,10 @@
 #include "common.h"
 #include "controlobserver.h"
 
+#ifndef USE_PEERCONNECT_STRICT_NAMESPACE
+using namespace pc;
+#endif // USE_PEERCONNECT_STRICT_NAMESPACE
+
 namespace pc {
 
 class Control;
