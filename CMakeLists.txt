@@ -144,8 +144,8 @@ if (PC_WITH_STATIC)
       COMMAND set PATH=${DEPOT_TOOLS_DIR};%PATH%
       COMMAND cmd.exe /C gn gen ${WEBRTC_OUT_DIR} --args=\"is_debug=false is_component_build=false target_cpu=\\\"x86\\\"\"
       COMMAND cmd.exe /C gn gen ${WEBRTC_OUT_DIR_DEBUG} --args=\"is_debug=true is_component_build=false target_cpu=\\\"x86\\\"\"
-      COMMAND ninja -C ${WEBRTC_OUT_DIR}
-      COMMAND ninja -C ${WEBRTC_OUT_DIR_DEBUG}
+      COMMAND ninja -C ${WEBRTC_OUT_DIR} peerconnection_client
+      COMMAND ninja -C ${WEBRTC_OUT_DIR_DEBUG} peerconnection_client
       WORKING_DIRECTORY "${WEBRTC_ROOT_DIR}"
       COMMENT "Building WebRTC library (Once)"
     )
@@ -154,14 +154,14 @@ if (PC_WITH_STATIC)
     if (_CMAKE_BUILD_TYPE STREQUAL "DEBUG")
       add_custom_command(TARGET peerconnect PRE_LINK
         COMMAND ${CMAKE_COMMAND} -E env \"PATH=${DEPOT_TOOLS_DIR}:$ENV{PATH}\" gn gen ${WEBRTC_OUT_DIR_DEBUG} --args=\"is_debug=true is_component_build=false\"
-        COMMAND ${CMAKE_COMMAND} -E env \"PATH=${DEPOT_TOOLS_DIR}:$ENV{PATH}\" ninja -C ${WEBRTC_OUT_DIR_DEBUG}
+        COMMAND ${CMAKE_COMMAND} -E env \"PATH=${DEPOT_TOOLS_DIR}:$ENV{PATH}\" ninja -C ${WEBRTC_OUT_DIR_DEBUG} peerconnection_unittests
         WORKING_DIRECTORY "${WEBRTC_ROOT_DIR}"
         COMMENT "Building WebRTC library (Once)"
         )
     else()
       add_custom_command(TARGET peerconnect PRE_LINK
         COMMAND ${CMAKE_COMMAND} -E env \"PATH=${DEPOT_TOOLS_DIR}:$ENV{PATH}\" gn gen ${WEBRTC_OUT_DIR} --args=\"is_debug=false is_component_build=false\"
-        COMMAND ${CMAKE_COMMAND} -E env \"PATH=${DEPOT_TOOLS_DIR}:$ENV{PATH}\" ninja -C ${WEBRTC_OUT_DIR}
+        COMMAND ${CMAKE_COMMAND} -E env \"PATH=${DEPOT_TOOLS_DIR}:$ENV{PATH}\" ninja -C ${WEBRTC_OUT_DIR} peerconnection_unittests
         WORKING_DIRECTORY "${WEBRTC_ROOT_DIR}"
         COMMENT "Building WebRTC library (Once)"
         )
@@ -172,7 +172,7 @@ if (PC_WITH_STATIC)
       add_custom_command(TARGET peerconnect PRE_LINK
         COMMAND export \"PATH=${DEPOT_TOOLS_DIR}:$ENV{PATH}\"
         COMMAND gn gen ${WEBRTC_OUT_DIR_DEBUG} --args=\"is_debug=true is_component_build=false\"
-        COMMAND ninja -C ${WEBRTC_OUT_DIR_DEBUG}
+        COMMAND ninja -C ${WEBRTC_OUT_DIR_DEBUG} peerconnection_client
         WORKING_DIRECTORY "${WEBRTC_ROOT_DIR}"
         COMMENT "Building WebRTC library (Once)"
         )
@@ -180,7 +180,7 @@ if (PC_WITH_STATIC)
       add_custom_command(TARGET peerconnect PRE_LINK
         COMMAND export \"PATH=${DEPOT_TOOLS_DIR}:$ENV{PATH}\"
         COMMAND gn gen ${WEBRTC_OUT_DIR} --args=\"is_debug=false is_component_build=false\"
-        COMMAND ninja -C ${WEBRTC_OUT_DIR}
+        COMMAND ninja -C ${WEBRTC_OUT_DIR} peerconnection_client
         WORKING_DIRECTORY "${WEBRTC_ROOT_DIR}"
         COMMENT "Building WebRTC library (Once)"
         )
