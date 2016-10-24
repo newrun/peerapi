@@ -28,19 +28,14 @@ set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "${PACKAGE} ${PACKAGE_VERSION}")
 
 option(PC_WITH_STATIC "Build the static version of the library" ON)
 option(PC_WITH_SHARED "Build the shared version of the library" ON)
+option(PC_BUILD_EXAMPLE "Build the example application" ON)
+option(PC_BUILD_TEST "Build test application" ON)
 
 if (NOT (PC_WITH_STATIC OR PC_WITH_SHARED))
 	message(FATAL_ERROR "Makes no sense to compile with neither static nor shared libraries.")
 endif()
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-
-# ============================================================================
-# The output directory.
-# ============================================================================
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
 
 message(STATUS "CMAKE_TOOLCHAIN_FILE='${CMAKE_TOOLCHAIN_FILE}'")
 
@@ -245,7 +240,7 @@ endif()
 # Variables for parent project including peerconnect using add_subdirectory()
 # ============================================================================
 
-set(PEERCONNECT_INCLUDE_DIRECTORY ${PC_INCLUDE_DIRECTORY} 
+set(PEERCONNECT_INCLUDE_DIR ${PC_INCLUDE_DIRECTORY} 
                                  CACHE STRING "PeerConnect include directories")
 if (PC_WITH_STATIC)
   set(PEERCONNECT_LIBRARIES_STATIC peerconnect ${WEBRTC_LIBRARIES_EXTERNAL}
@@ -261,38 +256,41 @@ endif()
 # Test
 # ============================================================================
 
-add_executable(test_main src/test/test_main.cc)
-add_dependencies(test_main peerconnect)
+if (PC_BUILD_TEST)
+  add_executable(test_main src/test/test_main.cc)
+  add_dependencies(test_main peerconnect)
 
-target_include_directories(test_main PRIVATE ${PEERCONNECT_INCLUDE_DIRECTORY})
-target_link_libraries(test_main ${PEERCONNECT_LIBRARIES_STATIC})
-set_target_properties (test_main PROPERTIES FOLDER test)
+  target_include_directories(test_main PRIVATE ${PEERCONNECT_INCLUDE_DIR})
+  target_link_libraries(test_main ${PEERCONNECT_LIBRARIES_STATIC})
+  set_target_properties (test_main PROPERTIES FOLDER test)
 
-add_test(test_main test_main)
-
+  add_test(test_main test_main)
+endif(PC_BUILD_TEST)
 
 # ============================================================================
 # Example
 # ============================================================================
 
-# echo server
-add_executable(echo_server examples/echo_server/main.cc)
-add_dependencies(echo_server peerconnect)
-target_include_directories(echo_server PRIVATE ${PEERCONNECT_INCLUDE_DIRECTORY})
-target_link_libraries(echo_server ${PEERCONNECT_LIBRARIES_STATIC})
-set_target_properties (echo_server PROPERTIES FOLDER examples)
+if (PC_BUILD_EXAMPLE)
+  # echo server
+  add_executable(echo_server examples/echo_server/main.cc)
+  add_dependencies(echo_server peerconnect)
+  target_include_directories(echo_server PRIVATE ${PEERCONNECT_INCLUDE_DIR})
+  target_link_libraries(echo_server ${PEERCONNECT_LIBRARIES_STATIC})
+  set_target_properties (echo_server PROPERTIES FOLDER examples)
 
-# echo client
-add_executable(echo_client examples/echo_client/main.cc)
-add_dependencies(echo_client peerconnect)
-target_include_directories(echo_client PRIVATE ${PEERCONNECT_INCLUDE_DIRECTORY})
-target_link_libraries(echo_client ${PEERCONNECT_LIBRARIES_STATIC})
-set_target_properties (echo_client PROPERTIES FOLDER examples)
+  # echo client
+  add_executable(echo_client examples/echo_client/main.cc)
+  add_dependencies(echo_client peerconnect)
+  target_include_directories(echo_client PRIVATE ${PEERCONNECT_INCLUDE_DIR})
+  target_link_libraries(echo_client ${PEERCONNECT_LIBRARIES_STATIC})
+  set_target_properties (echo_client PROPERTIES FOLDER examples)
 
-# p2p netcat
-add_executable(p2p_netcat examples/p2p_netcat/main.cc)
-add_dependencies(p2p_netcat peerconnect)
-target_include_directories(p2p_netcat PRIVATE ${PEERCONNECT_INCLUDE_DIRECTORY})
-target_link_libraries(p2p_netcat ${PEERCONNECT_LIBRARIES_STATIC})
-set_target_properties (p2p_netcat PROPERTIES FOLDER examples)
-set_target_properties (p2p_netcat PROPERTIES OUTPUT_NAME pnc)
+  # p2p netcat
+  add_executable(p2p_netcat examples/p2p_netcat/main.cc)
+  add_dependencies(p2p_netcat peerconnect)
+  target_include_directories(p2p_netcat PRIVATE ${PEERCONNECT_INCLUDE_DIR})
+  target_link_libraries(p2p_netcat ${PEERCONNECT_LIBRARIES_STATIC})
+  set_target_properties (p2p_netcat PROPERTIES FOLDER examples)
+  set_target_properties (p2p_netcat PROPERTIES OUTPUT_NAME pnc)
+endif (PC_BUILD_EXAMPLE)
