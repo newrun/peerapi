@@ -2522,6 +2522,10 @@ asio/reference/ssl__context_base/options.html
 asio/reference/ssl__context_base/password_purpose.html
 asio/reference/ssl__context_base/single_dh_use.html
 asio/reference/ssl__context_base/_context_base.html
+asio/reference/ssl__error__get_stream_category.html
+asio/reference/ssl__error__make_error_code.html
+asio/reference/ssl__error__stream_category.html
+asio/reference/ssl__error__stream_errors.html
 asio/reference/ssl__rfc2818_verification.html
 asio/reference/ssl__rfc2818_verification/operator_lp__rp_.html
 asio/reference/ssl__rfc2818_verification/result_type.html
