@@ -355,13 +355,17 @@ protected:
     template <typename ErrorCodeType>
     lib::error_code translate_ec(ErrorCodeType ec) {
         if (ec.category() == lib::asio::error::get_ssl_category()) {
+#ifdef SSL_R_SHORT_READ
             if (ERR_GET_REASON(ec.value()) == SSL_R_SHORT_READ) {
                 return make_error_code(transport::error::tls_short_read);
             } else {
+#endif
                 // We know it is a TLS related error, but otherwise don't know
                 // more. Pass through as TLS generic.
                 return make_error_code(transport::error::tls_error);
+ #ifdef SSL_R_SHORT_READ
             }
+#endif
         } else {
             // We don't know any more information about this error so pass
             // through
