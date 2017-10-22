@@ -32,3 +32,6 @@ build
 
 # OS
 .DS_Store
+
+# Visual Studo Code
+.vscode
