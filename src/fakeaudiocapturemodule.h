@@ -17,10 +17,11 @@
 // Note P postfix of a function indicates that it should only be called by the
 // processing thread.
 
-#ifndef WEBRTC_API_TEST_FAKEAUDIOCAPTUREMODULE_H_
-#define WEBRTC_API_TEST_FAKEAUDIOCAPTUREMODULE_H_
+#ifndef _PEERCONNECT_PC_TEST_FAKEAUDIOCAPTUREMODULE_H_
+#define _PEERCONNECT_PC_TEST_FAKEAUDIOCAPTUREMODULE_H_
 
 #include <memory>
+
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/messagehandler.h"
@@ -172,12 +173,22 @@ class FakeAudioCaptureModule
   int32_t ResetAudioDevice() override;
   int32_t SetLoudspeakerStatus(bool enable) override;
   int32_t GetLoudspeakerStatus(bool* enabled) const override;
-  virtual bool BuiltInAECIsAvailable() const override { return false; }
-  virtual int32_t EnableBuiltInAEC(bool enable) override { return -1; }
-  virtual bool BuiltInAGCIsAvailable() const override { return false; }
-  virtual int32_t EnableBuiltInAGC(bool enable) override { return -1; }
-  virtual bool BuiltInNSIsAvailable() const override { return false; }
-  virtual int32_t EnableBuiltInNS(bool enable) override { return -1; }
+  bool BuiltInAECIsAvailable() const override { return false; }
+  int32_t EnableBuiltInAEC(bool enable) override { return -1; }
+  bool BuiltInAGCIsAvailable() const override { return false; }
+  int32_t EnableBuiltInAGC(bool enable) override { return -1; }
+  bool BuiltInNSIsAvailable() const override { return false; }
+  int32_t EnableBuiltInNS(bool enable) override { return -1; }
+#if defined(WEBRTC_IOS)
+  int GetPlayoutAudioParameters(
+      webrtc::AudioParameters* params) const override {
+    return -1;
+  }
+  int GetRecordAudioParameters(webrtc::AudioParameters* params) const override {
+    return -1;
+  }
+#endif  // WEBRTC_IOS
+
   // End of functions inherited from webrtc::AudioDeviceModule.
 
   // The following function is inherited from rtc::MessageHandler.
@@ -225,7 +236,7 @@ class FakeAudioCaptureModule
 
   // The time in milliseconds when Process() was last called or 0 if no call
   // has been made.
-  uint32_t last_process_time_ms_;
+  int64_t last_process_time_ms_;
 
   // Callback for playout and recording.
   webrtc::AudioTransport* audio_callback_;
@@ -245,7 +256,7 @@ class FakeAudioCaptureModule
   // wall clock time the next frame should be generated and received. started_
   // ensures that next_frame_time_ can be initialized properly on first call.
   bool started_;
-  uint32_t next_frame_time_;
+  int64_t next_frame_time_;
 
   std::unique_ptr<rtc::Thread> process_thread_;
 
@@ -267,4 +278,4 @@ class FakeAudioCaptureModule
   rtc::CriticalSection crit_callback_;
 };
 
-#endif  // WEBRTC_API_TEST_FAKEAUDIOCAPTUREMODULE_H_
+#endif  // _PEERCONNECT_PC_TEST_FAKEAUDIOCAPTUREMODULE_H_

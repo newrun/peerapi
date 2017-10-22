@@ -119,7 +119,7 @@ CriticalSection g_log_crit;
 // The list of logging streams currently configured.
 // Note: we explicitly do not clean this up, because of the uncertain ordering
 // of destructors at program exit.  Let the person who sets the stream trigger
-// cleanup by setting to NULL, or let it leak (safe at program exit).
+// cleanup by setting to null, or let it leak (safe at program exit).
 LogMessage::StreamList LogMessage::streams_ GUARDED_BY(g_log_crit);
 
 // Boolean options default to false (0)
@@ -133,7 +133,9 @@ LogMessage::LogMessage(const char* file,
                        const char* module)
     : severity_(sev), tag_(kLibjingle) {
   if (timestamp_) {
-    int64_t time = TimeSince(LogStartTime());
+    // Use SystemTimeMillis so that even if tests use fake clocks, the timestamp
+    // in log messages represents the real system time.
+    int64_t time = TimeDiff(SystemTimeMillis(), LogStartTime());
     // Also ensure WallClockStartTime is initialized, so that it matches
     // LogStartTime.
     WallClockStartTime();
@@ -147,7 +149,7 @@ LogMessage::LogMessage(const char* file,
     print_stream_ << "[" << std::dec << id << "] ";
   }
 
-  if (file != NULL)
+  if (file != nullptr)
     print_stream_ << "(" << FilenameFromPath(file)  << ":" << line << "): ";
 
   if (err_ctx != ERRCTX_NONE) {
@@ -157,7 +159,7 @@ LogMessage::LogMessage(const char* file,
       case ERRCTX_ERRNO:
         tmp << " " << strerror(err);
         break;
-#if WEBRTC_WIN
+#ifdef WEBRTC_WIN
       case ERRCTX_HRESULT: {
         char msgbuf[256];
         DWORD flags = FORMAT_MESSAGE_FROM_SYSTEM;
@@ -165,9 +167,8 @@ LogMessage::LogMessage(const char* file,
         if (hmod)
           flags |= FORMAT_MESSAGE_FROM_HMODULE;
         if (DWORD len = FormatMessageA(
-            flags, hmod, err,
-            MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-            msgbuf, sizeof(msgbuf) / sizeof(msgbuf[0]), NULL)) {
+                flags, hmod, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                msgbuf, sizeof(msgbuf) / sizeof(msgbuf[0]), nullptr)) {
           while ((len > 0) &&
               isspace(static_cast<unsigned char>(msgbuf[len-1]))) {
             msgbuf[--len] = 0;
@@ -179,9 +180,8 @@ LogMessage::LogMessage(const char* file,
 #endif  // WEBRTC_WIN
 #if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
       case ERRCTX_OSSTATUS: {
-        // PeerConnect don't need this.
-        // std::string desc(DescriptionFromOSStatus(err));
-        // tmp << " " << (desc.empty() ? "Unknown error" : desc.c_str());
+//        std::string desc(DescriptionFromOSStatus(err));
+//        tmp << " " << (desc.empty() ? "Unknown error" : desc.c_str());
         break;
       }
 #endif  // WEBRTC_MAC && !defined(WEBRTC_IOS)
@@ -196,7 +196,12 @@ LogMessage::LogMessage(const char* file,
                        int line,
                        LoggingSeverity sev,
                        const std::string& tag)
-    : LogMessage(file, line, sev, ERRCTX_NONE, 0 /* err */, NULL /* module */) {
+    : LogMessage(file,
+                 line,
+                 sev,
+                 ERRCTX_NONE,
+                 0 /* err */,
+                 nullptr /* module */) {
   tag_ = tag;
   print_stream_ << tag << ": ";
 }
@@ -220,12 +225,12 @@ LogMessage::~LogMessage() {
 }
 
 int64_t LogMessage::LogStartTime() {
-  static const int64_t g_start = TimeMillis();
+  static const int64_t g_start = SystemTimeMillis();
   return g_start;
 }
 
 uint32_t LogMessage::WallClockStartTime() {
-  static const uint32_t g_start_wallclock = time(NULL);
+  static const uint32_t g_start_wallclock = time(nullptr);
   return g_start_wallclock;
 }
 
@@ -357,7 +362,7 @@ void LogMessage::OutputToDebug(const std::string& str,
                                               "logToStdErr",
                                               kCFStringEncodingUTF8);
   CFStringRef domain = CFBundleGetIdentifier(CFBundleGetMainBundle());
-  if (key != NULL && domain != NULL) {
+  if (key != nullptr && domain != nullptr) {
     Boolean exists_and_is_valid;
     Boolean should_log =
         CFPreferencesGetAppBooleanValue(key, domain, &exists_and_is_valid);
@@ -365,7 +370,7 @@ void LogMessage::OutputToDebug(const std::string& str,
     // stderr.
     log_to_stderr = exists_and_is_valid && should_log;
   }
-  if (key != NULL) {
+  if (key != nullptr) {
     CFRelease(key);
   }
 #endif
@@ -446,15 +451,15 @@ void LogMessage::OutputToDebug(const std::string& str,
 void LogMultiline(LoggingSeverity level, const char* label, bool input,
                   const void* data, size_t len, bool hex_mode,
                   LogMultilineState* state) {
-  if (!LOGP_CHECK_LEVEL_V(level))
+  if (!LOG_CHECK_LEVEL_V(level))
     return;
 
   const char * direction = (input ? " << " : " >> ");
 
-  // NULL data means to flush our count of unprintable characters.
+  // null data means to flush our count of unprintable characters.
   if (!data) {
     if (state && state->unprintable_count_[input]) {
-      LOGP_V(level) << label << direction << "## "
+      LOG_V(level) << label << direction << "## "
                    << state->unprintable_count_[input]
                    << " consecutive unprintable ##";
       state->unprintable_count_[input] = 0;
@@ -480,7 +485,7 @@ void LogMultiline(LoggingSeverity level, const char* label, bool input,
       }
       asc_line[sizeof(asc_line)-1] = 0;
       hex_line[sizeof(hex_line)-1] = 0;
-      LOGP_V(level) << label << direction
+      LOG_V(level) << label << direction
                    << asc_line << " " << hex_line << " ";
       udata += line_len;
       len -= line_len;
@@ -534,7 +539,7 @@ void LogMultiline(LoggingSeverity level, const char* label, bool input,
     // Print out the current line, but prefix with a count of prior unprintable
     // characters.
     if (consecutive_unprintable) {
-      LOGP_V(level) << label << direction << "## " << consecutive_unprintable
+      LOG_V(level) << label << direction << "## " << consecutive_unprintable
                   << " consecutive unprintable ##";
       consecutive_unprintable = 0;
     }
@@ -549,9 +554,9 @@ void LogMultiline(LoggingSeverity level, const char* label, bool input,
       pos_private = substr.find("Passwd");
     }
     if (pos_private == std::string::npos) {
-      LOGP_V(level) << label << direction << substr;
+      LOG_V(level) << label << direction << substr;
     } else {
-      LOGP_V(level) << label << direction << "## omitted for privacy ##";
+      LOG_V(level) << label << direction << "## omitted for privacy ##";
     }
   }
 

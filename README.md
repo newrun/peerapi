@@ -63,10 +63,10 @@ In the [WebRTC development](https://webrtc.org/native-code/development/) instruc
 * Follow 'Before You Start' step
 * Follow 'Getting the code' step
 
-Currently PeerConnect supports WebRTC branch-heads/55 so run
+Currently PeerConnect supports WebRTC branch-heads/60 so run
 
 ```
-$ git checkout -b peers55 refs/remotes/branch-heads/55
+$ git checkout -b peers60 refs/remotes/branch-heads/60
 ```
 
 To update build toolchain and dependencies of WebRTC, run:

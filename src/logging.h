@@ -14,7 +14,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-//   LOGP(...) an ostream target that can be used to send formatted
+//   LOG(...) an ostream target that can be used to send formatted
 // output to a variety of logging targets, such as debugger console, stderr,
 // or any LogSink.
 //   The severity level passed as the first argument to the LOGging
@@ -24,30 +24,30 @@
 //   There are several variations on the LOG macro which facilitate logging
 // of common error conditions, detailed below.
 
-// LOGP(sev) logs the given stream at severity "sev", which must be a
+// LOG(sev) logs the given stream at severity "sev", which must be a
 //     compile-time constant of the LoggingSeverity type, without the namespace
 //     prefix.
-// LOGP_V(sev) Like LOGP(), but sev is a run-time variable of the LoggingSeverity
+// LOG_V(sev) Like LOG(), but sev is a run-time variable of the LoggingSeverity
 //     type (basically, it just doesn't prepend the namespace).
-// LOGP_F(sev) Like LOGP(), but includes the name of the current function.
-// LOGP_T(sev) Like LOGP(), but includes the this pointer.
-// LOGP_T_F(sev) Like LOGP_F(), but includes the this pointer.
-// LOGP_GLE(M)(sev [, mod]) attempt to add a string description of the
+// LOG_F(sev) Like LOG(), but includes the name of the current function.
+// LOG_T(sev) Like LOG(), but includes the this pointer.
+// LOG_T_F(sev) Like LOG_F(), but includes the this pointer.
+// LOG_GLE(M)(sev [, mod]) attempt to add a string description of the
 //     HRESULT returned by GetLastError.  The "M" variant allows searching of a
 //     DLL's string table for the error description.
-// LOGP_ERRNO(sev) attempts to add a string description of an errno-derived
+// LOG_ERRNO(sev) attempts to add a string description of an errno-derived
 //     error. errno and associated facilities exist on both Windows and POSIX,
 //     but on Windows they only apply to the C/C++ runtime.
-// LOGP_ERR(sev) is an alias for the platform's normal error system, i.e. _GLE on
+// LOG_ERR(sev) is an alias for the platform's normal error system, i.e. _GLE on
 //     Windows and _ERRNO on POSIX.
 // (The above three also all have _EX versions that let you specify the error
 // code, rather than using the last one.)
-// LOGP_E(sev, ctx, err, ...) logs a detailed error interpreted using the
+// LOG_E(sev, ctx, err, ...) logs a detailed error interpreted using the
 //     specified context.
-// LOGP_CHECK_LEVEL(sev) (and LOGP_CHECK_LEVEL_V(sev)) can be used as a test
+// LOG_CHECK_LEVEL(sev) (and LOG_CHECK_LEVEL_V(sev)) can be used as a test
 //     before performing expensive or sensitive operations whose sole purpose is
 //     to output logging data at the desired level.
-// Lastly, PLOGP(sev, err) is an alias for LOGP_ERR_EX.
+// Lastly, PLOG(sev, err) is an alias for LOG_ERR_EX.
 
 #ifndef __PEERCONNECT_LOGGING_H__
 #define __PEERCONNECT_LOGGING_H__
@@ -81,16 +81,13 @@ namespace pc {
 //   }
 //
 //   int err = LibraryFunc();
-//   LOGP(LS_ERROR) << "LibraryFunc returned: "
+//   LOG(LS_ERROR) << "LibraryFunc returned: "
 //                 << ErrorName(err, LIBRARY_ERRORS);
 
 struct ConstantLabel { int value; const char * label; };
-
-#ifndef KLABEL
 #define KLABEL(x) { x, #x }
 #define TLABEL(x, y) { x, y }
 #define LASTLABEL { 0, 0 }
-#endif
 
 const char* FindLabel(int value, const ConstantLabel entries[]);
 std::string ErrorName(int err, const ConstantLabel* err_table);
@@ -148,9 +145,12 @@ class LogSink {
 
 class LogMessage {
  public:
-  LogMessage(const char* file, int line, LoggingSeverity sev,
-             LogErrorContext err_ctx = ERRCTX_NONE, int err = 0,
-             const char* module = NULL);
+  LogMessage(const char* file,
+             int line,
+             LoggingSeverity sev,
+             LogErrorContext err_ctx = ERRCTX_NONE,
+             int err = 0,
+             const char* module = nullptr);
 
   LogMessage(const char* file,
              int line,
@@ -194,7 +194,7 @@ class LogMessage {
   //   GetLogToStream gets the severity for the specified stream, of if none
   //   is specified, the minimum stream severity.
   //   RemoveLogToStream removes the specified stream, without destroying it.
-  static int GetLogToStream(LogSink* stream = NULL);
+  static int GetLogToStream(LogSink* stream = nullptr);
   static void AddLogToStream(LogSink* stream, LoggingSeverity min_sev);
   static void RemoveLogToStream(LogSink* stream);
 
@@ -263,12 +263,12 @@ class LogMultilineState {
 };
 
 // When possible, pass optional state variable to track various data across
-// multiple calls to LogMultiline.  Otherwise, pass NULL.
+// multiple calls to LogMultiline.  Otherwise, pass null.
 void LogMultiline(LoggingSeverity level, const char* label, bool input,
                   const void* data, size_t len, bool hex_mode,
                   LogMultilineState* state);
 
-#ifndef LOGP
+#ifndef LOG
 
 // The following non-obvious technique for implementation of a
 // conditional log stream was stolen from google3/base/logging.h.
@@ -285,101 +285,91 @@ class LogMessageVoidify {
   void operator&(std::ostream&) { }
 };
 
-#define LOGP_SEVERITY_PRECONDITION(sev) \
+#define LOG_SEVERITY_PRECONDITION(sev) \
   !(pc::LogMessage::Loggable(sev)) \
     ? (void) 0 \
     : pc::LogMessageVoidify() &
 
-#define LOGP(sev) \
-  LOGP_SEVERITY_PRECONDITION(pc::sev) \
+#define LOG(sev) \
+  LOG_SEVERITY_PRECONDITION(pc::sev) \
     pc::LogMessage(__FILE__, __LINE__, pc::sev).stream()
-
-#define LOGP_IF(cond, sev) \
-  !(cond) \
-    ? (void) 0 \
-    : LOGP(sev)
-
-#define LOGP_F_IF(cond, sev) \
-  !(cond) \
-    ? (void) 0 \
-    : LOGP_F(sev)
 
 // The _V version is for when a variable is passed in.  It doesn't do the
 // namespace concatination.
-#define LOGP_V(sev) \
-  LOGP_SEVERITY_PRECONDITION(sev) \
+#define LOG_V(sev) \
+  LOG_SEVERITY_PRECONDITION(sev) \
     pc::LogMessage(__FILE__, __LINE__, sev).stream()
 
 // The _F version prefixes the message with the current function name.
 #if (defined(__GNUC__) && !defined(NDEBUG)) || defined(WANT_PRETTY_LOG_F)
-#define LOGP_F(sev) LOGP(sev) << __PRETTY_FUNCTION__ << ": "
-#define LOGP_T_F(sev) LOGP(sev) << this << ": " << __PRETTY_FUNCTION__ << ": "
+#define LOG_F(sev) LOG(sev) << __PRETTY_FUNCTION__ << ": "
+#define LOG_T_F(sev) LOG(sev) << this << ": " << __PRETTY_FUNCTION__ << ": "
 #else
-#define LOGP_F(sev) LOGP(sev) << __FUNCTION__ << ": "
-#define LOGP_T_F(sev) LOGP(sev) << this << ": " << __FUNCTION__ << ": "
+#define LOG_F(sev) LOG(sev) << __FUNCTION__ << ": "
+#define LOG_T_F(sev) LOG(sev) << this << ": " << __FUNCTION__ << ": "
 #endif
 
-#define LOGP_CHECK_LEVEL(sev) \
+#define LOG_CHECK_LEVEL(sev) \
   pc::LogCheckLevel(pc::sev)
-#define LOGP_CHECK_LEVEL_V(sev) \
+#define LOG_CHECK_LEVEL_V(sev) \
   pc::LogCheckLevel(sev)
 
 inline bool LogCheckLevel(LoggingSeverity sev) {
   return (LogMessage::GetMinLogSeverity() <= sev);
 }
 
-#define LOGP_E(sev, ctx, err, ...) \
-  LOGP_SEVERITY_PRECONDITION(pc::sev) \
+#define LOG_E(sev, ctx, err, ...) \
+  LOG_SEVERITY_PRECONDITION(pc::sev) \
     pc::LogMessage(__FILE__, __LINE__, pc::sev, \
                           pc::ERRCTX_ ## ctx, err , ##__VA_ARGS__) \
         .stream()
 
-#define LOGP_T(sev) LOGP(sev) << this << ": "
+#define LOG_T(sev) LOG(sev) << this << ": "
 
-#define LOGP_ERRNO_EX(sev, err) \
-  LOGP_E(sev, ERRNO, err)
-#define LOGP_ERRNO(sev) \
-  LOGP_ERRNO_EX(sev, errno)
+#define LOG_ERRNO_EX(sev, err) \
+  LOG_E(sev, ERRNO, err)
+#define LOG_ERRNO(sev) \
+  LOG_ERRNO_EX(sev, errno)
 
 #if defined(WEBRTC_WIN)
-#define LOGP_GLE_EX(sev, err) \
-  LOGP_E(sev, HRESULT, err)
-#define LOGP_GLE(sev) \
-  LOGP_GLE_EX(sev, GetLastError())
-#define LOGP_GLEM(sev, mod) \
-  LOGP_E(sev, HRESULT, GetLastError(), mod)
-#define LOGP_ERR_EX(sev, err) \
-  LOGP_GLE_EX(sev, err)
-#define LOGP_ERR(sev) \
-  LOGP_GLE(sev)
+#define LOG_GLE_EX(sev, err) \
+  LOG_E(sev, HRESULT, err)
+#define LOG_GLE(sev) \
+  LOG_GLE_EX(sev, GetLastError())
+#define LOG_GLEM(sev, mod) \
+  LOG_E(sev, HRESULT, GetLastError(), mod)
+#define LOG_ERR_EX(sev, err) \
+  LOG_GLE_EX(sev, err)
+#define LOG_ERR(sev) \
+  LOG_GLE(sev)
 #define LAST_SYSTEM_ERROR \
   (::GetLastError())
-#elif __native_client__
-#define LOGP_ERR_EX(sev, err) \
-  LOGP(sev)
-#define LOGP_ERR(sev) \
-  LOGP(sev)
+#elif defined(__native_client__) && __native_client__
+#define LOG_ERR_EX(sev, err) \
+  LOG(sev)
+#define LOG_ERR(sev) \
+  LOG(sev)
 #define LAST_SYSTEM_ERROR \
   (0)
 #elif defined(WEBRTC_POSIX)
-#define LOGP_ERR_EX(sev, err) \
-  LOGP_ERRNO_EX(sev, err)
-#define LOGP_ERR(sev) \
-  LOGP_ERRNO(sev)
+#define LOG_ERR_EX(sev, err) \
+  LOG_ERRNO_EX(sev, err)
+#define LOG_ERR(sev) \
+  LOG_ERRNO(sev)
 #define LAST_SYSTEM_ERROR \
   (errno)
 #endif  // WEBRTC_WIN
 
-#define LOGP_TAG(sev, tag) \
-  LOGP_SEVERITY_PRECONDITION(sev) \
-    pc::LogMessage(NULL, 0, sev, tag).stream()
+#define LOG_TAG(sev, tag)        \
+  LOG_SEVERITY_PRECONDITION(sev) \
+  pc::LogMessage(nullptr, 0, sev, tag).stream()
 
-#define PLOGP(sev, err) \
-  LOGP_ERR_EX(sev, err)
+#define PLOG(sev, err) \
+  LOG_ERR_EX(sev, err)
 
 // TODO(?): Add an "assert" wrapper that logs in the same manner.
 
-#endif  // LOGP
+#endif  // LOG
 
 }  // namespace pc
 

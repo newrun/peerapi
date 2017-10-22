@@ -4,12 +4,7 @@
 #
 # ============================================================================
 
-if (APPLE)
-  cmake_minimum_required(VERSION 3.2)
-else (APPLE)
-  cmake_minimum_required(VERSION 2.8)
-endif (APPLE)
-
+cmake_minimum_required(VERSION 3.2)
 project(peerconnect)
 
 
@@ -149,14 +144,14 @@ if (PC_WITH_STATIC)
     if (_CMAKE_BUILD_TYPE STREQUAL "DEBUG")
       add_custom_command(TARGET peerconnect PRE_LINK
         COMMAND ${CMAKE_COMMAND} -E env \"PATH=${DEPOT_TOOLS_DIR}:$ENV{PATH}\" gn gen ${WEBRTC_OUT_DIR_DEBUG} --args=\"is_debug=true is_component_build=false\"
-        COMMAND ${CMAKE_COMMAND} -E env \"PATH=${DEPOT_TOOLS_DIR}:$ENV{PATH}\" ninja -C ${WEBRTC_OUT_DIR_DEBUG} peerconnection_unittests
+        COMMAND ${CMAKE_COMMAND} -E env \"PATH=${DEPOT_TOOLS_DIR}:$ENV{PATH}\" ninja -C ${WEBRTC_OUT_DIR_DEBUG}
         WORKING_DIRECTORY "${WEBRTC_ROOT_DIR}"
         COMMENT "Building WebRTC library (Once)"
         )
     else()
       add_custom_command(TARGET peerconnect PRE_LINK
         COMMAND ${CMAKE_COMMAND} -E env \"PATH=${DEPOT_TOOLS_DIR}:$ENV{PATH}\" gn gen ${WEBRTC_OUT_DIR} --args=\"is_debug=false is_component_build=false\"
-        COMMAND ${CMAKE_COMMAND} -E env \"PATH=${DEPOT_TOOLS_DIR}:$ENV{PATH}\" ninja -C ${WEBRTC_OUT_DIR} peerconnection_unittests
+        COMMAND ${CMAKE_COMMAND} -E env \"PATH=${DEPOT_TOOLS_DIR}:$ENV{PATH}\" ninja -C ${WEBRTC_OUT_DIR}
         WORKING_DIRECTORY "${WEBRTC_ROOT_DIR}"
         COMMENT "Building WebRTC library (Once)"
         )
@@ -251,7 +246,6 @@ if (PC_WITH_SHARED)
                                   CACHE STRING "PeerConnect shared library")
 endif()
 
-
 # ============================================================================
 # Test
 # ============================================================================
@@ -259,7 +253,6 @@ endif()
 if (PC_BUILD_TEST)
   add_executable(test_main src/test/test_main.cc)
   add_dependencies(test_main peerconnect)
-
   target_include_directories(test_main PRIVATE ${PEERCONNECT_INCLUDE_DIR})
   target_link_libraries(test_main ${PEERCONNECT_LIBRARIES_STATIC})
   set_target_properties (test_main PROPERTIES FOLDER test)

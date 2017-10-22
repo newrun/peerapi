@@ -35,28 +35,28 @@ PeerConnect::PeerConnect( const string peer ) {
   peer_ = local_peer;
   close_once_ = false;
 
-  LOGP_F( INFO ) << "Done";
+  LOG_F( INFO ) << "Done";
 }
 
 PeerConnect::~PeerConnect() {
-  LOGP_F( INFO ) << "Done";
+  LOG_F( INFO ) << "Done";
 }
 
 void PeerConnect::Run() {
   rtc::ThreadManager::Instance()->CurrentThread()->Run();
-  LOGP_F( INFO ) << "Done";
+  LOG_F( INFO ) << "Done";
 }
 
 void PeerConnect::Stop() {
   rtc::ThreadManager::Instance()->CurrentThread()->Quit();
-  LOGP_F( INFO ) << "Done";
+  LOG_F( INFO ) << "Done";
 }
 
 
 void PeerConnect::Open() {
 
   if ( control_.get() != nullptr ) {
-    LOGP_F( WARNING ) << "Already open.";
+    LOG_F( WARNING ) << "Already open.";
     return;
   }
 
@@ -76,7 +76,7 @@ void PeerConnect::Open() {
   control_->RegisterObserver( this, control_ );
 
   if ( control_.get() == NULL ) {
-    LOGP_F( LERROR ) << "Failed to create class Control.";
+    LOG_F( LERROR ) << "Failed to create class Control.";
     return;
   }
 
@@ -85,7 +85,7 @@ void PeerConnect::Open() {
   //
 
   if ( !control_->InitializeControl() ) {
-    LOGP_F( LERROR ) << "Failed to initialize Control.";
+    LOG_F( LERROR ) << "Failed to initialize Control.";
     control_.reset();
     return;
   }
@@ -95,7 +95,7 @@ void PeerConnect::Open() {
   //
 
   control_->Open( setting_.signal_id_, setting_.signal_password_, peer_ );
-  LOGP_F( INFO ) << "Done";
+  LOG_F( INFO ) << "Done";
   return;
 }
 
@@ -108,12 +108,12 @@ void PeerConnect::Close( const string peer ) {
   else {
     control_->ClosePeer( peer, CLOSE_NORMAL, FORCE_QUEUING_ON );
   }
-  LOGP_F( INFO ) << "Done";
+  LOG_F( INFO ) << "Done";
 }
 
 void PeerConnect::Connect( const string peer ) {
   control_->Connect( peer );
-  LOGP_F( INFO ) << "Done, peer is " << peer;
+  LOG_F( INFO ) << "Done, peer is " << peer;
   return;
 }
 
@@ -171,10 +171,10 @@ PeerConnect& PeerConnect::On( string event_id, std::function<void( string )> han
   if ( event_id == "open" || event_id == "connect" || event_id == "writable" ) {
     std::unique_ptr<EventHandler_2> f( new EventHandler_2( handler ) );
     event_handler_.insert( Events::value_type( event_id, std::move( f ) ) );
-    LOGP_F( INFO ) << "An event handler '" << event_id << "' has been inserted";
+    LOG_F( INFO ) << "An event handler '" << event_id << "' has been inserted";
   }
   else {
-    LOGP_F( LERROR ) << "Unsupported event type: " << event_id;
+    LOG_F( LERROR ) << "Unsupported event type: " << event_id;
   }
   return *this;
 }
@@ -183,7 +183,7 @@ PeerConnect& PeerConnect::On( string event_id, std::function<void( string, strin
 
   if ( event_id.empty() ) return *this;
 
-  LOGP_F( LERROR ) << "Unsupported event type: " << event_id;
+  LOG_F( LERROR ) << "Unsupported event type: " << event_id;
   return *this;
 }
 
@@ -194,10 +194,10 @@ PeerConnect& PeerConnect::On( string event_id, std::function<void( string, pc::C
     std::unique_ptr<EventHandler_Close> f( new EventHandler_Close( handler ) );
     event_handler_.insert( Events::value_type( event_id, std::move( f ) ) );
 
-    LOGP_F( INFO ) << "An event handler '" << event_id << "' has been inserted";
+    LOG_F( INFO ) << "An event handler '" << event_id << "' has been inserted";
   }
   else {
-    LOGP_F( LERROR ) << "Unsupported event type: " << event_id;
+    LOG_F( LERROR ) << "Unsupported event type: " << event_id;
   }
 
   return *this;
@@ -210,10 +210,10 @@ PeerConnect& PeerConnect::On( string event_id, std::function<void( string, char*
     std::unique_ptr<EventHandler_Message> f( new EventHandler_Message( handler ) );
     event_handler_.insert( Events::value_type( event_id, std::move( f ) ) );
 
-    LOGP_F( INFO ) << "An event handler '" << event_id << "' has been inserted";
+    LOG_F( INFO ) << "An event handler '" << event_id << "' has been inserted";
   }
   else {
-    LOGP_F( LERROR ) << "Unsupported event type: " << event_id;
+    LOG_F( LERROR ) << "Unsupported event type: " << event_id;
   }
 
   return *this;
@@ -230,7 +230,7 @@ void PeerConnect::OnOpen( const string peer ) {
     CallEventHandler( "open", peer );
   }
 
-  LOGP_F( INFO ) << "Done";
+  LOG_F( INFO ) << "Done";
 }
 
 void PeerConnect::OnClose( const string peer, const CloseCode code, const string desc ) {
@@ -238,7 +238,7 @@ void PeerConnect::OnClose( const string peer, const CloseCode code, const string
   // This instance of PeerConnect and local peer is going to be closed
   if ( peer == peer_ ) {
     if ( close_once_ ) {
-      LOGP_F( WARNING ) << "close_ is false, peer is " << peer;
+      LOG_F( WARNING ) << "close_ is false, peer is " << peer;
       return;
     }
 
@@ -258,7 +258,7 @@ void PeerConnect::OnClose( const string peer, const CloseCode code, const string
     }
   }
 
-  LOGP_F( INFO ) << "Done, peer is " << peer;
+  LOG_F( INFO ) << "Done, peer is " << peer;
 }
 
 void PeerConnect::OnConnect( const string peer ) {
@@ -266,7 +266,7 @@ void PeerConnect::OnConnect( const string peer ) {
     CallEventHandler( "connect", peer );
   }
 
-  LOGP_F( INFO ) << "Done, peer is " << peer;
+  LOG_F( INFO ) << "Done, peer is " << peer;
 }
 
 void PeerConnect::OnMessage( const string peer, const char* data, const size_t size ) {
@@ -280,7 +280,7 @@ void PeerConnect::OnWritable( const string peer ) {
     CallEventHandler( "writable", peer );
   }
 
-  LOGP_F( INFO ) << "Done, peer is " << peer;
+  LOG_F( INFO ) << "Done, peer is " << peer;
 }
 
 
@@ -302,7 +302,7 @@ bool PeerConnect::ParseOptions( const string& options ) {
   string value;
 
   if ( !reader.parse( options, joptions ) ) {
-    LOGP_F( WARNING ) << "Invalid setting: " << options;
+    LOG_F( WARNING ) << "Invalid setting: " << options;
     return false;
   }
 
