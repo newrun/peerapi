@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 The PeerConnect Project Authors. All rights reserved.
+ *  Copyright 2016 The PeerApi Project Authors. All rights reserved.
  *
  *  Ryan Lee
  */
@@ -30,8 +30,8 @@
  */
 
 
-#ifndef __PEERCONNECT_SIGNAL_H__
-#define __PEERCONNECT_SIGNAL_H__
+#ifndef __PEERAPI_SIGNAL_H__
+#define __PEERAPI_SIGNAL_H__
 
 #include <string>
 
@@ -48,7 +48,7 @@
 #include "webrtc/base/json.h"
 
 
-namespace pc {
+namespace peerapi {
 
 class SignalInterface {
 public:
@@ -158,6 +158,6 @@ private:
 }; // class Signal
 
 
-} // namespace pc
+} // namespace peerapi
 
-#endif // __PEERCONNECT_SIGNAL_H__
+#endif // __PEERAPI_SIGNAL_H__

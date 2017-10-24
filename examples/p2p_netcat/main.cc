@@ -1,5 +1,5 @@
 /*
-*  Copyright 2016 The PeerConnect Project Authors. All rights reserved.
+*  Copyright 2016 The PeerApi Project Authors. All rights reserved.
 *
 *  Ryan Lee
 */
@@ -27,27 +27,27 @@
 using namespace std;
 
 
-bool parse_args(int argc, char* argv[], string& local_peer, string& remote_peer, bool& server_mode);
+bool parse_args(int argc, char* argv[], string& local_peer_id, string& remote_peer_id, bool& server_mode);
 void usage(const char* prg);
-void read_stdin(PeerConnect* pc, std::string peer);
+void read_stdin(Peer* peer, std::string peer_id);
 bool write_stdout(const char* buf, int len);
-void set_mode(PeerConnect* pc);
+void set_mode(Peer* peer);
 void ctrlc_handler(int s);
 
-static PeerConnect *pc_;
+static Peer *peer_;
 
 
 int main(int argc, char *argv[]) {
 
-  string local_peer;
-  string remote_peer;
+  string local_peer_id;
+  string remote_peer_id;
   bool server_mode;
   
   //
   // Parse arguments
   //
 
-  if (!parse_args(argc, argv, local_peer, remote_peer, server_mode)) {
+  if (!parse_args(argc, argv, local_peer_id, remote_peer_id, server_mode)) {
     usage(argv[0]);
     return 1;
   }
@@ -56,32 +56,32 @@ int main(int argc, char *argv[]) {
   // Set event handlers
   //
 
-  PeerConnect pc(local_peer);
+  Peer peer(local_peer_id);
 
-  set_mode(&pc);
+  set_mode(&peer);
 
-  pc.On("open", function_pc( string peer ) {
+  peer.On("open", function_peer( string peer_id ) {
     if (server_mode) {
-      std::cerr << "Listening " << peer << std::endl;
+      std::cerr << "Listening " << peer_id << std::endl;
     }
     else {
-      std::cerr << "Connecting to " << remote_peer << std::endl;
-      pc.Connect(remote_peer);
+      std::cerr << "Connecting to " << remote_peer_id << std::endl;
+      peer.Connect(remote_peer_id);
     }
   });
 
-  pc.On("connect", function_pc( string peer ) {
+  peer.On("connect", function_peer( string peer_id ) {
     std::cerr << "Connected" << std::endl;
-    std::thread(read_stdin, &pc, peer).detach();
+    std::thread(read_stdin, &peer, peer_id).detach();
   });
 
-  pc.On("close", function_pc( string peer, CloseCode code, string desc ) {
+  peer.On("close", function_peer( string peer_id, CloseCode code, string desc ) {
 
-    if ( peer == local_peer ) {
-      PeerConnect::Stop();
+    if ( peer_id == local_peer_id ) {
+      Peer::Stop();
     }
     else {
-      pc.Close();
+      peer.Close();
     }
 
     if ( !desc.empty() ) {
@@ -89,9 +89,9 @@ int main(int argc, char *argv[]) {
     }
   });
 
-  pc.On("message", function_pc(string peer, char *data, size_t size) {
+  peer.On("message", function_peer(string peer_id, char *data, size_t size) {
     if (!write_stdout(data, size)) {
-      pc.Close(peer);
+      peer.Close(peer_id);
     }
   });
 
@@ -99,9 +99,9 @@ int main(int argc, char *argv[]) {
   // Sign in as anonymous user
   //
 
-  pc.Open();
+  peer.Open();
 
-  PeerConnect::Run();
+  Peer::Run();
   return 0;
 }
 
@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
 #define STDERR_FILENO 2
 #endif
 
-void read_stdin(PeerConnect* pc, std::string peer)
+void read_stdin(Peer* peer, std::string peer_id)
 {
   int nbytes;
   char buf[32*1024];
@@ -127,11 +127,11 @@ void read_stdin(PeerConnect* pc, std::string peer)
   for (;;) {
     nbytes = read(STDIN_FILENO, buf, sizeof(buf));
     if (nbytes <= 0) {
-      pc->Close( peer );
+      peer->Close( peer_id );
       return;
     }
 
-    if (!pc->Send(peer, buf, nbytes, SYNC_ON)) {
+    if (!peer->Send(peer_id, buf, nbytes, SYNC_ON)) {
       return;
     }
   }
@@ -156,12 +156,12 @@ bool write_stdout(const char* buf, int len)
 
 void ctrlc_handler(int s) {
   std::cerr << "Terminating..." << std::endl;
-  pc_->Close();
+  peer_->Close();
 }
 
-void set_mode(PeerConnect* pc)
+void set_mode(Peer* peer)
 {
-  pc_ = pc;
+  peer_ = peer;
   signal(SIGINT, ctrlc_handler);
 
 #ifdef WIN32
@@ -171,15 +171,15 @@ void set_mode(PeerConnect* pc)
 #endif
 }
 
-bool parse_args(int argc, char* argv[], string& local_peer, string& remote_peer, bool& server_mode) {
+bool parse_args(int argc, char* argv[], string& local_peer_id, string& remote_peer_id, bool& server_mode) {
   if (argc == 2) {
-    remote_peer = argv[1];
-    local_peer = PeerConnect::CreateRandomUuid();
+    remote_peer_id = argv[1];
+    local_peer_id = Peer::CreateRandomUuid();
     server_mode = false;
     return true;
   }
   else if (argc == 3 && std::string(argv[1]) == "-l") {
-    local_peer = argv[2];
+    local_peer_id = argv[2];
     server_mode = true;
     return true;
   }
@@ -187,7 +187,7 @@ bool parse_args(int argc, char* argv[], string& local_peer, string& remote_peer,
 }
 
 void usage(const char* prg) {
-  std::cerr << "P2P netcat demo (http://github.com/peersio/peerconnect)" << std::endl << std::endl;
+  std::cerr << "P2P netcat demo (http://github.com/peerborough/peerapi)" << std::endl << std::endl;
   std::cerr << "Usage: " << prg << " [-l] name" << std::endl << std::endl;
   std::cerr << "  Options:" << std::endl;
   std::cerr << "    -l      Listen mode, for inbound connections" << std::endl << std::endl;

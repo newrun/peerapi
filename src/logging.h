@@ -1,5 +1,5 @@
 /*
-*  Copyright 2016 The PeerConnect Project Authors. All rights reserved.
+*  Copyright 2016 The PeerApi Project Authors. All rights reserved.
 *
 *  Ryan Lee
 */
@@ -49,8 +49,8 @@
 //     to output logging data at the desired level.
 // Lastly, PLOG(sev, err) is an alias for LOG_ERR_EX.
 
-#ifndef __PEERCONNECT_LOGGING_H__
-#define __PEERCONNECT_LOGGING_H__
+#ifndef __PEERAPI_LOGGING_H__
+#define __PEERAPI_LOGGING_H__
 
 #include <errno.h>
 
@@ -67,7 +67,7 @@
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/thread_annotations.h"
 
-namespace pc {
+namespace peerapi {
 
 ///////////////////////////////////////////////////////////////////////////////
 // ConstantLabel can be used to easily generate string names from constant
@@ -286,19 +286,19 @@ class LogMessageVoidify {
 };
 
 #define LOG_SEVERITY_PRECONDITION(sev) \
-  !(pc::LogMessage::Loggable(sev)) \
+  !(peerapi::LogMessage::Loggable(sev)) \
     ? (void) 0 \
-    : pc::LogMessageVoidify() &
+    : peerapi::LogMessageVoidify() &
 
 #define LOG(sev) \
-  LOG_SEVERITY_PRECONDITION(pc::sev) \
-    pc::LogMessage(__FILE__, __LINE__, pc::sev).stream()
+  LOG_SEVERITY_PRECONDITION(peerapi::sev) \
+    peerapi::LogMessage(__FILE__, __LINE__, peerapi::sev).stream()
 
 // The _V version is for when a variable is passed in.  It doesn't do the
 // namespace concatination.
 #define LOG_V(sev) \
   LOG_SEVERITY_PRECONDITION(sev) \
-    pc::LogMessage(__FILE__, __LINE__, sev).stream()
+    peerapi::LogMessage(__FILE__, __LINE__, sev).stream()
 
 // The _F version prefixes the message with the current function name.
 #if (defined(__GNUC__) && !defined(NDEBUG)) || defined(WANT_PRETTY_LOG_F)
@@ -310,18 +310,18 @@ class LogMessageVoidify {
 #endif
 
 #define LOG_CHECK_LEVEL(sev) \
-  pc::LogCheckLevel(pc::sev)
+  peerapi::LogCheckLevel(peerapi::sev)
 #define LOG_CHECK_LEVEL_V(sev) \
-  pc::LogCheckLevel(sev)
+  peerapi::LogCheckLevel(sev)
 
 inline bool LogCheckLevel(LoggingSeverity sev) {
   return (LogMessage::GetMinLogSeverity() <= sev);
 }
 
 #define LOG_E(sev, ctx, err, ...) \
-  LOG_SEVERITY_PRECONDITION(pc::sev) \
-    pc::LogMessage(__FILE__, __LINE__, pc::sev, \
-                          pc::ERRCTX_ ## ctx, err , ##__VA_ARGS__) \
+  LOG_SEVERITY_PRECONDITION(peerapi::sev) \
+    peerapi::LogMessage(__FILE__, __LINE__, peerapi::sev, \
+                          peerapi::ERRCTX_ ## ctx, err , ##__VA_ARGS__) \
         .stream()
 
 #define LOG_T(sev) LOG(sev) << this << ": "
@@ -362,7 +362,7 @@ inline bool LogCheckLevel(LoggingSeverity sev) {
 
 #define LOG_TAG(sev, tag)        \
   LOG_SEVERITY_PRECONDITION(sev) \
-  pc::LogMessage(nullptr, 0, sev, tag).stream()
+  peerapi::LogMessage(nullptr, 0, sev, tag).stream()
 
 #define PLOG(sev, err) \
   LOG_ERR_EX(sev, err)
@@ -371,6 +371,6 @@ inline bool LogCheckLevel(LoggingSeverity sev) {
 
 #endif  // LOG
 
-}  // namespace pc
+}  // namespace peerapi
 
-#endif  // __PEERCONNECT_LOGGING_H__
+#endif  // __PEERAPI_LOGGING_H__

@@ -1,11 +1,11 @@
 /*
- *  Copyright 2016 The PeerConnect Project Authors. All rights reserved.
+ *  Copyright 2016 The PeerApi Project Authors. All rights reserved.
  *
  *  Ryan Lee
  */
 
-#ifndef __PEERCONNECT_PEERCONNECT_H__
-#define __PEERCONNECT_PEERCONNECT_H__
+#ifndef __PEERAPI_PEERCONNECT_H__
+#define __PEERAPI_PEERCONNECT_H__
 
 #include <string>
 #include <map>
@@ -15,17 +15,17 @@
 #include "common.h"
 #include "controlobserver.h"
 
-#ifndef USE_PEERCONNECT_STRICT_NAMESPACE
-using namespace pc;
-#endif // USE_PEERCONNECT_STRICT_NAMESPACE
+#ifndef USE_PEERAPI_STRICT_NAMESPACE
+using namespace peerapi;
+#endif // USE_PEERAPI_STRICT_NAMESPACE
 
-namespace pc {
+namespace peerapi {
 
 class Control;
 class Signal;
 
 
-class PeerConnect
+class Peer
   : public ControlObserver {
 public:
 
@@ -46,23 +46,23 @@ public:
   static void Stop();
 
   void Open();
-  void Close( const string peer = "" );
-  void Connect( const string peer );
-  bool Send( const string& peer, const char* data, const std::size_t size, const bool wait = SYNC_OFF );
-  bool Send( const string& peer, const string& data, const bool wait = SYNC_OFF );
+  void Close( const string peer_id = "" );
+  void Connect( const string peer_id );
+  bool Send( const string& peer_id, const char* data, const std::size_t size, const bool wait = SYNC_OFF );
+  bool Send( const string& peer_id, const string& data, const bool wait = SYNC_OFF );
   bool SetOptions( const string options );
 
-  PeerConnect& On( string event_id, std::function<void( string )> );
-  PeerConnect& On( string event_id, std::function<void( string, string )> );
-  PeerConnect& On( string event_id, std::function<void( string, pc::CloseCode, string )> );
-  PeerConnect& On( string event_id, std::function<void( string, char*, std::size_t )> );
+  Peer& On( string event_id, std::function<void( string )> );
+  Peer& On( string event_id, std::function<void( string, string )> );
+  Peer& On( string event_id, std::function<void( string, peerapi::CloseCode, string )> );
+  Peer& On( string event_id, std::function<void( string, char*, std::size_t )> );
 
   //
   // Member functions
   //
 
-  explicit PeerConnect( const string peer = "" );
-  ~PeerConnect();
+  explicit Peer( const string peer_id = "" );
+  ~Peer();
 
   static std::string CreateRandomUuid();
 
@@ -87,7 +87,7 @@ protected:
   using EventHandler_1 = EventHandler_t<>;
   using EventHandler_2 = EventHandler_t<string>;
   using EventHandler_3 = EventHandler_t<string, Data&>;
-  using EventHandler_Close = EventHandler_t<string, pc::CloseCode, string>;
+  using EventHandler_Close = EventHandler_t<string, peerapi::CloseCode, string>;
   using EventHandler_Message = EventHandler_t<string, char*, std::size_t>;
   using Events = std::map<string, std::unique_ptr<Handler_t>>;
 
@@ -95,11 +95,11 @@ protected:
   // ControlObserver implementation
   //
 
-  void OnOpen( const string peer );
-  void OnClose( const string peer, const pc::CloseCode code, const string desc = "" );
-  void OnConnect( const string peer );
-  void OnMessage( const string peer, const char* data, const size_t size );
-  void OnWritable( const string peer );
+  void OnOpen( const string peer_id );
+  void OnClose( const string peer_id, const peerapi::CloseCode code, const string desc = "" );
+  void OnConnect( const string peer_id );
+  void OnMessage( const string peer_id, const char* data, const size_t size );
+  void OnWritable( const string peer_id );
 
   bool ParseOptions( const string& options );
 
@@ -110,10 +110,10 @@ protected:
   std::shared_ptr<Control> control_;
   std::shared_ptr<Signal> signal_;
 
-  string peer_;
+  string peer_id_;
 };
 
 
-} // namespace pc
+} // namespace peerapi
 
-#endif // __PEERCONNECT_PEERCONNECT_H__
+#endif // __PEERAPI_PEERCONNECT_H__

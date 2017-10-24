@@ -1,11 +1,11 @@
 /*
-*  Copyright 2016 The PeerConnect Project Authors. All rights reserved.
+*  Copyright 2016 The PeerApi Project Authors. All rights reserved.
 *
 *  Ryan Lee
 */
 
-#ifndef __PEERCONNECT_CONTROL_H__
-#define __PEERCONNECT_CONTROL_H__
+#ifndef __PEERAPI_CONTROL_H__
+#define __PEERAPI_CONTROL_H__
 
 #include <memory>
 
@@ -17,7 +17,7 @@
 #include "fakeaudiocapturemodule.h"
 
 
-namespace pc {
+namespace peerapi {
 
 class Control
     : public PeerObserver,
@@ -46,10 +46,10 @@ public:
   void Send(const string to, const char* data, const size_t size);
   bool SyncSend(const string to, const char* data, const size_t size);
 
-  void Open(const string& user_id, const string& user_password, const string& peer);
+  void Open(const string& user_id, const string& user_password, const string& peer_id);
   void Close(const CloseCode code, bool force_queueing = FORCE_QUEUING_OFF);
-  void Connect(const string peer);
-  bool IsWritable(const string peer);
+  void Connect(const string peer_id);
+  bool IsWritable(const string peer_id);
 
   void OnCommandReceived(const Json::Value& message);
   void OnSignalCommandReceived(const Json::Value& message);
@@ -59,12 +59,12 @@ public:
   // PeerObserver implementation
   //
 
-  virtual void SendCommand(const string& peer, const string& command, const Json::Value& data);
-  virtual void ClosePeer( const string peer, const CloseCode code,  bool force_queueing = FORCE_QUEUING_OFF );
-  virtual void OnPeerConnect(const string peer);
-  virtual void OnPeerClose(const string peer, const CloseCode code);
-  virtual void OnPeerMessage(const string& peer, const char* data, const size_t size);
-  virtual void OnPeerWritable(const string& peer);
+  virtual void SendCommand(const string& peer_id, const string& command, const Json::Value& data);
+  virtual void ClosePeer( const string peer_id, const CloseCode code,  bool force_queueing = FORCE_QUEUING_OFF );
+  virtual void OnPeerConnect(const string peer_id);
+  virtual void OnPeerClose(const string peer_id, const CloseCode code);
+  virtual void OnPeerMessage(const string& peer_id, const char* data, const size_t size);
+  virtual void OnPeerWritable(const string& peer_id);
 
 
   // Register/Unregister observer
@@ -130,10 +130,10 @@ private:
   };
 
   rtc::Thread* webrtc_thread_;
-  ControlObserver* pc_;
+  ControlObserver* peer_;
   std::shared_ptr<Control> ref_;
 };
 
-} // namespace pc
+} // namespace peerapi
 
-#endif // __PEERCONNECT_CONTROL_H__
+#endif // __PEERAPI_CONTROL_H__

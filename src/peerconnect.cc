@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 The PeerConnect Project Authors. All rights reserved.
+ *  Copyright 2016 The PeerApi Project Authors. All rights reserved.
  *
  *  Ryan Lee
  */
@@ -11,49 +11,49 @@
 #include "control.h"
 #include "logging.h"
 
-namespace pc {
+namespace peerapi {
 
-PeerConnect::PeerConnect( const string peer ) {
+Peer::Peer( const string peer_id ) {
   // Log level
 #if DEBUG || _DEBUG
   rtc::LogMessage::LogToDebug( rtc::LS_NONE );
-  pc::LogMessage::LogToDebug( pc::WARNING );
+  peerapi::LogMessage::LogToDebug( peerapi::WARNING );
 #else
   rtc::LogMessage::LogToDebug( rtc::LS_NONE );
-  pc::LogMessage::LogToDebug( pc::LS_NONE );
+  peerapi::LogMessage::LogToDebug( peerapi::LS_NONE );
 #endif
 
-  string local_peer;
+  string local_peer_id;
 
-  if ( peer.empty() ) {
-    local_peer = rtc::CreateRandomUuid();
+  if ( peer_id.empty() ) {
+    local_peer_id = rtc::CreateRandomUuid();
   }
   else {
-    local_peer = peer;
+    local_peer_id = peer_id;
   }
 
-  peer_ = local_peer;
+  peer_id_ = local_peer_id;
   close_once_ = false;
 
   LOG_F( INFO ) << "Done";
 }
 
-PeerConnect::~PeerConnect() {
+Peer::~Peer() {
   LOG_F( INFO ) << "Done";
 }
 
-void PeerConnect::Run() {
+void Peer::Run() {
   rtc::ThreadManager::Instance()->CurrentThread()->Run();
   LOG_F( INFO ) << "Done";
 }
 
-void PeerConnect::Stop() {
+void Peer::Stop() {
   rtc::ThreadManager::Instance()->CurrentThread()->Quit();
   LOG_F( INFO ) << "Done";
 }
 
 
-void PeerConnect::Open() {
+void Peer::Open() {
 
   if ( control_.get() != nullptr ) {
     LOG_F( WARNING ) << "Already open.";
@@ -65,14 +65,14 @@ void PeerConnect::Open() {
   //
 
   if ( signal_ == nullptr ) {
-    signal_ = std::make_shared<pc::Signal>( setting_.signal_uri_ );
+    signal_ = std::make_shared<peerapi::Signal>( setting_.signal_uri_ );
   }
 
   //
   // Initialize control
   //
 
-  control_ = std::make_shared<pc::Control>( signal_ );
+  control_ = std::make_shared<peerapi::Control>( signal_ );
   control_->RegisterObserver( this, control_ );
 
   if ( control_.get() == NULL ) {
@@ -94,26 +94,26 @@ void PeerConnect::Open() {
   // Connect to signal server
   //
 
-  control_->Open( setting_.signal_id_, setting_.signal_password_, peer_ );
+  control_->Open( setting_.signal_id_, setting_.signal_password_, peer_id_ );
   LOG_F( INFO ) << "Done";
   return;
 }
 
-void PeerConnect::Close( const string peer ) {
+void Peer::Close( const string peer_id ) {
 
-  if ( peer.empty() || peer == peer_ ) {
+  if ( peer_id.empty() || peer_id == peer_id_ ) {
     control_->Close( CLOSE_NORMAL, FORCE_QUEUING_ON );
     signal_->SyncClose();
   }
   else {
-    control_->ClosePeer( peer, CLOSE_NORMAL, FORCE_QUEUING_ON );
+    control_->ClosePeer( peer_id, CLOSE_NORMAL, FORCE_QUEUING_ON );
   }
   LOG_F( INFO ) << "Done";
 }
 
-void PeerConnect::Connect( const string peer ) {
-  control_->Connect( peer );
-  LOG_F( INFO ) << "Done, peer is " << peer;
+void Peer::Connect( const string peer_id ) {
+  control_->Connect( peer_id );
+  LOG_F( INFO ) << "Done, peer is " << peer_id;
   return;
 }
 
@@ -121,7 +121,7 @@ void PeerConnect::Connect( const string peer ) {
 // Send message to destination peer session id
 //
 
-bool PeerConnect::Send( const string& peer, const char* data, const size_t size, const bool wait ) {
+bool Peer::Send( const string& peer_id, const char* data, const size_t size, const bool wait ) {
   if ( wait ) {
 
     //
@@ -129,10 +129,10 @@ bool PeerConnect::Send( const string& peer, const char* data, const size_t size,
     // and a timeout is 60*1000 ms by default.
     //
 
-    return control_->SyncSend( peer, data, size );
+    return control_->SyncSend( peer_id, data, size );
   }
   else {
-    control_->Send( peer, data, size );
+    control_->Send( peer_id, data, size );
 
     //
     // Asyncronous send always returns true and
@@ -143,11 +143,11 @@ bool PeerConnect::Send( const string& peer, const char* data, const size_t size,
   }
 }
 
-bool PeerConnect::Send( const string& peer, const string& message, const bool wait  ) {
-  return Send( peer, message.c_str(), message.size(), wait );
+bool Peer::Send( const string& peer_id, const string& message, const bool wait  ) {
+  return Send( peer_id, message.c_str(), message.size(), wait );
 }
 
-bool PeerConnect::SetOptions( const string options ) {
+bool Peer::SetOptions( const string options ) {
 
   // parse settings
   if ( !options.empty() ) {
@@ -157,14 +157,14 @@ bool PeerConnect::SetOptions( const string options ) {
 }
 
 
-std::string PeerConnect::CreateRandomUuid() {
+std::string Peer::CreateRandomUuid() {
   return rtc::CreateRandomUuid();
 }
 
 //
 // Register Event handler
 //
-PeerConnect& PeerConnect::On( string event_id, std::function<void( string )> handler ) {
+Peer& Peer::On( string event_id, std::function<void( string )> handler ) {
 
   if ( event_id.empty() ) return *this;
 
@@ -179,7 +179,7 @@ PeerConnect& PeerConnect::On( string event_id, std::function<void( string )> han
   return *this;
 }
 
-PeerConnect& PeerConnect::On( string event_id, std::function<void( string, string )> handler ) {
+Peer& Peer::On( string event_id, std::function<void( string, string )> handler ) {
 
   if ( event_id.empty() ) return *this;
 
@@ -187,7 +187,7 @@ PeerConnect& PeerConnect::On( string event_id, std::function<void( string, strin
   return *this;
 }
 
-PeerConnect& PeerConnect::On( string event_id, std::function<void( string, pc::CloseCode, string )> handler ) {
+Peer& Peer::On( string event_id, std::function<void( string, peerapi::CloseCode, string )> handler ) {
   if ( event_id.empty() ) return *this;
 
   if ( event_id == "close" ) {
@@ -203,7 +203,7 @@ PeerConnect& PeerConnect::On( string event_id, std::function<void( string, pc::C
   return *this;
 }
 
-PeerConnect& PeerConnect::On( string event_id, std::function<void( string, char*, std::size_t )> handler ) {
+Peer& Peer::On( string event_id, std::function<void( string, char*, std::size_t )> handler ) {
   if ( event_id.empty() ) return *this;
 
   if ( event_id == "message" ) {
@@ -223,29 +223,29 @@ PeerConnect& PeerConnect::On( string event_id, std::function<void( string, char*
 // Signal event handler
 //
 
-void PeerConnect::OnOpen( const string peer ) {
+void Peer::OnOpen( const string peer_id ) {
   close_once_ = false;
 
   if ( event_handler_.find( "open" ) != event_handler_.end() ) {
-    CallEventHandler( "open", peer );
+    CallEventHandler( "open", peer_id );
   }
 
   LOG_F( INFO ) << "Done";
 }
 
-void PeerConnect::OnClose( const string peer, const CloseCode code, const string desc ) {
+void Peer::OnClose( const string peer_id, const CloseCode code, const string desc ) {
 
-  // This instance of PeerConnect and local peer is going to be closed
-  if ( peer == peer_ ) {
+  // This instance of Peer and local peer is going to be closed
+  if ( peer_id == peer_id_ ) {
     if ( close_once_ ) {
-      LOG_F( WARNING ) << "close_ is false, peer is " << peer;
+      LOG_F( WARNING ) << "close_ is false, peer is " << peer_id;
       return;
     }
 
     close_once_ = true;
 
     if ( event_handler_.find( "close" ) != event_handler_.end() ) {
-      CallEventHandler( "close", peer, code, desc );
+      CallEventHandler( "close", peer_id, code, desc );
     }
 
     control_->UnregisterObserver();
@@ -254,38 +254,38 @@ void PeerConnect::OnClose( const string peer, const CloseCode code, const string
   // Remote peer has been closed
   else {
     if ( event_handler_.find( "close" ) != event_handler_.end() ) {
-      CallEventHandler( "close", peer, code, desc );
+      CallEventHandler( "close", peer_id, code, desc );
     }
   }
 
-  LOG_F( INFO ) << "Done, peer is " << peer;
+  LOG_F( INFO ) << "Done, peer is " << peer_id;
 }
 
-void PeerConnect::OnConnect( const string peer ) {
+void Peer::OnConnect( const string peer_id ) {
   if ( event_handler_.find( "connect" ) != event_handler_.end() ) {
-    CallEventHandler( "connect", peer );
+    CallEventHandler( "connect", peer_id );
   }
 
-  LOG_F( INFO ) << "Done, peer is " << peer;
+  LOG_F( INFO ) << "Done, peer is " << peer_id;
 }
 
-void PeerConnect::OnMessage( const string peer, const char* data, const size_t size ) {
+void Peer::OnMessage( const string peer_id, const char* data, const size_t size ) {
   if ( event_handler_.find( "message" ) != event_handler_.end() ) {
-    CallEventHandler( "message", peer, data, size );
+    CallEventHandler( "message", peer_id, data, size );
   }
 }
 
-void PeerConnect::OnWritable( const string peer ) {
+void Peer::OnWritable( const string peer_id ) {
   if ( event_handler_.find( "writable" ) != event_handler_.end() ) {
-    CallEventHandler( "writable", peer );
+    CallEventHandler( "writable", peer_id );
   }
 
-  LOG_F( INFO ) << "Done, peer is " << peer;
+  LOG_F( INFO ) << "Done, peer is " << peer_id;
 }
 
 
 template<typename ...A>
-void PeerConnect::CallEventHandler( string msg_id, A&& ... args )
+void Peer::CallEventHandler( string msg_id, A&& ... args )
 {
   using eventhandler_t = EventHandler_t<A...>;
   using cb_t = std::function<void( A... )>;
@@ -295,7 +295,7 @@ void PeerConnect::CallEventHandler( string msg_id, A&& ... args )
 }
 
 
-bool PeerConnect::ParseOptions( const string& options ) {
+bool Peer::ParseOptions( const string& options ) {
   Json::Reader reader;
   Json::Value joptions;
 
@@ -321,4 +321,4 @@ bool PeerConnect::ParseOptions( const string& options ) {
   return true;
 }
 
-} // namespace pc
+} // namespace peerapi

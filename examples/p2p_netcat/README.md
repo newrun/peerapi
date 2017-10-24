@@ -1,5 +1,5 @@
 # Netcat over p2p network
-This is PeerConnect library example.
+This is PeerApi library example.
 
 # Usage
 ```

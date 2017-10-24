@@ -17,8 +17,8 @@
 // Note P postfix of a function indicates that it should only be called by the
 // processing thread.
 
-#ifndef _PEERCONNECT_PC_TEST_FAKEAUDIOCAPTUREMODULE_H_
-#define _PEERCONNECT_PC_TEST_FAKEAUDIOCAPTUREMODULE_H_
+#ifndef _PEERAPI_PC_TEST_FAKEAUDIOCAPTUREMODULE_H_
+#define _PEERAPI_PC_TEST_FAKEAUDIOCAPTUREMODULE_H_
 
 #include <memory>
 
@@ -278,4 +278,4 @@ class FakeAudioCaptureModule
   rtc::CriticalSection crit_callback_;
 };
 
-#endif  // _PEERCONNECT_PC_TEST_FAKEAUDIOCAPTUREMODULE_H_
+#endif  // _PEERAPI_PC_TEST_FAKEAUDIOCAPTUREMODULE_H_

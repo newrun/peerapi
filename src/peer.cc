@@ -1,5 +1,5 @@
 /*
-*  Copyright 2016 The PeerConnect Project Authors. All rights reserved.
+*  Copyright 2016 The PeerApi Project Authors. All rights reserved.
 *
 *  Ryan Lee
 */
@@ -11,7 +11,7 @@
 
 #include "logging.h"
 
-namespace pc {
+namespace peerapi {
 
 //
 // class PeerControl
@@ -46,7 +46,7 @@ bool PeerControl::Initialize() {
   }
 
   webrtc::DataChannelInit init;
-  const string data_channel_name = string("pc_data_") + remote_id_;
+  const string data_channel_name = string("peer_data_") + remote_id_;
   if (!CreateDataChannel(data_channel_name, init)) {
     LOG_F(LS_ERROR) << "CreateDataChannel failed";
     DeletePeerConnection();
@@ -553,4 +553,4 @@ PeerDataChannelObserver::state() const {
 }
 
 
-} // namespace pc
+} // namespace peerapi

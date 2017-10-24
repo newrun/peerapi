@@ -1,11 +1,11 @@
 /*
-*  Copyright 2016 The PeerConnect Project Authors. All rights reserved.
+*  Copyright 2016 The PeerApi Project Authors. All rights reserved.
 *
 *  Ryan Lee
 */
 
-#ifndef __PEERCONNECT_PEER_H__
-#define __PEERCONNECT_PEER_H__
+#ifndef __PEERAPI_PEER_H__
+#define __PEERAPI_PEER_H__
 
 #include <condition_variable>
 #include <mutex>
@@ -17,7 +17,7 @@
 #include "webrtc/base/json.h"
 #include "common.h"
 
-namespace pc {
+namespace peerapi {
 
 //
 // class PeerObserver
@@ -25,12 +25,12 @@ namespace pc {
 
 class PeerObserver {
 public:
-  virtual void SendCommand(const std::string& peer, const std::string& command, const Json::Value& data) = 0;
-  virtual void ClosePeer(const std::string peer, const pc::CloseCode code, bool force_queuing = FORCE_QUEUING_OFF ) = 0;
-  virtual void OnPeerConnect(const std::string peer) = 0;
-  virtual void OnPeerClose(const std::string peer, const pc::CloseCode code) = 0;
-  virtual void OnPeerMessage(const std::string& peer, const char* buffer, const size_t size) = 0;
-  virtual void OnPeerWritable(const std::string& peer) = 0;
+  virtual void SendCommand(const std::string& peer_id, const std::string& command, const Json::Value& data) = 0;
+  virtual void ClosePeer(const std::string peer_id, const peerapi::CloseCode code, bool force_queuing = FORCE_QUEUING_OFF ) = 0;
+  virtual void OnPeerConnect(const std::string peer_id) = 0;
+  virtual void OnPeerClose(const std::string peer_id, const peerapi::CloseCode code) = 0;
+  virtual void OnPeerMessage(const std::string& peer_id, const char* buffer, const size_t size) = 0;
+  virtual void OnPeerWritable(const std::string& peer_id) = 0;
 };
 
 class PeerDataChannelObserver;
@@ -184,6 +184,6 @@ private:
   std::mutex send_lock_;
 };
 
-} // namespace pc
+} // namespace peerapi
 
-#endif // __PEERCONNECT_PEER_H__
+#endif // __PEERAPI_PEER_H__

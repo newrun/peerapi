@@ -1,4 +1,4 @@
-# PeerConnect
+# PeerApi
 
 A peer-to-peer C++ library for network.
 
@@ -10,28 +10,28 @@ A peer-to-peer C++ library for network.
 # Quick start
 Peer A (listen)
 ```c++
-PeerConnect pc("PEER_A");
+Peer peer("PEER_A");
 
-pc.On("message", function_pc(string peer, char* data, size_t size) {
+peer.On("message", function_peer(string peer_id, char* data, size_t size) {
   std::cout << "A message has been received." << std::endl;
 });
 
-pc.Open();
+peer.Open();
 ```
 
 Peer B (connect)
 ```c++
-PeerConnect pc("PEER_B");
+Peer peer("PEER_B");
 
-pc.On("open", function_pc(string peer) {
-  pc.>Connect("PEER_A");
+peer.On("open", function_peer(string peer_id) {
+  peer.>Connect("PEER_A");
 });
 
-pc.On("connect", function_pc(string peer) {
-  pc.Send("PEER_A", "Hello");
+peer.On("connect", function_peer(string peer_id) {
+  peer.Send("PEER_A", "Hello");
 });
 
-pc.Open();
+peer.Open();
 ```
 
 # API
@@ -42,7 +42,7 @@ See the [API.md](API.md) document.
 
 See the **examples** directory.
 
-* [p2p netcat](https://github.com/peersio/peerconnect/tree/master/examples/p2p_netcat): netcat on peer-to-peer way
+* [p2p netcat](https://github.com/peerborough/peerapi/tree/master/examples/p2p_netcat): netcat on peer-to-peer way
 
 
 # Build
@@ -63,10 +63,10 @@ In the [WebRTC development](https://webrtc.org/native-code/development/) instruc
 * Follow 'Before You Start' step
 * Follow 'Getting the code' step
 
-Currently PeerConnect supports WebRTC branch-heads/60 so run
+Currently PeerApi supports WebRTC branch-heads/60 so run
 
 ```
-$ git checkout -b peers60 refs/remotes/branch-heads/60
+$ git checkout -b peerapi60 refs/remotes/branch-heads/60
 ```
 
 To update build toolchain and dependencies of WebRTC, run:
@@ -74,10 +74,10 @@ To update build toolchain and dependencies of WebRTC, run:
 $ gclient sync
 ```
 
-Note that you don't have to follow 'Generating Ninja project files' or 'Compiling' step. PeerConnect will do that internally.
+Note that you don't have to follow 'Generating Ninja project files' or 'Compiling' step. PeerApi will do that internally.
 
 
-## Build PeerConnect
+## Build PeerApi
 
 Generate the build files
 ```

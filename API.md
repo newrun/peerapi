@@ -1,8 +1,8 @@
-﻿# PeerConnect
+﻿# Peer
 
 ### Table of Contents
 * Constructor
- * [PeerConnect()](#classpeerconnect)
+ * [Peer()](#classpeer)
 * Methods
  * [Open()](#open)
  * [Close()](#close)
@@ -15,8 +15,8 @@
  * [On("message")](#onmessage)
  * [On("writable")](#onwritable)
 * Static Methods
- * [PeerConnect::Run()](#run)
- * [PeerConnect::Stop()](#stop)
+ * [Peer::Run()](#run)
+ * [Peer::Stop()](#stop)
 * Example
  * [echo_server](#echoserver)
  * [echo_client](#echoclient)
@@ -30,20 +30,20 @@ Include following at the top of your code
 #include "peerconnect.h"
 ```
 
-## Class: PeerConnect
+## Class: Peer
 
-This class is a PeerConnect server and client.
+This class is a PeerApi server and client.
 
 ## Constructor
 
-<a name="classpeerconnect"/>
-### PeerConnect()
+<a name="classpeer"/>
+### Peer()
 
-Construct a new PeerConnect object. A `peer` is local name of peer and remote peer may connect to local peer with `peer` name.
+Construct a new Peer object. A `peer` is local name of peer and remote peer may connect to local peer with `peer` name.
 
 ```c++
-PeerConnect( 
-  const std::string peer = ""
+Peer( 
+  const std::string peer_id = ""
 )
 ```
 
@@ -55,9 +55,9 @@ Parameters
 Examples
 
 ```c++
-PeerConnect pc1;
-PeerConnect pc2("PEER_NAME");
-PeerConnect pc3("Your@email.com");
+Peer peer1;
+Peer peer2("PEER_NAME");
+Peer peer3("Your@email.com");
 ```
 
 ## Methods
@@ -78,7 +78,7 @@ Close the remote peer connection or connection attempt, if any. If the connectio
 
 ```c++
 void Close(
-  const std::string peer = ""
+  const std::string peer_id = ""
 )
 ```
 
@@ -94,7 +94,7 @@ Connect to remote peer.
 
 ```c++
 void Connect(
-  const std::string peer
+  const std::string peer_id
 )
 ```
 
@@ -110,14 +110,14 @@ Transmits data to the peer over p2p connection.
 
 ```c++
 bool Send(
-  const std::string& peer,
+  const std::string& peer_id,
   const char* data,
   const size_t size,
   const bool wait = SYNC_OFF
 )
 
 bool Send(
-  const string& peer,
+  const string& peer_id,
   const string& data,
   const bool wait = SYNC_OFF
 )
@@ -139,10 +139,10 @@ Constants
 <a name="onopen"/>
 ### On("open")
 
-Attaches "open" event handler. A "open" event is emitted when PeerConnect is ready by `Open()` method.
+Attaches "open" event handler. A "open" event is emitted when Peer is ready by `Open()` method.
 
 ```c++
-pc.On("open", function_pc( std::string peer ) {
+peer.On("open", function_peer( std::string peer_id ) {
   // ...
 })
 ```
@@ -157,7 +157,7 @@ Parameters
 Attaches "close" event handler. A "close" event is emitted when connection is closed.
 
 ```c++
-pc.On("close", function_pc( std::string peer, CloseCode code, std::string desc ) {
+peer.On("close", function_peer( std::string peer_id, CloseCode code, std::string desc ) {
   // ...
 })
 ```
@@ -165,7 +165,7 @@ pc.On("close", function_pc( std::string peer, CloseCode code, std::string desc )
 Parameters
 
 > * peer : A name of closed peer. Note that peer is one of local peer or remote peer.
-> * code : A close code defined in the PeerConnect.
+> * code : A close code defined in the Peer.
 > * desc : A description of close reason.
 
 Constants
@@ -189,7 +189,7 @@ enum CloseCode {
 Attaches "connect" event handler. A "connect" event is emitted when connection is established.
 
 ```c++
-pc.On("connect", function_pc( std::string peer ) {
+peer.On("connect", function_peer( std::string peer_id ) {
   // ...
 })
 ```
@@ -204,7 +204,7 @@ Parameters
 Attaches "message" event handler. A "message" event is emitted when data is received.
 
 ```c++
-pc.On("message", function_pc( std::string peer, char* data, std::size_t size ) {
+peer.On("message", function_peer( std::string peer_id, char* data, std::size_t size ) {
   // ...
 })
 ```
@@ -222,7 +222,7 @@ Parameters
 Attaches "writable" event handler. A "writable" event is emitted when read to send data. It is useful when asynchronously (SYNC_OFF) sending a data.
 
 ```c++
-pc.On("writable", function_pc( std::string peer ){
+peer.On("writable", function_peer( std::string peer_id ){
   // ...
 });
 ```
@@ -233,21 +233,21 @@ Parameter
 ## Static methods
 
 <a name="run"/>
-### PeerConnect::Run()
+### Peer::Run()
 
-Run PeerConnect object's event processing loop. Note that the thread quit a loop if other thread calls PeerConnect::Stop() method. 
+Run Peer object's event processing loop. Note that the thread quit a loop if other thread calls Peer::Stop() method. 
 
 ```c++
-void PeerConnect::Run()
+void Peer::Run()
 ```
 
 <a name="stop"/>
-### PeerConnect::Stop()
+### Peer::Stop()
 
-Stop PeerConnect object's event processing loop.
+Stop Peer object's event processing loop.
 
 ```c++
-void PeerConnect::Stop()
+void Peer::Stop()
 ```
 
 ## Example
@@ -256,39 +256,39 @@ void PeerConnect::Stop()
 * echo server
 
 ```c++
-PeerConnect pc("SERVER_PEER");
+Peer peer("SERVER_PEER");
 
-pc.On("message", function_pc(std::string peer, char* data, std::size_t size) {
+peer.On("message", function_peer(std::string peer_id, char* data, std::size_t size) {
   // Echo message
-  pc.Send(peer, data, size);
+  peer.Send(peer, data, size);
 });
 
-pc.Open();
-PeerConnect::Run();
+peer.Open();
+Peer::Run();
 ```
 
 <a name="echoclient"/>
 * echo client
 ```c++
 
-PeerConnect pc;
+Peer peer;
 
-pc.On("open", function_pc(std::string peer) {
-  pc.Connect("SERVER_PEER");
+peer.On("open", function_peer(std::string peer_id) {
+  peer.Connect("SERVER_PEER");
 });
 
-pc.On("connect", function_pc(std::string peer) {
-  pc.Send(peer, "Hello world");
+peer.On("connect", function_peer(std::string peer_id) {
+  peer.Send(peer, "Hello world");
 });
 
-pc.On("close", function_pc(std::string peer, CloseCode code, std::string desc) {
-  PeerConnect::Stop();
+peer.On("close", function_peer(std::string peer_id, CloseCode code, std::string desc) {
+  Peer::Stop();
 });
 
-pc.On("message", function_pc(std::string peer, char* data, std::size_t size) {
-  pc.Close();
+peer.On("message", function_peer(std::string peer_id, char* data, std::size_t size) {
+  peer.Close();
 });
 
-pc.Open();
-PeerConnect::Run();
+peer.Open();
+Peer::Run();
 ```

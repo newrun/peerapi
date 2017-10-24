@@ -1,5 +1,5 @@
 /*
-*  Copyright 2016 The PeerConnect Project Authors. All rights reserved.
+*  Copyright 2016 The PeerApi Project Authors. All rights reserved.
 *
 *  Ryan Lee
 */
@@ -21,24 +21,24 @@ int main(int argc, char *argv[]) {
   }
   string server = argv[1];
 
-  PeerConnect pc(server);
+  Peer peer(server);
 
-  pc.On("connect", function_pc(string peer) {
-    std::cout << "Peer " << peer << " has been connected." << std::endl;
+  peer.On("connect", function_peer(string peer_id) {
+    std::cout << "Peer " << peer_id << " has been connected." << std::endl;
   });
 
-  pc.On("close", function_pc(string peer, CloseCode code, string desc) {
-    std::cout << "Peer " << peer << " has been closed." << std::endl;
+  peer.On("close", function_peer(string peer_id, CloseCode code, string desc) {
+    std::cout << "Peer " << peer_id << " has been closed." << std::endl;
   });
 
-  pc.On("message", function_pc(string peer, char* data, size_t size) {
+  peer.On("message", function_peer(string peer_id, char* data, size_t size) {
     std::cout << "Message " << std::string(data, size) << 
                  " has been received." << std::endl;
-    pc.Send(peer,data, size);
+    peer.Send(peer_id,data, size);
   });
 
-  pc.Open();
-  PeerConnect::Run();
+  peer.Open();
+  Peer::Run();
 
   return 0;
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 The PeerConnect Project Authors. All rights reserved.
+ *  Copyright 2016 The PeerApi Project Authors. All rights reserved.
  *
  *  Ryan Lee
  */
@@ -13,7 +13,7 @@
 #include "signalconnection.h"
 #include "logging.h"
 
-namespace pc {
+namespace peerapi {
 
 Signal::Signal(const string url) :
       con_state_(con_closed),
@@ -417,4 +417,4 @@ Signal::context_ptr Signal::OnTlsInit(websocketpp::connection_hdl conn)
 }
 
 
-} // namespace pc
+} // namespace peerapi

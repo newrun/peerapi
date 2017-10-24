@@ -1,16 +1,16 @@
 /*
- *  Copyright 2016 The PeerConnect Project Authors. All rights reserved.
+ *  Copyright 2016 The PeerApi Project Authors. All rights reserved.
  *
  *  Ryan Lee
  */
 
 
-#ifndef __PEERCONNECT_COMMON_H__
-#define __PEERCONNECT_COMMON_H__
+#ifndef __PEERAPI_COMMON_H__
+#define __PEERAPI_COMMON_H__
 
-namespace pc {
+namespace peerapi {
 
-#define function_pc [&]
+#define function_peer [&]
 
 enum CloseCode {
   // Success
@@ -30,6 +30,6 @@ const bool SYNC_ON = true;
 const bool FORCE_QUEUING_OFF = false;
 const bool FORCE_QUEUING_ON = true;
 
-} // namespace pc
+} // namespace peerapi
 
-#endif // __PEERCONNECT_COMMON_H__
+#endif // __PEERAPI_COMMON_H__

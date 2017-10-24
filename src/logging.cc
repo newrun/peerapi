@@ -1,5 +1,5 @@
 /*
-*  Copyright 2016 The PeerConnect Project Authors. All rights reserved.
+*  Copyright 2016 The PeerApi Project Authors. All rights reserved.
 *
 *  Ryan Lee
 */
@@ -55,7 +55,7 @@ static const char kLibjingle[] = "libjingle";
 
 using namespace rtc;
 
-namespace pc {
+namespace peerapi {
 namespace {
 
 // Return the filename portion of the string (that following the last slash).
@@ -567,4 +567,4 @@ void LogMultiline(LoggingSeverity level, const char* label, bool input,
 
 //////////////////////////////////////////////////////////////////////
 
-}  // namespace pc
+}  // namespace peerapi
