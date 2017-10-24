@@ -27,7 +27,7 @@
 Include following at the top of your code
 
 ```c++
-#include "peerconnect.h"
+#include "peerapi.h"
 ```
 
 ## Class: Peer

@@ -18,7 +18,7 @@
 #endif
 #include <fcntl.h>
 #include <signal.h>
-#include "peerconnect.h"
+#include "peerapi.h"
 
 #ifdef WIN32
 #pragma warning(disable:4996)

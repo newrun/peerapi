@@ -7,7 +7,7 @@
 #include <iostream>
 #include <string>
 
-#include "peerconnect.h"
+#include "peerapi.h"
 
 using namespace std;
 

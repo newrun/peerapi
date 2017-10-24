@@ -76,7 +76,7 @@ find_package(Asio)
 # Headers and sources.
 # ============================================================================
 set(HEADERS
-    "src/peerconnect.h"
+    "src/peerapi.h"
     "src/common.h"
     "src/control.h"
     "src/controlobserver.h"
@@ -87,7 +87,7 @@ set(HEADERS
     )
 
 set(SOURCES
-    "src/peerconnect.cc"
+    "src/peerapi.cc"
     "src/control.cc"
     "src/peer.cc"
     "src/signalconnection.cc"

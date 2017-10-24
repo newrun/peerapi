@@ -9,7 +9,7 @@
 #include <thread>
 #include <cassert>
 
-#include "peerconnect.h"
+#include "peerapi.h"
 
 using namespace std;
 

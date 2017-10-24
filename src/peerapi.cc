@@ -7,7 +7,7 @@
 #include <string>
 #include <locale>
  
-#include "peerconnect.h"
+#include "peerapi.h"
 #include "control.h"
 #include "logging.h"
 
