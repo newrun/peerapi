@@ -34,7 +34,7 @@ Signal::Signal(const string url) :
 
   // Default settings
   if (url_.empty()) {
-    url_ = "wss://signal.peers.io/hello";
+    url_ = "wss://signal.peerapi.peerborough.com/hello";
   }
 
   // Initialize ASIO
