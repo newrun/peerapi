@@ -74,7 +74,7 @@ macro (MERGE_STATIC_LIBRARIES TARGET_LIB LIBRARIES LIBRARIES_DEBUG OBJECTS OBJEC
       set(_OBJECTS ${OBJECTS})
     endif()
 
-    set(outfile "libpeerconnect.a")
+    set(outfile "libpeerapi.a")
     set(target_temp_file "${CMAKE_CURRENT_BINARY_DIR}/lib${TARGET_LIB}_temp.a")
 
     set(MRI_SCRIPT "create ${outfile}\n")
@@ -89,13 +89,13 @@ macro (MERGE_STATIC_LIBRARIES TARGET_LIB LIBRARIES LIBRARIES_DEBUG OBJECTS OBJEC
     set(MRI_SCRIPT "${MRI_SCRIPT}save\n")
     set(MRI_SCRIPT "${MRI_SCRIPT}end\n")
 
-    file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/peerconnect.mri" "${MRI_SCRIPT}")
+    file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/peerapi.mri" "${MRI_SCRIPT}")
 
     add_custom_command(TARGET ${TARGET_LIB} POST_BUILD
                         COMMAND ${CMAKE_COMMAND} -E copy "${outfile}"
                                 "${target_temp_file}"
                         COMMAND rm "${outfile}"
-                        COMMAND ${CMAKE_AR} -M < "${CMAKE_CURRENT_BINARY_DIR}/peerconnect.mri"
+                        COMMAND ${CMAKE_AR} -M < "${CMAKE_CURRENT_BINARY_DIR}/peerapi.mri"
                         COMMAND rm "${target_temp_file}"
                         )
 	endif (WIN32)
