@@ -291,7 +291,7 @@ void PeerControl::OnPeerDisconnected() {
   // It will be in state pClosing if a user calls Close() manually
   //
 
-  control_->ClosePeer( remote_id_, CLOSE_GOING_AWAY );
+  control_->ClosePeer( remote_id_, CLOSE_GOING_AWAY, FORCE_QUEUING_ON );
 }
 
 
